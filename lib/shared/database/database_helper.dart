@@ -16,10 +16,12 @@ class DatabaseHelper {
   };
 
   bool _initialized = false;
+  Future<void>? _initFuture;
 
   Future<void> _ensureInitialized() async {
     if (!_initialized) {
-      await _loadData();
+      _initFuture ??= _loadData();
+      await _initFuture;
       _initialized = true;
     }
   }
@@ -34,6 +36,11 @@ class DatabaseHelper {
     return File(p.join(path, 'time_way_pro_data.json'));
   }
 
+  Future<File> get _backupFile async {
+    final path = await _localPath;
+    return File(p.join(path, 'time_way_pro_data.json.bak'));
+  }
+
   Future<void> _loadData() async {
     try {
       final file = await _localFile;
@@ -43,18 +50,44 @@ class DatabaseHelper {
       }
     } catch (e) {
       print('Error loading data: $e');
-      _data = {
-        'tasks': [],
-        'task_records': [],
-        'plans': [],
-        'sync_config': [],
-      };
+      // 尝试从备份恢复
+      try {
+        final backupFile = await _backupFile;
+        if (await backupFile.exists()) {
+          final contents = await backupFile.readAsString();
+          _data = jsonDecode(contents);
+          print('Restored from backup');
+        } else {
+          _data = {
+            'tasks': [],
+            'task_records': [],
+            'plans': [],
+            'sync_config': [],
+          };
+        }
+      } catch (e2) {
+        print('Error loading backup: $e2');
+        _data = {
+          'tasks': [],
+          'task_records': [],
+          'plans': [],
+          'sync_config': [],
+        };
+      }
     }
   }
 
   Future<void> _saveData() async {
     try {
       final file = await _localFile;
+      final backupFile = await _backupFile;
+
+      // 先备份当前文件
+      if (await file.exists()) {
+        await file.copy(backupFile.path);
+      }
+
+      // 写入新数据
       await file.writeAsString(jsonEncode(_data));
     } catch (e) {
       print('Error saving data: $e');
@@ -97,6 +130,8 @@ class DatabaseHelper {
     if (index != -1) {
       list[index] = record;
       await _saveData();
+    } else {
+      print('Warning: Record not found for update in $table with $idField=${record[idField]}');
     }
   }
 
@@ -125,7 +160,17 @@ class DatabaseHelper {
   }
 
   Future<void> importAll(Map<String, dynamic> data) async {
+    // 验证数据格式
+    if (!data.containsKey('tasks') || !data.containsKey('task_records') || !data.containsKey('plans')) {
+      throw Exception('Invalid data format: missing required fields');
+    }
+
+    if (data['tasks'] is! List || data['task_records'] is! List || data['plans'] is! List) {
+      throw Exception('Invalid data format: fields must be lists');
+    }
+
     _data = data;
+    _initialized = true;
     await _saveData();
   }
 

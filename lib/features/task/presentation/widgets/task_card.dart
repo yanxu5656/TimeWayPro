@@ -29,35 +29,39 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         border: isRunning
-            ? Border.all(color: AppColors.success.withValues(alpha: 0.5), width: 2)
-            : null,
+            ? Border.all(color: AppColors.success.withValues(alpha: 0.4), width: 2)
+            : Border.all(color: AppColors.divider.withValues(alpha: 0.5), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isRunning ? 0.08 : 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: isRunning
+                ? AppColors.success.withValues(alpha: 0.15)
+                : AppColors.shadow,
+            blurRadius: isRunning ? 20 : 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(20),
           onTap: onEdit,
           onLongPress: () => _showOptions(context),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 // 完成按钮
                 _buildCompleteButton(),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
 
                 // 任务信息
                 Expanded(
@@ -71,7 +75,7 @@ class TaskCard extends StatelessWidget {
                             child: Text(
                               task.title,
                               style: TextStyle(
-                                fontSize: 15,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: task.isCompleted
                                     ? AppColors.textHint
@@ -85,15 +89,15 @@ class TaskCard extends StatelessWidget {
                           if (isRunning) _buildRunningIndicator(),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
 
                       // 计时显示（进行中）
                       if (isRunning) _buildTimerDisplay(),
 
                       // 标签行
                       Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
+                        spacing: 8,
+                        runSpacing: 6,
                         children: [
                           _buildTag(
                             task.timerType == TimerType.countUp
@@ -117,20 +121,51 @@ class TaskCard extends StatelessWidget {
 
                       // 完成次数
                       if (task.isRepeatable && task.completedCount > 0) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 10),
                         Row(
                           children: [
-                            const Icon(
-                              Icons.check_circle_outline,
-                              size: 14,
-                              color: AppColors.primary,
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primarySubtle,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle_outline,
+                                    size: 14,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${task.completedCount}/${task.repeatCount}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '今日已完成 ${task.completedCount}/${task.repeatCount} 次',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.primary,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: task.repeatCount > 0
+                                      ? task.completedCount / task.repeatCount
+                                      : 0,
+                                  backgroundColor: AppColors.surfaceVariant,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    task.completedCount >= task.repeatCount
+                                        ? AppColors.success
+                                        : AppColors.primary,
+                                  ),
+                                  minHeight: 4,
+                                ),
                               ),
                             ),
                           ],
@@ -139,20 +174,20 @@ class TaskCard extends StatelessWidget {
 
                       // 今日累计时长
                       if (dailyDuration > 0) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             const Icon(
                               Icons.access_time,
                               size: 14,
-                              color: AppColors.textSecondary,
+                              color: AppColors.textHint,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '今日累计 ${_formatDuration(dailyDuration)}',
+                              '今日 ${_formatDuration(dailyDuration)}',
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textSecondary,
+                                color: AppColors.textHint,
                               ),
                             ),
                           ],
@@ -178,13 +213,14 @@ class TaskCard extends StatelessWidget {
   Widget _buildCompleteButton() {
     return GestureDetector(
       onTap: onComplete,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: 28,
         height: 28,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: task.isCompleted ? AppColors.primary : AppColors.textHint,
+            color: task.isCompleted ? AppColors.primary : AppColors.textHint.withValues(alpha: 0.5),
             width: 2,
           ),
           color: task.isCompleted ? AppColors.primary : Colors.transparent,
@@ -198,17 +234,24 @@ class TaskCard extends StatelessWidget {
 
   Widget _buildRunningIndicator() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.play_circle_filled, size: 12, color: AppColors.success),
-          SizedBox(width: 4),
-          Text(
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.success,
+            ),
+          ),
+          const SizedBox(width: 6),
+          const Text(
             '进行中',
             style: TextStyle(
               fontSize: 11,
@@ -249,24 +292,30 @@ class TaskCard extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withValues(alpha: 0.1),
+            AppColors.primary.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.access_time, size: 16, color: AppColors.primary),
-          const SizedBox(width: 6),
+          const Icon(Icons.access_time_filled, size: 18, color: AppColors.primary),
+          const SizedBox(width: 8),
           Text(
             timeStr,
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               color: AppColors.primary,
               fontFamily: 'monospace',
+              letterSpacing: 1,
             ),
           ),
         ],
@@ -278,11 +327,16 @@ class TaskCard extends StatelessWidget {
     return GestureDetector(
       onTap: onStart,
       child: Container(
-        width: 40,
-        height: 40,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColors.primary.withValues(alpha: 0.1),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primary.withValues(alpha: 0.15),
+              AppColors.primary.withValues(alpha: 0.05),
+            ],
+          ),
         ),
         child: Icon(
           task.timerType == TimerType.countUp
@@ -299,11 +353,16 @@ class TaskCard extends StatelessWidget {
     return GestureDetector(
       onTap: onStop,
       child: Container(
-        width: 40,
-        height: 40,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColors.error.withValues(alpha: 0.1),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.error.withValues(alpha: 0.15),
+              AppColors.error.withValues(alpha: 0.05),
+            ],
+          ),
         ),
         child: const Icon(
           Icons.stop_rounded,
@@ -316,21 +375,22 @@ class TaskCard extends StatelessWidget {
 
   Widget _buildTag(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppColors.textSecondary),
-          const SizedBox(width: 3),
+          Icon(icon, size: 13, color: AppColors.textSecondary),
+          const SizedBox(width: 4),
           Text(
             text,
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -349,50 +409,68 @@ class TaskCard extends StatelessWidget {
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                task.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_outlined),
-              title: const Text('编辑任务'),
-              onTap: () {
-                Navigator.pop(context);
-                onEdit();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: AppColors.error),
-              title: const Text('删除任务', style: TextStyle(color: AppColors.error)),
-              onTap: () {
-                Navigator.pop(context);
-                onDelete();
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  task.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySubtle,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+                ),
+                title: const Text('编辑任务'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onEdit();
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                ),
+                title: const Text('删除任务', style: TextStyle(color: AppColors.error)),
+                onTap: () {
+                  Navigator.pop(context);
+                  onDelete();
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );

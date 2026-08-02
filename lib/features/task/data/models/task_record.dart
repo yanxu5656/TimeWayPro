@@ -32,7 +32,7 @@ class TaskRecord {
       taskId: map['task_id'],
       startTime: DateTime.parse(map['start_time']),
       endTime: map['end_time'] != null ? DateTime.parse(map['end_time']) : null,
-      duration: map['duration'],
+      duration: map['duration'] ?? 0,
       completedAt: map['completed_at'] != null ? DateTime.parse(map['completed_at']) : null,
     );
   }

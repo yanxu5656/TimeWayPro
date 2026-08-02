@@ -15,6 +15,11 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen> {
   int _selectedPeriod = 0; // 0: 日, 1: 周, 2: 月
 
+  // 缓存统计数据，避免频繁刷新
+  _StatsData? _cachedStats;
+  int _lastPeriod = -1;
+  int _lastTaskCount = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,42 +29,63 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
-          return FutureBuilder<_StatsData>(
-            future: _loadStats(provider),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+          // 检查是否需要刷新（时间段变化或任务数据变化）
+          final currentTaskCount = provider.tasks.length;
+          final needRefresh = _lastPeriod != _selectedPeriod ||
+              _cachedStats == null ||
+              currentTaskCount != _lastTaskCount;
 
-              final stats = snapshot.data ?? _StatsData.empty();
+          if (needRefresh) {
+            _lastPeriod = _selectedPeriod;
+            _lastTaskCount = currentTaskCount;
+            return FutureBuilder<_StatsData>(
+              future: _loadStats(provider),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppColors.primary,
+                    ),
+                  );
+                }
 
-              return ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // 日期选择器
-                  _buildDateSelector(),
-                  const SizedBox(height: 20),
+                _cachedStats = snapshot.data ?? _StatsData.empty();
+                return _buildContent(_cachedStats!);
+              },
+            );
+          }
 
-                  // 概览卡片
-                  _buildOverviewCards(stats),
-                  const SizedBox(height: 20),
-
-                  // 热力图
-                  _buildHeatMap(stats),
-                  const SizedBox(height: 20),
-
-                  // 饼图
-                  _buildPieChart(stats),
-                  const SizedBox(height: 20),
-
-                  // 任务明细
-                  _buildTaskDetail(stats),
-                ],
-              );
-            },
-          );
+          // 使用缓存的数据
+          return _buildContent(_cachedStats!);
         },
       ),
+    );
+  }
+
+  Widget _buildContent(_StatsData stats) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        // 时间段选择器
+        _buildDateSelector(),
+        const SizedBox(height: 20),
+
+        // 概览卡片
+        _buildOverviewCards(stats),
+        const SizedBox(height: 20),
+
+        // 热力图
+        _buildHeatMap(stats),
+        const SizedBox(height: 20),
+
+        // 饼图
+        _buildPieChart(stats),
+        const SizedBox(height: 20),
+
+        // 任务明细
+        _buildTaskDetail(stats),
+      ],
     );
   }
 
@@ -68,7 +94,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -84,19 +117,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final isSelected = _selectedPeriod == index;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedPeriod = index),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+        onTap: () {
+          if (_selectedPeriod != index) {
+            setState(() {
+              _selectedPeriod = index;
+              _cachedStats = null; // 清除缓存，触发重新加载
+            });
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected ? Colors.white : AppColors.textSecondary,
             ),
           ),
@@ -129,14 +170,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
+              color: AppColors.shadow,
+              blurRadius: 10,
               offset: const Offset(0, 2),
             ),
           ],
@@ -144,14 +185,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 16),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: color,
+                letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 4),
@@ -159,7 +208,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               label,
               style: const TextStyle(
                 fontSize: 13,
-                color: AppColors.textSecondary,
+                color: AppColors.textHint,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -170,14 +220,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildHeatMap(_StatsData stats) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
+            color: AppColors.shadow,
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -189,7 +239,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             '热力图',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 16),
@@ -223,8 +273,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
 
     return Wrap(
-      spacing: 4,
-      runSpacing: 4,
+      spacing: 6,
+      runSpacing: 6,
       children: List.generate(days, (i) {
         final date = startDate.add(Duration(days: i));
         final key = DateFormat('yyyy-MM-dd').format(date);
@@ -234,19 +284,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         return Tooltip(
           message: '${DateFormat('MM/dd').format(date)}\n${_formatDuration(duration)}',
           child: Container(
-            width: _selectedPeriod == 2 ? 36 : 40,
-            height: _selectedPeriod == 2 ? 36 : 40,
+            width: _selectedPeriod == 2 ? 38 : 42,
+            height: _selectedPeriod == 2 ? 38 : 42,
             decoration: BoxDecoration(
               color: _getHeatMapColor(intensity),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
               child: Text(
                 '${date.day}',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   color: intensity > 0.5 ? Colors.white : AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -257,7 +307,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Color _getHeatMapColor(double intensity) {
-    if (intensity == 0) return AppColors.background;
+    if (intensity == 0) return AppColors.surfaceVariant;
     if (intensity < 0.2) return AppColors.heatMapColors[0];
     if (intensity < 0.4) return AppColors.heatMapColors[2];
     if (intensity < 0.6) return AppColors.heatMapColors[4];
@@ -268,29 +318,47 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildPieChart(_StatsData stats) {
     if (stats.taskDurations.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: const Center(
-          child: Text(
-            '暂无数据',
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.pie_chart_outline,
+              size: 48,
+              color: AppColors.textHint.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '暂无数据',
+              style: TextStyle(
+                color: AppColors.textHint,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
+            color: AppColors.shadow,
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -302,7 +370,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             '任务占比',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 16),
@@ -339,7 +407,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         title: '$shortTitle\n${percentage.toStringAsFixed(0)}%',
         titleStyle: const TextStyle(
           fontSize: 10,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: Colors.white,
         ),
         radius: 70,
@@ -351,7 +419,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildLegend(_StatsData stats) {
     return Wrap(
       spacing: 16,
-      runSpacing: 8,
+      runSpacing: 10,
       children: stats.taskDurations.asMap().entries.map((entry) {
         final index = entry.key;
         final item = entry.value;
@@ -363,7 +431,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               height: 12,
               decoration: BoxDecoration(
                 color: AppColors.chartColors[index % AppColors.chartColors.length],
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
             const SizedBox(width: 6),
@@ -384,14 +452,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (stats.taskDurations.isEmpty) return const SizedBox();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
+            color: AppColors.shadow,
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -403,10 +471,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             '任务明细',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           ...stats.taskDurations.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
@@ -415,19 +483,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 : 0.0;
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 16),
               child: Row(
                 children: [
                   Container(
                     width: 4,
-                    height: 32,
+                    height: 40,
                     decoration: BoxDecoration(
                       color: AppColors
                           .chartColors[index % AppColors.chartColors.length],
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,29 +504,32 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           item['title'] as String,
                           style: const TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        LinearProgressIndicator(
-                          value: percentage / 100,
-                          backgroundColor: AppColors.background,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.chartColors[
-                                index % AppColors.chartColors.length],
-                          ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
                           borderRadius: BorderRadius.circular(4),
-                          minHeight: 4,
+                          child: LinearProgressIndicator(
+                            value: percentage / 100,
+                            backgroundColor: AppColors.surfaceVariant,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.chartColors[
+                                  index % AppColors.chartColors.length],
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                            minHeight: 6,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Text(
                     _formatDuration(item['total_duration'] as int),
                     style: const TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.primary,
                     ),
                   ),

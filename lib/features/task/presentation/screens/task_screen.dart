@@ -16,6 +16,33 @@ class TaskScreen extends StatefulWidget {
 
 class _TaskScreenState extends State<TaskScreen> {
   DateTime _selectedDate = DateTime.now();
+  Map<String, int> _dailyDurations = {};
+  bool _isLoadingDurations = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDailyDurations();
+  }
+
+  Future<void> _loadDailyDurations() async {
+    if (_isLoadingDurations) return;
+    _isLoadingDurations = true;
+
+    try {
+      final provider = context.read<TaskProvider>();
+      final durations = await provider.getAllTaskDailyDurations();
+      if (mounted) {
+        setState(() {
+          _dailyDurations = durations;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading daily durations: $e');
+    } finally {
+      _isLoadingDurations = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -316,7 +343,6 @@ class _TaskScreenState extends State<TaskScreen> {
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textHint,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -328,78 +354,74 @@ class _TaskScreenState extends State<TaskScreen> {
     final repeatableTasks = tasks.where((t) => t.isRepeatable).toList();
     final oneTimeTasks = tasks.where((t) => !t.isRepeatable).toList();
 
-    return FutureBuilder<Map<String, int>>(
-      future: provider.getAllTaskDailyDurations(),
-      builder: (context, snapshot) {
-        final dailyDurations = snapshot.data ?? {};
+    // 获取所有任务（包括可能在计时中的任务）
+    final allTasks = provider.tasks;
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-          children: [
-            // 进行中的任务
-            if (provider.activeTimers.isNotEmpty) ...[
-              _buildSectionTitle('进行中', provider.activeTimers.length, AppColors.success),
-              ...provider.activeTimers.keys.map((taskId) {
-                final task = tasks.firstWhere(
-                  (t) => t.id == taskId,
-                  orElse: () => tasks.first,
-                );
-                return TaskCard(
-                  task: task,
-                  isRunning: true,
-                  elapsedSeconds: provider.getTaskElapsedSeconds(taskId),
-                  dailyDuration: dailyDurations[taskId] ?? 0,
-                  onComplete: () => _completeTask(task),
-                  onEdit: () => _editTask(task),
-                  onDelete: () => _deleteTask(task),
-                  onStart: () => _stopTask(task),
-                  onStop: () => _stopTask(task),
-                );
-              }),
-              const SizedBox(height: 20),
-            ],
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+      children: [
+        // 进行中的任务
+        if (provider.activeTimers.isNotEmpty) ...[
+          _buildSectionTitle('进行中', provider.activeTimers.length, AppColors.success),
+          ...provider.activeTimers.keys.map((taskId) {
+            // 从所有任务中查找，而不是只从活跃任务中查找
+            final task = allTasks.where((t) => t.id == taskId).firstOrNull;
+            if (task == null) return const SizedBox.shrink();
 
-            // 常驻任务
-            if (repeatableTasks.isNotEmpty) ...[
-              _buildSectionTitle('常驻任务', repeatableTasks.length, AppColors.info),
-              ...repeatableTasks.map((task) {
-                final isRunning = provider.isTaskRunning(task.id);
-                return TaskCard(
-                  task: task,
-                  isRunning: isRunning,
-                  elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
-                  dailyDuration: dailyDurations[task.id] ?? 0,
-                  onComplete: () => _completeTask(task),
-                  onEdit: () => _editTask(task),
-                  onDelete: () => _deleteTask(task),
-                  onStart: () => _startTask(task),
-                  onStop: () => _stopTask(task),
-                );
-              }),
-              const SizedBox(height: 20),
-            ],
+            return TaskCard(
+              task: task,
+              isRunning: true,
+              elapsedSeconds: provider.getTaskElapsedSeconds(taskId),
+              dailyDuration: _dailyDurations[taskId] ?? 0,
+              onComplete: () => _completeTask(task),
+              onEdit: () => _editTask(task),
+              onDelete: () => _deleteTask(task),
+              onStart: () => _stopTask(task),
+              onStop: () => _stopTask(task),
+            );
+          }),
+          const SizedBox(height: 20),
+        ],
 
-            // 待完成任务
-            if (oneTimeTasks.isNotEmpty) ...[
-              _buildSectionTitle('待完成任务', oneTimeTasks.length, AppColors.warning),
-              ...oneTimeTasks.map((task) {
-                final isRunning = provider.isTaskRunning(task.id);
-                return TaskCard(
-                  task: task,
-                  isRunning: isRunning,
-                  elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
-                  dailyDuration: dailyDurations[task.id] ?? 0,
-                  onComplete: () => _completeTask(task),
-                  onEdit: () => _editTask(task),
-                  onDelete: () => _deleteTask(task),
-                  onStart: () => _startTask(task),
-                  onStop: () => _stopTask(task),
-                );
-              }),
-            ],
-          ],
-        );
-      },
+        // 常驻任务
+        if (repeatableTasks.isNotEmpty) ...[
+          _buildSectionTitle('常驻任务', repeatableTasks.length, AppColors.info),
+          ...repeatableTasks.map((task) {
+            final isRunning = provider.isTaskRunning(task.id);
+            return TaskCard(
+              task: task,
+              isRunning: isRunning,
+              elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
+              dailyDuration: _dailyDurations[task.id] ?? 0,
+              onComplete: () => _completeTask(task),
+              onEdit: () => _editTask(task),
+              onDelete: () => _deleteTask(task),
+              onStart: () => _startTask(task),
+              onStop: () => _stopTask(task),
+            );
+          }),
+          const SizedBox(height: 20),
+        ],
+
+        // 待完成任务
+        if (oneTimeTasks.isNotEmpty) ...[
+          _buildSectionTitle('待完成任务', oneTimeTasks.length, AppColors.warning),
+          ...oneTimeTasks.map((task) {
+            final isRunning = provider.isTaskRunning(task.id);
+            return TaskCard(
+              task: task,
+              isRunning: isRunning,
+              elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
+              dailyDuration: _dailyDurations[task.id] ?? 0,
+              onComplete: () => _completeTask(task),
+              onEdit: () => _editTask(task),
+              onDelete: () => _deleteTask(task),
+              onStart: () => _startTask(task),
+              onStop: () => _stopTask(task),
+            );
+          }),
+        ],
+      ],
     );
   }
 
@@ -487,19 +509,22 @@ class _TaskScreenState extends State<TaskScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const AddTaskScreen()),
-    );
+    ).then((_) => _loadDailyDurations());
   }
 
   void _editTask(Task task) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => AddTaskScreen(task: task)),
-    );
+    ).then((_) => _loadDailyDurations());
   }
 
   void _completeTask(Task task) {
     final provider = context.read<TaskProvider>();
     provider.completeTask(task.id);
+
+    // 重新加载每日时长
+    _loadDailyDurations();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -585,6 +610,10 @@ class _TaskScreenState extends State<TaskScreen> {
             onPressed: () {
               Navigator.pop(context);
               context.read<TaskProvider>().stopTimer(task.id);
+
+              // 重新加载每日时长
+              _loadDailyDurations();
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Row(

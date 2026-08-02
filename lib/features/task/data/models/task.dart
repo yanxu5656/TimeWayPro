@@ -22,6 +22,7 @@ class Task {
   final int? reminderMinutes; // 提前提醒分钟数
   final bool isCompleted;
   final int completedCount; // 已完成次数
+  final DateTime? lastCompletedDate; // 上次完成日期（用于每日重置）
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -37,6 +38,7 @@ class Task {
     this.reminderMinutes,
     this.isCompleted = false,
     this.completedCount = 0,
+    this.lastCompletedDate,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -54,24 +56,43 @@ class Task {
       'reminder_minutes': reminderMinutes,
       'is_completed': isCompleted ? 1 : 0,
       'completed_count': completedCount,
+      'last_completed_date': lastCompletedDate?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
   }
 
   factory Task.fromMap(Map<String, dynamic> map) {
+    // 安全的枚举值解析
+    TimerType parseTimerType(dynamic value) {
+      if (value == null || value is! int || value >= TimerType.values.length) {
+        return TimerType.countUp;
+      }
+      return TimerType.values[value];
+    }
+
+    RepeatType parseRepeatType(dynamic value) {
+      if (value == null || value is! int || value >= RepeatType.values.length) {
+        return RepeatType.none;
+      }
+      return RepeatType.values[value];
+    }
+
     return Task(
       id: map['id'],
       title: map['title'],
       description: map['description'],
-      timerType: TimerType.values[map['timer_type']],
+      timerType: parseTimerType(map['timer_type']),
       duration: map['duration'],
-      repeatType: RepeatType.values[map['repeat_type']],
-      repeatCount: map['repeat_count'],
+      repeatType: parseRepeatType(map['repeat_type']),
+      repeatCount: map['repeat_count'] ?? 1,
       dueDate: map['due_date'] != null ? DateTime.parse(map['due_date']) : null,
       reminderMinutes: map['reminder_minutes'],
       isCompleted: map['is_completed'] == 1,
-      completedCount: map['completed_count'],
+      completedCount: map['completed_count'] ?? 0,
+      lastCompletedDate: map['last_completed_date'] != null
+          ? DateTime.parse(map['last_completed_date'])
+          : null,
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),
     );
@@ -89,6 +110,7 @@ class Task {
     int? reminderMinutes,
     bool? isCompleted,
     int? completedCount,
+    DateTime? lastCompletedDate,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -104,12 +126,24 @@ class Task {
       reminderMinutes: reminderMinutes ?? this.reminderMinutes,
       isCompleted: isCompleted ?? this.isCompleted,
       completedCount: completedCount ?? this.completedCount,
+      lastCompletedDate: lastCompletedDate ?? this.lastCompletedDate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   bool get isRepeatable => repeatType != RepeatType.none;
+
+  // 检查是否需要重置每日完成次数
+  bool get needsDailyReset {
+    if (!isRepeatable) return false;
+    if (lastCompletedDate == null) return false;
+    final now = DateTime.now();
+    final lastDate = lastCompletedDate!;
+    return now.year != lastDate.year ||
+        now.month != lastDate.month ||
+        now.day != lastDate.day;
+  }
 
   String get repeatTypeText {
     switch (repeatType) {

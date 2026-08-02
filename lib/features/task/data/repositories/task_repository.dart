@@ -63,10 +63,12 @@ class TaskRepository {
       await updateTask(task.copyWith(
         isCompleted: true,
         completedCount: task.completedCount + 1,
+        lastCompletedDate: DateTime.now(),
       ));
     } else {
       await updateTask(task.copyWith(
         completedCount: task.completedCount + 1,
+        lastCompletedDate: DateTime.now(),
       ));
     }
   }
@@ -87,7 +89,8 @@ class TaskRepository {
       'task_records',
       (map) {
         final startTime = DateTime.parse(map['start_time']);
-        return startTime.isAfter(start) && startTime.isBefore(end);
+        // 使用 !isBefore 来包含 start 时刻
+        return !startTime.isBefore(start) && startTime.isBefore(end);
       },
     );
     return maps.map((map) => TaskRecord.fromMap(map)).toList();
