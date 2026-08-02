@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
@@ -22,6 +23,14 @@ class NotificationService {
     const initSettings = InitializationSettings(android: androidSettings);
 
     await _plugin.initialize(initSettings);
+
+    // 请求通知权限（Android 13+）
+    if (Platform.isAndroid) {
+      final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        await android.requestNotificationsPermission();
+      }
+    }
 
     // 创建通知渠道
     const channel = AndroidNotificationChannel(
