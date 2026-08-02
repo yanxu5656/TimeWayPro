@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/task.dart';
 import '../data/models/task_record.dart';
 import '../data/repositories/task_repository.dart';
+import '../../../shared/services/notification_service.dart';
 
 // 计时状态
 class TimerState {
@@ -54,6 +55,7 @@ class TimerState {
 
 class TaskProvider extends ChangeNotifier {
   final TaskRepository _repository = TaskRepository();
+  final NotificationService _notificationService = NotificationService();
 
   List<Task> _tasks = [];
   List<TaskRecord> _records = [];
@@ -142,6 +144,26 @@ class TaskProvider extends ChangeNotifier {
           await _clearSavedTimers();
         } else {
           await _saveActiveTimers();
+
+          // 恢复通知
+          final firstEntry = _activeTimers.entries.first;
+          final task = await _repository.getTaskById(firstEntry.key);
+          if (task != null) {
+            await _notificationService.showTimerNotification(
+              taskTitle: task.title,
+              elapsedSeconds: firstEntry.value.currentElapsedSeconds,
+              isCountDown: task.timerType == TimerType.countDown,
+              totalDuration: task.duration,
+            );
+
+            // 启动通知定时更新
+            _notificationService.startPeriodicUpdate(
+              taskTitle: task.title,
+              getElapsedSeconds: () => firstEntry.value.currentElapsedSeconds,
+              isCountDown: task.timerType == TimerType.countDown,
+              getTotalDuration: () => task.duration,
+            );
+          }
         }
 
         notifyListeners();
@@ -291,6 +313,22 @@ class TaskProvider extends ChangeNotifier {
 
     _activeTimers[taskId] = timerState;
 
+    // 显示通知
+    await _notificationService.showTimerNotification(
+      taskTitle: task.title,
+      elapsedSeconds: 0,
+      isCountDown: task.timerType == TimerType.countDown,
+      totalDuration: task.duration,
+    );
+
+    // 启动通知定时更新
+    _notificationService.startPeriodicUpdate(
+      taskTitle: task.title,
+      getElapsedSeconds: () => timerState.currentElapsedSeconds,
+      isCountDown: task.timerType == TimerType.countDown,
+      getTotalDuration: () => task.duration,
+    );
+
     // 保存计时器状态
     await _saveActiveTimers();
 
@@ -333,8 +371,22 @@ class TaskProvider extends ChangeNotifier {
     // 更新保存的状态
     if (_activeTimers.isEmpty) {
       await _clearSavedTimers();
+      // 移除通知
+      await _notificationService.removeTimerNotification();
+      _notificationService.stopPeriodicUpdate();
     } else {
       await _saveActiveTimers();
+      // 更新通知为下一个活跃任务
+      final nextTask = _activeTimers.entries.first;
+      final task = await _repository.getTaskById(nextTask.key);
+      if (task != null) {
+        await _notificationService.showTimerNotification(
+          taskTitle: task.title,
+          elapsedSeconds: nextTask.value.currentElapsedSeconds,
+          isCountDown: task.timerType == TimerType.countDown,
+          totalDuration: task.duration,
+        );
+      }
     }
 
     notifyListeners();
@@ -455,6 +507,8 @@ class TaskProvider extends ChangeNotifier {
       timerState.timer?.cancel();
     }
     _activeTimers.clear();
+    // 清理通知服务
+    _notificationService.stopPeriodicUpdate();
     super.dispose();
   }
 }
