@@ -12,6 +12,7 @@ class DatabaseHelper {
     'tasks': [],
     'task_records': [],
     'plans': [],
+    'daily_tasks': [],
     'sync_config': [],
   };
 
@@ -47,6 +48,12 @@ class DatabaseHelper {
       if (await file.exists()) {
         final contents = await file.readAsString();
         _data = jsonDecode(contents);
+        // 确保所有必要的表都存在
+        _data['tasks'] ??= [];
+        _data['task_records'] ??= [];
+        _data['plans'] ??= [];
+        _data['daily_tasks'] ??= [];
+        _data['sync_config'] ??= [];
       }
     } catch (e) {
       print('Error loading data: $e');
@@ -56,12 +63,19 @@ class DatabaseHelper {
         if (await backupFile.exists()) {
           final contents = await backupFile.readAsString();
           _data = jsonDecode(contents);
+          // 确保所有必要的表都存在
+          _data['tasks'] ??= [];
+          _data['task_records'] ??= [];
+          _data['plans'] ??= [];
+          _data['daily_tasks'] ??= [];
+          _data['sync_config'] ??= [];
           print('Restored from backup');
         } else {
           _data = {
             'tasks': [],
             'task_records': [],
             'plans': [],
+            'daily_tasks': [],
             'sync_config': [],
           };
         }
@@ -71,6 +85,7 @@ class DatabaseHelper {
           'tasks': [],
           'task_records': [],
           'plans': [],
+          'daily_tasks': [],
           'sync_config': [],
         };
       }
