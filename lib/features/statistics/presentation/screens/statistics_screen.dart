@@ -14,11 +14,13 @@ class StatisticsScreen extends StatefulWidget {
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
   int _selectedPeriod = 0; // 0: 日, 1: 周, 2: 月
+  DateTime _selectedDate = DateTime.now();
 
   // 缓存统计数据，避免频繁刷新
   _StatsData? _cachedStats;
   int _lastPeriod = -1;
   int _lastTaskCount = 0;
+  String _lastDateKey = '';
 
   @override
   Widget build(BuildContext context) {
@@ -29,15 +31,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
-          // 检查是否需要刷新（时间段变化或任务数据变化）
+          // 检查是否需要刷新
           final currentTaskCount = provider.tasks.length;
+          final currentDateKey = '$_selectedPeriod-${_selectedDate.toIso8601String().substring(0, 10)}';
           final needRefresh = _lastPeriod != _selectedPeriod ||
               _cachedStats == null ||
-              currentTaskCount != _lastTaskCount;
+              currentTaskCount != _lastTaskCount ||
+              _lastDateKey != currentDateKey;
 
           if (needRefresh) {
             _lastPeriod = _selectedPeriod;
             _lastTaskCount = currentTaskCount;
+            _lastDateKey = currentDateKey;
             return FutureBuilder<_StatsData>(
               future: _loadStats(provider),
               builder: (context, snapshot) {
@@ -91,10 +96,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildDateSelector() {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow,
@@ -103,11 +108,66 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          _buildPeriodTab('日', 0),
-          _buildPeriodTab('周', 1),
-          _buildPeriodTab('月', 2),
+          // 时间段切换
+          Row(
+            children: [
+              _buildPeriodTab('日', 0),
+              const SizedBox(width: 4),
+              _buildPeriodTab('周', 1),
+              const SizedBox(width: 4),
+              _buildPeriodTab('月', 2),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // 日期导航
+          Row(
+            children: [
+              _buildNavButton(
+                icon: Icons.chevron_left_rounded,
+                onTap: _previousPeriod,
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _selectDate,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySubtle,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _isCurrentPeriod()
+                              ? Icons.today_rounded
+                              : Icons.calendar_month_rounded,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _getPeriodText(),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              _buildNavButton(
+                icon: Icons.chevron_right_rounded,
+                onTap: _nextPeriod,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -121,22 +181,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           if (_selectedPeriod != index) {
             setState(() {
               _selectedPeriod = index;
-              _cachedStats = null; // 清除缓存，触发重新加载
+              _cachedStats = null;
             });
           }
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected ? Colors.white : AppColors.textSecondary,
             ),
@@ -144,6 +204,123 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildNavButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        child: Icon(
+          icon,
+          size: 22,
+          color: AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  bool _isCurrentPeriod() {
+    final now = DateTime.now();
+    switch (_selectedPeriod) {
+      case 0: // 日
+        return _selectedDate.year == now.year &&
+            _selectedDate.month == now.month &&
+            _selectedDate.day == now.day;
+      case 1: // 周
+        final currentWeekStart = now.subtract(Duration(days: now.weekday - 1));
+        final selectedWeekStart = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+        return currentWeekStart.year == selectedWeekStart.year &&
+            currentWeekStart.month == selectedWeekStart.month &&
+            currentWeekStart.day == selectedWeekStart.day;
+      case 2: // 月
+        return _selectedDate.year == now.year &&
+            _selectedDate.month == now.month;
+      default:
+        return false;
+    }
+  }
+
+  String _getPeriodText() {
+    switch (_selectedPeriod) {
+      case 0: // 日
+        if (_isCurrentPeriod()) return '今天';
+        return DateFormat('yyyy年MM月dd日').format(_selectedDate);
+      case 1: // 周
+        final weekStart = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+        final weekEnd = weekStart.add(const Duration(days: 6));
+        if (_isCurrentPeriod()) return '本周';
+        return '${DateFormat('MM/dd').format(weekStart)} - ${DateFormat('MM/dd').format(weekEnd)}';
+      case 2: // 月
+        if (_isCurrentPeriod()) return '本月';
+        return DateFormat('yyyy年MM月').format(_selectedDate);
+      default:
+        return '';
+    }
+  }
+
+  void _previousPeriod() {
+    setState(() {
+      switch (_selectedPeriod) {
+        case 0: // 日
+          _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+          break;
+        case 1: // 周
+          _selectedDate = _selectedDate.subtract(const Duration(days: 7));
+          break;
+        case 2: // 月
+          _selectedDate = DateTime(_selectedDate.year, _selectedDate.month - 1, 1);
+          break;
+      }
+      _cachedStats = null;
+    });
+  }
+
+  void _nextPeriod() {
+    setState(() {
+      switch (_selectedPeriod) {
+        case 0: // 日
+          _selectedDate = _selectedDate.add(const Duration(days: 1));
+          break;
+        case 1: // 周
+          _selectedDate = _selectedDate.add(const Duration(days: 7));
+          break;
+        case 2: // 月
+          _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + 1, 1);
+          break;
+      }
+      _cachedStats = null;
+    });
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: AppColors.textOnPrimary,
+              surface: AppColors.surface,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _cachedStats = null;
+      });
+    }
   }
 
   Widget _buildOverviewCards(_StatsData stats) {
@@ -235,12 +412,25 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '热力图',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '热力图',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (_selectedPeriod == 0)
+                Text(
+                  DateFormat('yyyy年MM月dd日').format(_selectedDate),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textHint,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
           _buildHeatMapGrid(stats.dailyMap),
@@ -250,18 +440,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildHeatMapGrid(Map<String, int> dailyMap) {
-    final now = DateTime.now();
-    final startDate = _selectedPeriod == 0
-        ? DateTime(now.year, now.month, now.day)
-        : _selectedPeriod == 1
-            ? now.subtract(Duration(days: now.weekday - 1))
-            : DateTime(now.year, now.month, 1);
+    DateTime startDate;
+    int days;
 
-    final days = _selectedPeriod == 0
-        ? 1
-        : _selectedPeriod == 1
-            ? 7
-            : DateTime(now.year, now.month + 1, 0).day;
+    switch (_selectedPeriod) {
+      case 0: // 日 - 显示当月
+        startDate = DateTime(_selectedDate.year, _selectedDate.month, 1);
+        days = DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
+        break;
+      case 1: // 周 - 显示当周
+        startDate = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+        days = 7;
+        break;
+      case 2: // 月 - 显示当月
+        startDate = DateTime(_selectedDate.year, _selectedDate.month, 1);
+        days = DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
+        break;
+      default:
+        startDate = DateTime.now();
+        days = 7;
+    }
 
     // 找到最大值用于计算颜色深度
     int maxDuration = 1;
@@ -272,31 +470,93 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       if (duration > maxDuration) maxDuration = duration;
     }
 
+    // 日模式显示当月热力图，周模式显示7天，月模式显示当月
+    if (_selectedPeriod == 1) {
+      // 周模式 - 7天横排
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(7, (i) {
+          final date = startDate.add(Duration(days: i));
+          final key = DateFormat('yyyy-MM-dd').format(date);
+          final duration = dailyMap[key] ?? 0;
+          final intensity = duration / maxDuration;
+          final isSelected = date.year == _selectedDate.year &&
+              date.month == _selectedDate.month &&
+              date.day == _selectedDate.day;
+
+          return Column(
+            children: [
+              Text(
+                ['一', '二', '三', '四', '五', '六', '日'][i],
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textHint,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Tooltip(
+                message: '${DateFormat('MM/dd').format(date)}\n${_formatDuration(duration)}',
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: _getHeatMapColor(intensity),
+                    borderRadius: BorderRadius.circular(8),
+                    border: isSelected
+                        ? Border.all(color: AppColors.primary, width: 2)
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${date.day}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: intensity > 0.5 ? Colors.white : AppColors.textSecondary,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+      );
+    }
+
+    // 日/月模式 - 网格布局
     return Wrap(
-      spacing: 6,
-      runSpacing: 6,
+      spacing: 4,
+      runSpacing: 4,
       children: List.generate(days, (i) {
         final date = startDate.add(Duration(days: i));
         final key = DateFormat('yyyy-MM-dd').format(date);
         final duration = dailyMap[key] ?? 0;
         final intensity = duration / maxDuration;
+        final isSelected = _selectedPeriod == 0 &&
+            date.year == _selectedDate.year &&
+            date.month == _selectedDate.month &&
+            date.day == _selectedDate.day;
 
         return Tooltip(
           message: '${DateFormat('MM/dd').format(date)}\n${_formatDuration(duration)}',
           child: Container(
-            width: _selectedPeriod == 2 ? 38 : 42,
-            height: _selectedPeriod == 2 ? 38 : 42,
+            width: _selectedPeriod == 2 ? 36 : 40,
+            height: _selectedPeriod == 2 ? 36 : 40,
             decoration: BoxDecoration(
               color: _getHeatMapColor(intensity),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
+              border: isSelected
+                  ? Border.all(color: AppColors.primary, width: 2)
+                  : null,
             ),
             child: Center(
               child: Text(
                 '${date.day}',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: intensity > 0.5 ? Colors.white : AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
             ),
@@ -562,25 +822,25 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   DateTimeRange _getDateRange() {
-    final now = DateTime.now();
     switch (_selectedPeriod) {
       case 0: // 日
         return DateTimeRange(
-          start: DateTime(now.year, now.month, now.day),
-          end: DateTime(now.year, now.month, now.day, 23, 59, 59),
+          start: DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day),
+          end: DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, 23, 59, 59),
         );
       case 1: // 周
-        final start = now.subtract(Duration(days: now.weekday - 1));
+        final weekStart = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
         return DateTimeRange(
-          start: DateTime(start.year, start.month, start.day),
-          end: DateTime(now.year, now.month, now.day, 23, 59, 59),
+          start: DateTime(weekStart.year, weekStart.month, weekStart.day),
+          end: DateTime(weekStart.year, weekStart.month, weekStart.day + 6, 23, 59, 59),
         );
       case 2: // 月
         return DateTimeRange(
-          start: DateTime(now.year, now.month, 1),
-          end: DateTime(now.year, now.month, now.day, 23, 59, 59),
+          start: DateTime(_selectedDate.year, _selectedDate.month, 1),
+          end: DateTime(_selectedDate.year, _selectedDate.month + 1, 0, 23, 59, 59),
         );
       default:
+        final now = DateTime.now();
         return DateTimeRange(
           start: DateTime(now.year, now.month, now.day),
           end: DateTime(now.year, now.month, now.day, 23, 59, 59),
