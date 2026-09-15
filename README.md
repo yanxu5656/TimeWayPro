@@ -1,17 +1,269 @@
-# time_way_pro
+<div align="center">
 
-A new Flutter project.
+# 时途 TimeWayPro
 
-## Getting Started
+**时间规划与人生规划助手**
 
-This project is a starting point for a Flutter application.
+给任务计时 · 记录真实用时 · 看清时间去向
 
-A few resources to get you started if this is your first Flutter project:
+![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
+![Version](https://img.shields.io/badge/Version-v1.2.0-00BFA5)
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+</div>
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## 简介
+
+TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管理应用。
+
+它的核心逻辑很简单：**给任务计时 → 把每一段实际用时记录下来 → 用统计图表告诉你时间究竟花在了哪里**。在此之上，再挂载「人生规划」的目标树与「每日待办」的轻量清单，兼顾长期方向与当天节奏。
+
+与常见的待办清单不同，时途不满足于「打勾」，而是记录**每件事真实消耗了多少时间** —— 这些记录会沉淀为热力图、饼图和任务明细，让「我很忙」变成「我忙在了这件事上，一共 3 小时 20 分」。
+
+---
+
+## 功能特性
+
+### ⏱ 任务 · 计时
+
+应用的核心模块。
+
+- **两种计时模式**：正计时（记录实际耗时）/ 倒计时（到点自动完成任务）
+- **多任务并行计时**：多个任务可同时处于计时状态，互不干扰
+- **后台计时与状态恢复**：计时状态持久化保存，杀掉 App 后重启自动恢复并继续计时；超过 24 小时的异常计时会自动归档
+- **暂停 / 继续**：支持中途暂停，恢复后继续累计
+- **重复任务**：支持不重复 / 每天 / 每周 / 每月，并可设定每日重复次数
+- **每日自动重置**：常驻任务的完成次数在跨天后自动归零
+- **截止日期与提醒**：可为任务设置截止日期与提前提醒
+- **计时记录**：每次计时生成一条独立记录（开始 / 结束 / 时长），作为统计模块的数据源
+
+### 📊 统计
+
+- **日 / 周 / 月**三个维度的灵活切换
+- **概览卡片**：区间总时长、完成任务数
+- **热力图**：按天着色，直观看出哪几天投入最多
+- **任务占比饼图**：各任务耗时占总时长的比例
+- **任务明细**：按耗时排序的任务列表与占比进度条
+
+### 🎯 人生规划
+
+- **任意层级的目标树**：目标可无限层级向下拆分（大目标 → 阶段 → 具体事项）
+- **进度管理**：每个节点可独立调整完成进度（0% ~ 100%），进度条按区间着色
+- **树状图展示**：层级以缩进 + 色条呈现，一眼看清结构
+- **级联删除**：删除父目标时自动递归清理其所有子目标
+
+### 📝 每日待办
+
+- **独立于任务模块的轻量清单**：按日期存储，适合当天临时事项
+- **时间段分类**：上午 / 下午 / 晚上三段分组，添加时自动定位当前时段
+- **完成进度**：点击圆圈勾选完成，顶部进度条实时显示今日完成度
+- **滑动删除**：左滑删除（带二次确认）
+- **长按编辑**：长按可修改内容与时间段
+
+### ☁️ 数据同步与备份
+
+- **坚果云 WebDAV 同步**：一键备份 / 恢复到坚果云
+- **本地导入导出**：支持导出为 JSON 文件、从 JSON 文件导入
+- **自动备份机制**：本地写入前自动留存上一份数据，读取失败时自动回滚
+
+### 🔔 通知栏常驻通知
+
+- 计时进行中时，在通知栏常驻显示当前任务名称与计时
+- 每 5 秒自动更新计时显示，无需打开 App 即可掌握进度
+- App 被杀死后重启，通知自动恢复
+- 适配 Android 13+ 通知权限申请
+
+---
+
+## 版本迭代
+
+### v1.2.0 — 每日待办功能
+*2026-08-02*
+
+**新增功能**
+- 每日待办：独立界面，与任务 / 统计 / 规划模块无关
+- 时间段分类：支持上午 / 下午 / 晚上三个时间段
+- 完成状态：点击勾选完成，显示今日进度
+- 滑动删除：左右滑动删除待办
+- 长按编辑：长按待办可编辑内容和时间段
+- 通知栏常驻通知：计时进行时在通知栏显示
+- Android 13+ 通知权限请求
+
+### v1.1.0 — 通知栏常驻通知
+*2026-08-02*
+
+**新增功能**
+- 通知栏常驻通知：计时进行时在通知栏显示任务名称和计时
+- 通知自动更新：每 5 秒更新一次计时时间
+- 通知自动恢复：杀掉 App 后重启自动恢复通知
+- Android 13+ 通知权限请求
+
+**修复 Bug**
+- 每日完成次数自动重置
+- 后台计时准确性
+- 杀掉 App 后计时状态恢复
+- 统计页面频繁刷新
+- 坚果云同步稳定性
+- 并发数据安全性（备份机制）
+
+### v1.0.0 — 时间规划与人生规划助手
+*2026-08-01*
+
+**初始版本**
+- 任务管理：正计时 / 倒计时、可重复 / 不可重复、每日 / 每周 / 每月频率
+- 统计面板：热力图、扇形图、任务明细
+- 人生规划：任意层级拆分、树状图展示
+- 坚果云同步：WebDAV 备份 / 恢复
+- 后台计时：杀掉 App 后重启可恢复计时
+- 每日重置：常驻任务完成次数每天自动重置
+
+### 🚧 开发中（未发布）
+
+- 统计页日期导航：支持前 / 后一天、周、月切换，可直接选择日期查看历史
+- 热力图「日」模式改为展示整月网格，并高亮当前选中日期
+
+---
+
+## 技术栈
+
+| 用途 | 依赖 |
+| --- | --- |
+| 框架 | Flutter（Dart SDK `^3.12.2`） |
+| 状态管理 | `provider` |
+| 图表 | `fl_chart` |
+| 本地通知 | `flutter_local_notifications` |
+| 云同步 | `webdav_client`（WebDAV 协议） |
+| 本地存储 | `path_provider` + `shared_preferences` + JSON 文件 |
+| 文件选择 | `file_picker` |
+| 其他 | `intl`、`uuid` |
+
+## 项目结构
+
+```
+lib/
+├── main.dart                          应用入口：初始化通知服务
+├── app/
+│   ├── app.dart                       全局 Provider 注册与主题装配
+│   └── main_screen.dart               主界面：底部五 Tab 导航
+├── core/
+│   ├── constants/app_constants.dart   全局常量
+│   └── theme/app_theme.dart           设计系统（配色、字体、组件主题）
+├── shared/
+│   ├── database/database_helper.dart  数据层：内存 + JSON 文件持久化
+│   └── services/notification_service.dart  通知栏常驻通知服务
+└── features/                          按功能模块划分
+    ├── daily/         每日待办：models / repositories / providers / screens
+    ├── task/          任务与计时：models / repositories / providers / screens / widgets
+    ├── statistics/    统计：热力图、饼图、明细
+    ├── planning/      人生规划：目标树
+    └── settings/      设置：云同步、数据导入导出
+```
+
+每个功能模块均采用 `data（模型 + 仓储） / providers（状态） / presentation（界面）` 的分层结构。
+
+---
+
+## 快速开始
+
+### 环境要求
+
+- Flutter SDK（stable 渠道）
+- Dart SDK `^3.12.2`
+- Android SDK（如需构建 Android 包）
+
+### 运行
+
+```bash
+# 拉取依赖
+flutter pub get
+
+# 运行到已连接的设备
+flutter run
+
+# 构建 Android 安装包
+flutter build apk --release
+```
+
+---
+
+## 数据存储
+
+应用的所有数据保存在本地 **单个 JSON 文件**中：
+
+```
+<应用文档目录>/time_way_pro_data.json
+<应用文档目录>/time_way_pro_data.json.bak   # 上一份数据，用于异常回滚
+```
+
+文件内包含五张逻辑表：
+
+| 表名 | 说明 |
+| --- | --- |
+| `tasks` | 任务定义（计时模式、重复规则、进度等） |
+| `task_records` | 计时记录（每次计时的开始 / 结束 / 时长） |
+| `plans` | 人生规划目标（含父子层级） |
+| `daily_tasks` | 每日待办 |
+| `sync_config` | 云同步配置 |
+
+每次写入前会先将现有文件复制为 `.bak`，若下次启动读取失败则自动从备份回滚。
+
+---
+
+## 坚果云同步配置
+
+时途通过**坚果云开放的 WebDAV 接口**实现云端备份与恢复。配置步骤如下：
+
+1. 登录坚果云网页版
+2. 进入「账户信息 → 安全选项 → 第三方应用管理」
+3. 添加一个应用密码，并复制生成的密码
+4. 打开时途 →「设置 → 云端同步 → 配置坚果云同步」
+5. 填入以下信息，点击「保存并测试连接」：
+
+   | 字段 | 填写内容 |
+   | --- | --- |
+   | WebDAV 地址 | `https://dav.jianguoyun.com/dav/`（默认已填） |
+   | 用户名 | 坚果云账号邮箱 |
+   | 应用密码 | 上一步生成的密码（**不是**登录密码） |
+
+连接成功后，即可在设置页执行「立即备份」与「恢复数据」。备份文件会尝试写入坚果云根目录的 `backup.json`，若失败则回退到 `TimeWayPro/backup.json`。
+
+> ⚠️ **注意**：恢复操作会**全量覆盖**本地所有数据，请谨慎操作。
+
+---
+
+## 权限说明
+
+应用在 `AndroidManifest.xml` 中声明了以下权限：
+
+| 权限 | 用途 |
+| --- | --- |
+| `INTERNET` | WebDAV 云同步 |
+| `ACCESS_NETWORK_STATE` | 检测网络状态 |
+| `POST_NOTIFICATIONS` | 计时状态的通知栏常驻通知（Android 13+ 需动态申请） |
+| `FOREGROUND_SERVICE` | 保障后台计时 |
+| `WAKE_LOCK` | 保障后台计时不被系统休眠中断 |
+
+---
+
+## 注意事项
+
+- 本项目的开发与验证以 **Android** 平台为主。工程目录中包含 iOS / Linux / macOS / Web / Windows 的平台脚手架，但尚未在这些平台上做适配验证。
+- `sync_config` 表（含坚果云账号与密码）会随导出数据一同写入备份文件。若将备份文件分享给他人，等同于分享了坚果云的访问凭据。
+- 恢复备份为**全量覆盖**，本地当前数据（含同步配置）会被替换。
+
+---
+
+## 许可证
+
+本项目尚未指定开源许可证。
+
+---
+
+<div align="center">
+
+**时途 TimeWayPro** · 记录时间，规划人生
+
+</div>
