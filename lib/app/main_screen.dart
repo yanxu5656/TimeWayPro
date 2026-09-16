@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
+import '../core/ui/aurora_background.dart';
 import '../features/daily/presentation/screens/daily_screen.dart';
 import '../features/task/presentation/screens/task_screen.dart';
 import '../features/statistics/presentation/screens/statistics_screen.dart';
@@ -27,9 +28,27 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      // 极光的实底由 AuroraBackground 自己画；这里再兜一层纯色，
+      // 避免首帧极光尚未光栅化时闪一下白。
+      backgroundColor: AppColors.background,
+      // 内容延伸到玻璃底部导航之下——Phase 4 的 BackdropFilter 依赖这一条，
+      // 否则它模糊的是 Scaffold 底色，视觉上毫无意义。
+      extendBody: true,
+      body: Stack(
+        children: [
+          // 全应用唯一一份。不能每屏自带：IndexedStack 会保活 5 屏，
+          // 5 个相位不同的控制器会让背景在切 Tab 时跳变。
+          const Positioned.fill(child: AuroraBackground()),
+          Positioned.fill(
+            // 双向隔离：列表滚动不触发极光层重栅格化，极光漂移也不重绘列表
+            child: RepaintBoundary(
+              child: IndexedStack(
+                index: _currentIndex,
+                children: _screens,
+              ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

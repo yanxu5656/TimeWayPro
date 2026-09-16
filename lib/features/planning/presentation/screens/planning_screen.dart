@@ -16,7 +16,8 @@ class _PlanningScreenState extends State<PlanningScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      // 透明：让 MainScreen 的极光层透出来
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('人生规划'),
       ),
@@ -33,7 +34,8 @@ class _PlanningScreenState extends State<PlanningScreen> {
           }
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.navInset),
             children: rootPlans
                 .map((plan) => _buildPlanTree(plan, provider, 0))
                 .toList(),

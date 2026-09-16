@@ -25,7 +25,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      // 透明：让 MainScreen 的极光层透出来
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('统计'),
       ),

@@ -47,7 +47,8 @@ class _TaskScreenState extends State<TaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      // 透明：让 MainScreen 的极光层透出来
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -358,7 +359,8 @@ class _TaskScreenState extends State<TaskScreen> {
     final allTasks = provider.tasks;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH, 0, AppSpacing.screenH, AppSpacing.navInset),
       children: [
         // 进行中的任务
         if (provider.activeTimers.isNotEmpty) ...[

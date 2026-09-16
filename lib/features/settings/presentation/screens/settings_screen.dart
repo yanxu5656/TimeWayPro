@@ -18,14 +18,16 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      // 透明：让 MainScreen 的极光层透出来
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('设置'),
       ),
       body: Consumer<SettingsProvider>(
         builder: (context, provider, child) {
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md,
+                AppSpacing.md, AppSpacing.navInset),
             children: [
               // 同步设置
               _buildSection(
