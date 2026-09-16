@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/ui/glass.dart';
 import '../../data/models/plan.dart';
 import '../../providers/plan_provider.dart';
 
@@ -15,12 +15,8 @@ class PlanningScreen extends StatefulWidget {
 class _PlanningScreenState extends State<PlanningScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // 透明：让 MainScreen 的极光层透出来
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('人生规划'),
-      ),
+    return GlassScaffold(
+      title: '人生规划',
       body: Consumer<PlanProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -35,17 +31,20 @@ class _PlanningScreenState extends State<PlanningScreen> {
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.navInset),
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.navInset,
+            ),
             children: rootPlans
                 .map((plan) => _buildPlanTree(plan, provider, 0))
                 .toList(),
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: GlassFab(
         heroTag: 'plan_fab',
         onPressed: () => _addPlan(context, null),
-        child: const Icon(Icons.add, size: 28),
       ),
     );
   }
@@ -58,23 +57,17 @@ class _PlanningScreenState extends State<PlanningScreen> {
           Icon(
             Icons.account_tree_outlined,
             size: 64,
-            color: AppColors.textHint.withOpacity(0.5),
+            color: AppColors.textHint.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           const Text(
             '暂无规划',
-            style: TextStyle(
-              fontSize: 18,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
           const Text(
             '点击右下角 + 创建你的第一个目标',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textHint,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textHint),
           ),
         ],
       ),
@@ -103,118 +96,110 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   Widget _buildPlanCard(
-      Plan plan, PlanProvider provider, int depth, bool hasChildren) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => _showPlanDetail(plan, provider),
-          onLongPress: () => _showOptions(plan, provider),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    Plan plan,
+    PlanProvider provider,
+    int depth,
+    bool hasChildren,
+  ) {
+    // 递归树的每个节点都包一层 RepaintBoundary——规划页是 eager build
+    // 的深层树，任一节点变化都会波及整棵子树
+    return RepaintBoundary(
+      child: GlassCard(
+        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+        radius: AppRadius.lg,
+        padding: const EdgeInsets.all(14),
+        onTap: () => _showPlanDetail(plan, provider),
+        onLongPress: () => _showOptions(plan, provider),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    // 层级指示器
-                    if (depth > 0)
-                      Container(
-                        width: 3,
-                        height: 20,
-                        margin: const EdgeInsets.only(right: 10),
-                        decoration: BoxDecoration(
-                          color: AppColors.chartColors[
-                              depth % AppColors.chartColors.length],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-
-                    // 图标
-                    Icon(
-                      hasChildren
-                          ? Icons.folder_outlined
-                          : Icons.flag_outlined,
-                      size: 20,
-                      color: AppColors.primary,
+                // 层级指示器
+                if (depth > 0)
+                  Container(
+                    width: 3,
+                    height: 20,
+                    margin: const EdgeInsets.only(right: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors
+                          .chartColors[depth % AppColors.chartColors.length],
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    const SizedBox(width: 10),
-
-                    // 标题
-                    Expanded(
-                      child: Text(
-                        plan.title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-
-                    // 进度
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getProgressColor(plan.progress).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        plan.progressText,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _getProgressColor(plan.progress),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // 进度条
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: plan.progress,
-                    backgroundColor: AppColors.background,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _getProgressColor(plan.progress),
-                    ),
-                    minHeight: 6,
                   ),
-                ),
 
-                // 描述
-                if (plan.description != null && plan.description!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    plan.description!,
+                // 图标
+                Icon(
+                  hasChildren ? Icons.folder_outlined : Icons.flag_outlined,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 10),
+
+                // 标题
+                Expanded(
+                  child: Text(
+                    plan.title,
                     style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
+                ),
+
+                // 进度
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getProgressColor(
+                      plan.progress,
+                    ).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    plan.progressText,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _getProgressColor(plan.progress),
+                    ),
+                  ),
+                ),
               ],
             ),
-          ),
+
+            // 进度条
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: plan.progress,
+                backgroundColor: AppColors.background,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  _getProgressColor(plan.progress),
+                ),
+                minHeight: 6,
+              ),
+            ),
+
+            // 描述
+            if (plan.description != null && plan.description!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                plan.description!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -227,12 +212,8 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   void _showPlanDetail(Plan plan, PlanProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+    showGlassSheet(
+      context,
       builder: (context) => _PlanDetailSheet(
         plan: plan,
         onUpdate: (updatedPlan) {
@@ -248,72 +229,51 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   void _showOptions(Plan plan, PlanProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
+    showGlassSheet(
+      context,
+      // SafeArea 与拖拽把手由 GlassSheet 统一提供
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: Text(
+              plan.title,
+              style: AppText.title.copyWith(color: AppColors.textPrimary),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                plan.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: const Text('添加子目标'),
-              onTap: () {
-                Navigator.pop(context);
-                _addPlan(context, plan.id);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_outlined),
-              title: const Text('编辑'),
-              onTap: () {
-                Navigator.pop(context);
-                _showPlanDetail(plan, provider);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: AppColors.error),
-              title: const Text('删除', style: TextStyle(color: AppColors.error)),
-              onTap: () {
-                Navigator.pop(context);
-                _deletePlan(plan, provider);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.add_circle_outline),
+            title: const Text('添加子目标'),
+            onTap: () {
+              Navigator.pop(context);
+              _addPlan(context, plan.id);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.edit_outlined),
+            title: const Text('编辑'),
+            onTap: () {
+              Navigator.pop(context);
+              _showPlanDetail(plan, provider);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline, color: AppColors.error),
+            title: const Text('删除', style: TextStyle(color: AppColors.error)),
+            onTap: () {
+              Navigator.pop(context);
+              _deletePlan(plan, provider);
+            },
+          ),
+        ],
       ),
     );
   }
 
   void _addPlan(BuildContext context, String? parentId) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+    showGlassSheet(
+      context,
       builder: (context) => _AddPlanSheet(
         parentId: parentId,
         onAdd: (plan) {
@@ -330,7 +290,6 @@ class _PlanningScreenState extends State<PlanningScreen> {
       builder: (context) => AlertDialog(
         title: const Text('删除目标'),
         content: Text('确定要删除「${plan.title}」吗？子目标也会被删除。'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -374,7 +333,9 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
     super.initState();
     _progress = widget.plan.progress;
     _titleController = TextEditingController(text: widget.plan.title);
-    _descController = TextEditingController(text: widget.plan.description ?? '');
+    _descController = TextEditingController(
+      text: widget.plan.description ?? '',
+    );
   }
 
   @override
@@ -386,153 +347,121 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+    // 外层键盘避让 / SafeArea / 滚动 / 拖拽把手由 GlassSheet 统一提供
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          '目标详情',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 20),
 
-              const Text(
-                '目标详情',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // 标题
-              const Text(
-                '标题',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(hintText: '输入目标标题'),
-              ),
-              const SizedBox(height: 16),
-
-              // 描述
-              const Text(
-                '描述（可选）',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _descController,
-                maxLines: 3,
-                decoration: const InputDecoration(hintText: '输入目标描述'),
-              ),
-              const SizedBox(height: 20),
-
-              // 进度
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '进度',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    '${(_progress * 100).toInt()}%',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SliderTheme(
-                data: SliderThemeData(
-                  activeTrackColor: AppColors.primary,
-                  inactiveTrackColor: AppColors.background,
-                  thumbColor: AppColors.primary,
-                  overlayColor: AppColors.primary.withOpacity(0.2),
-                  trackHeight: 6,
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 8),
-                ),
-                child: Slider(
-                  value: _progress,
-                  onChanged: (v) => setState(() => _progress = v),
-                  min: 0,
-                  max: 1,
-                  divisions: 20,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 按钮
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: widget.onAddChild,
-                      icon: const Icon(Icons.add),
-                      label: const Text('添加子目标'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        widget.onUpdate(widget.plan.copyWith(
-                          title: _titleController.text.trim(),
-                          description: _descController.text.trim().isEmpty
-                              ? null
-                              : _descController.text.trim(),
-                          progress: _progress,
-                        ));
-                      },
-                      child: const Text('保存'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+        // 标题
+        const Text(
+          '标题',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
           ),
         ),
-      ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _titleController,
+          decoration: const InputDecoration(hintText: '输入目标标题'),
+        ),
+        const SizedBox(height: 16),
+
+        // 描述
+        const Text(
+          '描述（可选）',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _descController,
+          maxLines: 3,
+          decoration: const InputDecoration(hintText: '输入目标描述'),
+        ),
+        const SizedBox(height: 20),
+
+        // 进度
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '进度',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            Text(
+              '${(_progress * 100).toInt()}%',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // 样式由全局 sliderTheme 提供，与原内联值逐项一致
+        Slider(
+          value: _progress,
+          onChanged: (v) => setState(() => _progress = v),
+          min: 0,
+          max: 1,
+          divisions: 20,
+        ),
+        const SizedBox(height: 24),
+
+        // 按钮
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: widget.onAddChild,
+                icon: const Icon(Icons.add),
+                label: const Text('添加子目标'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  widget.onUpdate(
+                    widget.plan.copyWith(
+                      title: _titleController.text.trim(),
+                      description: _descController.text.trim().isEmpty
+                          ? null
+                          : _descController.text.trim(),
+                      progress: _progress,
+                    ),
+                  );
+                },
+                child: const Text('保存'),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -560,93 +489,72 @@ class _AddPlanSheetState extends State<_AddPlanSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                widget.parentId != null ? '添加子目标' : '创建新目标',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 20),
+    // 外层键盘避让 / SafeArea / 滚动 / 拖拽把手由 GlassSheet 统一提供
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          widget.parentId != null ? '添加子目标' : '创建新目标',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 20),
 
-              const Text(
-                '目标名称',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _titleController,
-                autofocus: true,
-                decoration: const InputDecoration(hintText: '输入目标名称'),
-              ),
-              const SizedBox(height: 16),
-
-              const Text(
-                '描述（可选）',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _descController,
-                maxLines: 3,
-                decoration: const InputDecoration(hintText: '输入目标描述'),
-              ),
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_titleController.text.trim().isEmpty) return;
-                    final now = DateTime.now();
-                    widget.onAdd(Plan(
-                      id: const Uuid().v4(),
-                      title: _titleController.text.trim(),
-                      description: _descController.text.trim().isEmpty
-                          ? null
-                          : _descController.text.trim(),
-                      parentId: widget.parentId,
-                      createdAt: now,
-                      updatedAt: now,
-                    ));
-                  },
-                  child: const Text('创建'),
-                ),
-              ),
-            ],
+        const Text(
+          '目标名称',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
           ),
         ),
-      ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _titleController,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '输入目标名称'),
+        ),
+        const SizedBox(height: 16),
+
+        const Text(
+          '描述（可选）',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _descController,
+          maxLines: 3,
+          decoration: const InputDecoration(hintText: '输入目标描述'),
+        ),
+        const SizedBox(height: 24),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              if (_titleController.text.trim().isEmpty) return;
+              final now = DateTime.now();
+              widget.onAdd(
+                Plan(
+                  id: const Uuid().v4(),
+                  title: _titleController.text.trim(),
+                  description: _descController.text.trim().isEmpty
+                      ? null
+                      : _descController.text.trim(),
+                  parentId: widget.parentId,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+            },
+            child: const Text('创建'),
+          ),
+        ),
+      ],
     );
   }
 }
