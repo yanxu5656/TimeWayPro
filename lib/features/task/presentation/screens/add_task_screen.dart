@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/ui/glass.dart';
 import '../../data/models/task.dart';
 import '../../providers/task_provider.dart';
 
@@ -58,31 +58,29 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(isEditing ? '编辑任务' : '新建任务'),
-        actions: [
-          if (isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: AppColors.error),
-              onPressed: _deleteTask,
-            ),
-        ],
-      ),
+    return GlassScaffold(
+      // 这是 Navigator.push 进来的全屏路由，不在 MainScreen 之下，
+      // 没有那一层极光可透——所以自己带一层。
+      standalone: true,
+      title: isEditing ? '编辑任务' : '新建任务',
+      actions: [
+        if (isEditing)
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: AppColors.error),
+            onPressed: _deleteTask,
+          ),
+      ],
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           children: [
             // 任务标题
             _buildSection(
               title: '任务名称',
               child: TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  hintText: '输入任务名称',
-                ),
+                decoration: const InputDecoration(hintText: '输入任务名称'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return '请输入任务名称';
@@ -97,9 +95,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               title: '任务描述（可选）',
               child: TextFormField(
                 controller: _descController,
-                decoration: const InputDecoration(
-                  hintText: '输入任务描述',
-                ),
+                decoration: const InputDecoration(hintText: '输入任务描述'),
                 maxLines: 3,
               ),
             ),
@@ -110,24 +106,24 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: _buildChoiceChip(
+                    child: GlassChip(
                       label: '正计时',
                       icon: Icons.timer_outlined,
                       selected: _timerType == TimerType.countUp,
-                      onSelected: (v) {
-                        if (v) setState(() => _timerType = TimerType.countUp);
-                      },
+                      onTap: () =>
+                          setState(() => _timerType = TimerType.countUp),
+                      expanded: false,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildChoiceChip(
+                    child: GlassChip(
                       label: '倒计时',
                       icon: Icons.hourglass_bottom,
                       selected: _timerType == TimerType.countDown,
-                      onSelected: (v) {
-                        if (v) setState(() => _timerType = TimerType.countDown);
-                      },
+                      onTap: () =>
+                          setState(() => _timerType = TimerType.countDown),
+                      expanded: false,
                     ),
                   ),
                 ],
@@ -214,15 +210,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               title: '截止日期（可选）',
               child: GestureDetector(
                 onTap: _selectDueDate,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(12),
+                child: GlassCard(
+                  tone: GlassTone.subtle,
+                  radius: AppRadius.md,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: 14,
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.event_outlined, color: AppColors.textSecondary),
+                      const Icon(
+                        Icons.event_outlined,
+                        color: AppColors.textSecondary,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         _dueDate != null
@@ -238,7 +238,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       if (_dueDate != null)
                         GestureDetector(
                           onTap: () => setState(() => _dueDate = null),
-                          child: const Icon(Icons.close, size: 18, color: AppColors.textHint),
+                          child: const Icon(
+                            Icons.close,
+                            size: 18,
+                            color: AppColors.textHint,
+                          ),
                         ),
                     ],
                   ),
@@ -252,9 +256,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 title: '提前提醒',
                 child: DropdownButtonFormField<int>(
                   value: _reminderMinutes,
-                  decoration: const InputDecoration(
-                    hintText: '选择提前提醒时间',
-                  ),
+                  decoration: const InputDecoration(hintText: '选择提前提醒时间'),
                   items: const [
                     DropdownMenuItem(value: null, child: Text('不提醒')),
                     DropdownMenuItem(value: 5, child: Text('提前5分钟')),
@@ -301,47 +303,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
   }
 
-  Widget _buildChoiceChip({
-    required String label,
-    required IconData icon,
-    required bool selected,
-    required ValueChanged<bool> onSelected,
-  }) {
-    return GestureDetector(
-      onTap: () => onSelected(!selected),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.divider,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: selected ? AppColors.primary : AppColors.textSecondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                color: selected ? AppColors.primary : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildRadioTile({
     required String title,
     required RepeatType value,
@@ -366,11 +327,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     required int max,
     required ValueChanged<int> onChanged,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+    return GlassCard(
+      tone: GlassTone.subtle,
+      radius: AppRadius.md,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -438,7 +400,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     final task = Task(
       id: widget.task?.id ?? const Uuid().v4(),
       title: _titleController.text.trim(),
-      description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
+      description: _descController.text.trim().isEmpty
+          ? null
+          : _descController.text.trim(),
       timerType: _timerType,
       duration: _timerType == TimerType.countDown
           ? _durationMinutes * 60 + _durationSeconds
@@ -469,7 +433,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       builder: (context) => AlertDialog(
         title: const Text('删除任务'),
         content: Text('确定要删除「${widget.task!.title}」吗？'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
