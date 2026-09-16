@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/ui/glass.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../task/data/repositories/task_repository.dart';
 import '../../../task/providers/task_provider.dart';
@@ -17,17 +17,17 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // 透明：让 MainScreen 的极光层透出来
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('设置'),
-      ),
+    return GlassScaffold(
+      title: '设置',
       body: Consumer<SettingsProvider>(
         builder: (context, provider, child) {
           return ListView(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md,
-                AppSpacing.md, AppSpacing.navInset),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.navInset,
+            ),
             children: [
               // 同步设置
               _buildSection(
@@ -102,7 +102,10 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.info_outline,
                 children: [
                   _buildInfoTile('版本', AppConstants.appVersion),
-                  _buildInfoTile('应用名', '${AppConstants.appNameCn} (${AppConstants.appName})'),
+                  _buildInfoTile(
+                    '应用名',
+                    '${AppConstants.appNameCn} (${AppConstants.appName})',
+                  ),
                 ],
               ),
             ],
@@ -117,32 +120,26 @@ class SettingsScreen extends StatelessWidget {
     required IconData icon,
     required List<Widget> children,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return GlassCard(
+      // 内部自己排版，标题与列表项各自带内边距
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
             child: Row(
               children: [
                 Icon(icon, size: 20, color: AppColors.primary),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                  style: AppText.taskTitle.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -156,15 +153,13 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSyncStatus(SettingsProvider provider) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: provider.isConfigured
-            ? AppColors.success.withOpacity(0.1)
-            : AppColors.background,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return GlassCard(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      tone: GlassTone.subtle,
+      radius: AppRadius.md,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      // 已连接时描边与阴影走 success 强调色
+      tint: provider.isConfigured ? AppColors.success : null,
       child: Row(
         children: [
           Icon(
@@ -175,15 +170,14 @@ class SettingsScreen extends StatelessWidget {
                 ? AppColors.success
                 : AppColors.textHint,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   provider.isConfigured ? '已连接坚果云' : '未配置同步',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: AppText.body.copyWith(
                     fontWeight: FontWeight.w600,
                     color: provider.isConfigured
                         ? AppColors.success
@@ -193,8 +187,7 @@ class SettingsScreen extends StatelessWidget {
                 if (provider.syncConfig?.lastSyncTime != null)
                   Text(
                     '上次同步: ${DateFormat('MM/dd HH:mm').format(provider.syncConfig!.lastSyncTime!)}',
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: AppText.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -250,23 +243,20 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildInfoTile(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs + 2,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: AppText.body.copyWith(color: AppColors.textSecondary),
           ),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textPrimary,
-            ),
+            style: AppText.body.copyWith(color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -274,12 +264,8 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showSyncConfig(BuildContext context, SettingsProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+    showGlassSheet(
+      context,
       builder: (context) => _SyncConfigSheet(
         currentConfig: provider.syncConfig,
         onSave: (config) async {
@@ -291,9 +277,6 @@ class SettingsScreen extends StatelessWidget {
                 SnackBar(
                   content: const Text('连接成功'),
                   backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
                 ),
               );
             } else {
@@ -301,10 +284,7 @@ class SettingsScreen extends StatelessWidget {
                 SnackBar(
                   content: Text('连接失败: ${provider.syncError ?? "请检查配置"}'),
                   backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
                   duration: const Duration(seconds: 5),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
                 ),
               );
             }
@@ -321,9 +301,6 @@ class SettingsScreen extends StatelessWidget {
         SnackBar(
           content: Text(success ? '备份成功' : '备份失败: ${provider.syncError}'),
           backgroundColor: success ? AppColors.success : AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -335,7 +312,6 @@ class SettingsScreen extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('恢复数据'),
         content: const Text('恢复将覆盖当前所有数据，确定继续吗？'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -358,11 +334,10 @@ class SettingsScreen extends StatelessWidget {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success ? '恢复成功，请切换到任务页面查看' : '恢复失败: ${provider.syncError}'),
+            content: Text(
+              success ? '恢复成功，请切换到任务页面查看' : '恢复失败: ${provider.syncError}',
+            ),
             backgroundColor: success ? AppColors.success : AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
@@ -370,13 +345,14 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _disconnect(
-      BuildContext context, SettingsProvider provider) async {
+    BuildContext context,
+    SettingsProvider provider,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('断开连接'),
         content: const Text('确定要断开坚果云连接吗？本地数据不会被删除。'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -384,8 +360,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定断开',
-                style: TextStyle(color: AppColors.error)),
+            child: const Text('确定断开', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -404,7 +379,8 @@ class SettingsScreen extends StatelessWidget {
 
       final result = await FilePicker.platform.saveFile(
         dialogTitle: '导出数据',
-        fileName: 'time_way_pro_backup_${DateFormat('yyyyMMdd').format(DateTime.now())}.json',
+        fileName:
+            'time_way_pro_backup_${DateFormat('yyyyMMdd').format(DateTime.now())}.json',
         type: FileType.custom,
         allowedExtensions: ['json'],
       );
@@ -417,9 +393,6 @@ class SettingsScreen extends StatelessWidget {
             SnackBar(
               content: const Text('导出成功'),
               backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
             ),
           );
         }
@@ -427,13 +400,7 @@ class SettingsScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('导出失败: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
+          SnackBar(content: Text('导出失败: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -445,7 +412,6 @@ class SettingsScreen extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('导入数据'),
         content: const Text('导入将覆盖当前所有数据，确定继续吗？'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -484,9 +450,6 @@ class SettingsScreen extends StatelessWidget {
             SnackBar(
               content: const Text('导入成功，请切换到任务页面查看'),
               backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
             ),
           );
         }
@@ -494,13 +457,7 @@ class SettingsScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('导入失败: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
+          SnackBar(content: Text('导入失败: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -527,11 +484,14 @@ class _SyncConfigSheetState extends State<_SyncConfigSheet> {
   void initState() {
     super.initState();
     _urlController = TextEditingController(
-        text: widget.currentConfig?.webdavUrl ?? AppConstants.defaultWebDavUrl);
-    _usernameController =
-        TextEditingController(text: widget.currentConfig?.username ?? '');
-    _passwordController =
-        TextEditingController(text: widget.currentConfig?.password ?? '');
+      text: widget.currentConfig?.webdavUrl ?? AppConstants.defaultWebDavUrl,
+    );
+    _usernameController = TextEditingController(
+      text: widget.currentConfig?.username ?? '',
+    );
+    _passwordController = TextEditingController(
+      text: widget.currentConfig?.password ?? '',
+    );
   }
 
   @override
@@ -544,123 +504,96 @@ class _SyncConfigSheetState extends State<_SyncConfigSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.divider,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  '配置坚果云同步',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  '请先在坚果云中开启WebDAV服务，获取应用密码后填入以下信息。',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 20),
+    // 外层 Padding(viewInsets) / SafeArea / SingleChildScrollView / 拖拽把手
+    // 全部由 GlassSheet 提供，这里只负责表单本身。
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '配置坚果云同步',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '请先在坚果云中开启WebDAV服务，获取应用密码后填入以下信息。',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 20),
 
-                // WebDAV地址
-                const Text(
-                  'WebDAV地址',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _urlController,
-                  decoration: const InputDecoration(
-                    hintText: 'https://dav.jianguoyun.com/dav/',
-                  ),
-                  validator: (v) => v!.isEmpty ? '请输入WebDAV地址' : null,
-                ),
-                const SizedBox(height: 16),
-
-                // 用户名
-                const Text(
-                  '用户名',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(
-                    hintText: '坚果云账号邮箱',
-                  ),
-                  validator: (v) => v!.isEmpty ? '请输入用户名' : null,
-                ),
-                const SizedBox(height: 16),
-
-                // 密码
-                const Text(
-                  '应用密码',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: '坚果云生成的应用密码',
-                  ),
-                  validator: (v) => v!.isEmpty ? '请输入密码' : null,
-                ),
-                const SizedBox(height: 24),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (!_formKey.currentState!.validate()) return;
-                      widget.onSave(SyncConfig(
-                        webdavUrl: _urlController.text.trim(),
-                        username: _usernameController.text.trim(),
-                        password: _passwordController.text.trim(),
-                      ));
-                    },
-                    child: const Text('保存并测试连接'),
-                  ),
-                ),
-              ],
+          // WebDAV地址
+          const Text(
+            'WebDAV地址',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
             ),
           ),
-        ),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _urlController,
+            decoration: const InputDecoration(
+              hintText: 'https://dav.jianguoyun.com/dav/',
+            ),
+            validator: (v) => v!.isEmpty ? '请输入WebDAV地址' : null,
+          ),
+          const SizedBox(height: 16),
+
+          // 用户名
+          const Text(
+            '用户名',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _usernameController,
+            decoration: const InputDecoration(hintText: '坚果云账号邮箱'),
+            validator: (v) => v!.isEmpty ? '请输入用户名' : null,
+          ),
+          const SizedBox(height: 16),
+
+          // 密码
+          const Text(
+            '应用密码',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(hintText: '坚果云生成的应用密码'),
+            validator: (v) => v!.isEmpty ? '请输入密码' : null,
+          ),
+          const SizedBox(height: 24),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                if (!_formKey.currentState!.validate()) return;
+                widget.onSave(
+                  SyncConfig(
+                    webdavUrl: _urlController.text.trim(),
+                    username: _usernameController.text.trim(),
+                    password: _passwordController.text.trim(),
+                  ),
+                );
+              },
+              child: const Text('保存并测试连接'),
+            ),
+          ),
+        ],
       ),
     );
   }
