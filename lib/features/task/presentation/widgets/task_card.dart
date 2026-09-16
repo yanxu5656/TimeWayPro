@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/ui/glass.dart';
 import '../../data/models/task.dart';
 
 class TaskCard extends StatelessWidget {
@@ -29,205 +29,197 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: isRunning
-            ? Border.all(color: AppColors.success.withValues(alpha: 0.4), width: 2)
-            : Border.all(color: AppColors.divider.withValues(alpha: 0.5), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: isRunning
-                ? AppColors.success.withValues(alpha: 0.15)
-                : AppColors.shadow,
-            blurRadius: isRunning ? 20 : 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onEdit,
-          onLongPress: () => _showOptions(context),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // 完成按钮
-                _buildCompleteButton(),
-                const SizedBox(width: 14),
+    // TaskProvider 每秒 tick 会重建整个列表，包一层 RepaintBoundary
+    // 把重栅格化限制在真正变化的卡片上
+    return RepaintBoundary(
+      child: GlassCard(
+        radius: AppRadius.xl,
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        // 计时中：描边加粗 + success 强调色 + 开启隐式过渡
+        animate: true,
+        edgeWidth: isRunning ? 2 : 1,
+        tint: isRunning ? AppColors.success : null,
+        onTap: onEdit,
+        onLongPress: () => _showOptions(context),
+        child: Row(
+          children: [
+            // 完成按钮
+            _buildCompleteButton(),
+            const SizedBox(width: 14),
 
-                // 任务信息
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            // 任务信息
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 标题和计时状态
+                  Row(
                     children: [
-                      // 标题和计时状态
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              task.title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: task.isCompleted
-                                    ? AppColors.textHint
-                                    : AppColors.textPrimary,
-                                decoration: task.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
-                            ),
+                      Expanded(
+                        child: Text(
+                          task.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: task.isCompleted
+                                ? AppColors.textHint
+                                : AppColors.textPrimary,
+                            decoration: task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
-                          if (isRunning) _buildRunningIndicator(),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-
-                      // 计时显示（进行中）
-                      if (isRunning) _buildTimerDisplay(),
-
-                      // 标签行
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: [
-                          _buildTag(
-                            task.timerType == TimerType.countUp
-                                ? Icons.timer_outlined
-                                : Icons.hourglass_bottom,
-                            task.timerType == TimerType.countUp
-                                ? '正计时'
-                                : '倒计时 ${task.durationText}',
-                          ),
-                          if (task.isRepeatable)
-                            _buildTag(Icons.repeat, task.repeatTypeText),
-                          if (task.isRepeatable && task.repeatCount > 1)
-                            _buildTag(Icons.refresh, '${task.repeatCount}次/天'),
-                          if (task.dueDate != null)
-                            _buildTag(
-                              Icons.event_outlined,
-                              DateFormat('MM/dd').format(task.dueDate!),
-                            ),
-                        ],
-                      ),
-
-                      // 完成次数
-                      if (task.isRepeatable && task.completedCount > 0) ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.primarySubtle,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.check_circle_outline,
-                                    size: 14,
-                                    color: AppColors.primary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${task.completedCount}/${task.repeatCount}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: task.repeatCount > 0
-                                      ? task.completedCount / task.repeatCount
-                                      : 0,
-                                  backgroundColor: AppColors.surfaceVariant,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    task.completedCount >= task.repeatCount
-                                        ? AppColors.success
-                                        : AppColors.primary,
-                                  ),
-                                  minHeight: 4,
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
-                      ],
-
-                      // 今日累计时长
-                      if (dailyDuration > 0) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.access_time,
-                              size: 14,
-                              color: AppColors.textHint,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '今日 ${_formatDuration(dailyDuration)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textHint,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
+                      if (isRunning) _buildRunningIndicator(),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 6),
 
-                // 操作按钮
-                if (!task.isCompleted)
-                  isRunning
-                      ? _buildStopButton()
-                      : _buildStartButton(),
-              ],
+                  // 计时显示（进行中）
+                  if (isRunning) _buildTimerDisplay(),
+
+                  // 标签行
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _buildTag(
+                        task.timerType == TimerType.countUp
+                            ? Icons.timer_outlined
+                            : Icons.hourglass_bottom,
+                        task.timerType == TimerType.countUp
+                            ? '正计时'
+                            : '倒计时 ${task.durationText}',
+                      ),
+                      if (task.isRepeatable)
+                        _buildTag(Icons.repeat, task.repeatTypeText),
+                      if (task.isRepeatable && task.repeatCount > 1)
+                        _buildTag(Icons.refresh, '${task.repeatCount}次/天'),
+                      if (task.dueDate != null)
+                        _buildTag(
+                          Icons.event_outlined,
+                          DateFormat('MM/dd').format(task.dueDate!),
+                        ),
+                    ],
+                  ),
+
+                  // 完成次数
+                  if (task.isRepeatable && task.completedCount > 0) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySubtle,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.check_circle_outline,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${task.completedCount}/${task.repeatCount}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: task.repeatCount > 0
+                                  ? task.completedCount / task.repeatCount
+                                  : 0,
+                              backgroundColor: AppColors.surfaceVariant,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                task.completedCount >= task.repeatCount
+                                    ? AppColors.success
+                                    : AppColors.primary,
+                              ),
+                              minHeight: 4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  // 今日累计时长
+                  if (dailyDuration > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.access_time,
+                          size: 14,
+                          color: AppColors.textHint,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '今日 ${_formatDuration(dailyDuration)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textHint,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
+
+            // 操作按钮
+            if (!task.isCompleted)
+              isRunning ? _buildStopButton() : _buildStartButton(),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildCompleteButton() {
-    return GestureDetector(
-      onTap: onComplete,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: task.isCompleted ? AppColors.primary : AppColors.textHint.withValues(alpha: 0.5),
-            width: 2,
+    return PressableScale(
+      child: GestureDetector(
+        onTap: onComplete,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: task.isCompleted
+                  ? AppColors.primary
+                  : AppColors.textHint.withValues(alpha: 0.5),
+              width: 2,
+            ),
+            color: task.isCompleted ? AppColors.primary : Colors.transparent,
           ),
-          color: task.isCompleted ? AppColors.primary : Colors.transparent,
+          child: task.isCompleted
+              ? const Icon(
+                  Icons.check,
+                  size: 16,
+                  color: AppColors.textOnPrimary,
+                )
+              : null,
         ),
-        child: task.isCompleted
-            ? const Icon(Icons.check, size: 16, color: Colors.white)
-            : null,
       ),
     );
   }
@@ -271,9 +263,11 @@ class TaskCard extends StatelessWidget {
 
     String timeStr;
     if (hours > 0) {
-      timeStr = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+      timeStr =
+          '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     } else {
-      timeStr = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+      timeStr =
+          '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
 
     // 倒计时模式显示剩余时间
@@ -284,9 +278,11 @@ class TaskCard extends StatelessWidget {
         final remMinutes = (remaining % 3600) ~/ 60;
         final remSeconds = remaining % 60;
         if (remHours > 0) {
-          timeStr = '${remHours.toString().padLeft(2, '0')}:${remMinutes.toString().padLeft(2, '0')}:${remSeconds.toString().padLeft(2, '0')}';
+          timeStr =
+              '${remHours.toString().padLeft(2, '0')}:${remMinutes.toString().padLeft(2, '0')}:${remSeconds.toString().padLeft(2, '0')}';
         } else {
-          timeStr = '${remMinutes.toString().padLeft(2, '0')}:${remSeconds.toString().padLeft(2, '0')}';
+          timeStr =
+              '${remMinutes.toString().padLeft(2, '0')}:${remSeconds.toString().padLeft(2, '0')}';
         }
       }
     }
@@ -295,81 +291,39 @@ class TaskCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary.withValues(alpha: 0.1),
-            AppColors.primary.withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
+        gradient: AppGradients.softFill(AppColors.primary),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.access_time_filled, size: 18, color: AppColors.primary),
-          const SizedBox(width: 8),
-          Text(
-            timeStr,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
-              fontFamily: 'monospace',
-              letterSpacing: 1,
-            ),
+          const Icon(
+            Icons.access_time_filled,
+            size: 18,
+            color: AppColors.primary,
           ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(timeStr, style: AppText.mono.copyWith(color: AppColors.primary)),
         ],
       ),
     );
   }
 
   Widget _buildStartButton() {
-    return GestureDetector(
+    return GlassIconButton(
+      icon: task.timerType == TimerType.countUp
+          ? Icons.play_arrow_rounded
+          : Icons.timer_outlined,
       onTap: onStart,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [
-              AppColors.primary.withValues(alpha: 0.15),
-              AppColors.primary.withValues(alpha: 0.05),
-            ],
-          ),
-        ),
-        child: Icon(
-          task.timerType == TimerType.countUp
-              ? Icons.play_arrow_rounded
-              : Icons.timer_outlined,
-          color: AppColors.primary,
-          size: 24,
-        ),
-      ),
+      color: AppColors.primary,
     );
   }
 
   Widget _buildStopButton() {
-    return GestureDetector(
+    return GlassIconButton(
+      icon: Icons.stop_rounded,
       onTap: onStop,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [
-              AppColors.error.withValues(alpha: 0.15),
-              AppColors.error.withValues(alpha: 0.05),
-            ],
-          ),
-        ),
-        child: const Icon(
-          Icons.stop_rounded,
-          color: AppColors.error,
-          size: 24,
-        ),
-      ),
+      color: AppColors.error,
     );
   }
 
@@ -407,71 +361,58 @@ class TaskCard extends StatelessWidget {
   }
 
   void _showOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  task.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySubtle,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
-                ),
-                title: const Text('编辑任务'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onEdit();
-                },
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
-                ),
-                title: const Text('删除任务', style: TextStyle(color: AppColors.error)),
-                onTap: () {
-                  Navigator.pop(context);
-                  onDelete();
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
+    showGlassSheet(
+      context,
+      // SafeArea 与拖拽把手由 GlassSheet 统一提供
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: Text(
+              task.title,
+              style: AppText.h3.copyWith(color: AppColors.textPrimary),
+            ),
           ),
-        ),
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primarySubtle,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.edit_outlined,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+            title: const Text('编辑任务'),
+            onTap: () {
+              Navigator.pop(context);
+              onEdit();
+            },
+          ),
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.delete_outline,
+                color: AppColors.error,
+                size: 20,
+              ),
+            ),
+            title: const Text('删除任务', style: TextStyle(color: AppColors.error)),
+            onTap: () {
+              Navigator.pop(context);
+              onDelete();
+            },
+          ),
+        ],
       ),
     );
   }

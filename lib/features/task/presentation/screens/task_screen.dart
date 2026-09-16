@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/ui/glass.dart';
 import '../../data/models/task.dart';
 import '../../providers/task_provider.dart';
 import '../widgets/task_card.dart';
@@ -46,46 +46,19 @@ class _TaskScreenState extends State<TaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // 透明：让 MainScreen 的极光层透出来
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.primarySubtle,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.access_time_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text('时途'),
-          ],
+    return GlassScaffold(
+      title: '时途',
+      titleIcon: Icons.access_time_rounded,
+      actions: [
+        GlassIconButton(
+          icon: Icons.calendar_today_rounded,
+          onTap: _selectDate,
+          color: AppColors.textPrimary,
+          size: 40,
+          iconSize: 20,
+          tooltip: '选择日期',
         ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.calendar_today_rounded, size: 20),
-              onPressed: _selectDate,
-              style: IconButton.styleFrom(
-                padding: const EdgeInsets.all(10),
-              ),
-            ),
-          ),
-        ],
-      ),
+      ],
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -111,13 +84,10 @@ class _TaskScreenState extends State<TaskScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: GlassFab(
         heroTag: 'task_fab',
+        label: '新任务',
         onPressed: _addTask,
-        icon: const Icon(Icons.add_rounded, size: 22),
-        label: const Text('新任务'),
-        elevation: 4,
-        highlightElevation: 8,
       ),
     );
   }
@@ -151,7 +121,9 @@ class _TaskScreenState extends State<TaskScreen> {
                   icon: Icons.chevron_left_rounded,
                   onTap: () {
                     setState(() {
-                      _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+                      _selectedDate = _selectedDate.subtract(
+                        const Duration(days: 1),
+                      );
                     });
                   },
                 ),
@@ -204,7 +176,9 @@ class _TaskScreenState extends State<TaskScreen> {
                   icon: Icons.chevron_right_rounded,
                   onTap: () {
                     setState(() {
-                      _selectedDate = _selectedDate.add(const Duration(days: 1));
+                      _selectedDate = _selectedDate.add(
+                        const Duration(days: 1),
+                      );
                     });
                   },
                 ),
@@ -218,21 +192,21 @@ class _TaskScreenState extends State<TaskScreen> {
             children: [
               _buildStatCard(
                 '全部任务',
-                '$totalTasks',
+                totalTasks,
                 Icons.list_alt_rounded,
                 AppColors.primary,
               ),
               const SizedBox(width: 12),
               _buildStatCard(
                 '进行中',
-                '$runningTasks',
+                runningTasks,
                 Icons.play_circle_outline_rounded,
                 runningTasks > 0 ? AppColors.success : AppColors.textHint,
               ),
               const SizedBox(width: 12),
               _buildStatCard(
                 '常驻任务',
-                '$repeatableTasks',
+                repeatableTasks,
                 Icons.repeat_rounded,
                 AppColors.info,
               ),
@@ -247,62 +221,45 @@ class _TaskScreenState extends State<TaskScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return GlassIconButton(
+      icon: icon,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        child: Icon(
-          icon,
-          size: 22,
-          color: AppColors.textSecondary,
-        ),
-      ),
+      color: AppColors.textSecondary,
+      size: 40,
+      iconSize: 22,
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String label, int value, IconData icon, Color color) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+      child: GlassCard(
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.md,
+          horizontal: AppSpacing.sm,
         ),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.xs),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(height: 10),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: color,
-                letterSpacing: -0.5,
-              ),
+            CountUpText(
+              value: value,
+              format: (v) => '$v',
+              duration: const Duration(milliseconds: 450),
+              style: AppText.numLg.copyWith(color: color),
             ),
             const SizedBox(height: 2),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textHint,
+              style: AppText.labelSm.copyWith(
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
-                letterSpacing: 0.3,
               ),
             ),
           ],
@@ -341,10 +298,7 @@ class _TaskScreenState extends State<TaskScreen> {
           const SizedBox(height: 8),
           Text(
             '点击下方按钮添加新任务',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textHint,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textHint),
           ),
         ],
       ),
@@ -358,72 +312,111 @@ class _TaskScreenState extends State<TaskScreen> {
     // 获取所有任务（包括可能在计时中的任务）
     final allTasks = provider.tasks;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenH, 0, AppSpacing.screenH, AppSpacing.navInset),
-      children: [
-        // 进行中的任务
-        if (provider.activeTimers.isNotEmpty) ...[
-          _buildSectionTitle('进行中', provider.activeTimers.length, AppColors.success),
-          ...provider.activeTimers.keys.map((taskId) {
-            // 从所有任务中查找，而不是只从活跃任务中查找
-            final task = allTasks.where((t) => t.id == taskId).firstOrNull;
-            if (task == null) return const SizedBox.shrink();
+    // 错峰入场。StaggeredEntrance 在 maxItems(8) 之后直接返回 child，
+    // 所以 eager 的 ListView(children:) 不会产生多余的动画对象——
+    // builder 化只是滚动性能优化，与本轮动效无关。
+    var slot = 0;
+    Widget staged(Widget child) =>
+        StaggeredEntrance(index: slot++, child: child);
 
-            return TaskCard(
-              task: task,
-              isRunning: true,
-              elapsedSeconds: provider.getTaskElapsedSeconds(taskId),
-              dailyDuration: _dailyDurations[taskId] ?? 0,
-              onComplete: () => _completeTask(task),
-              onEdit: () => _editTask(task),
-              onDelete: () => _deleteTask(task),
-              onStart: () => _stopTask(task),
-              onStop: () => _stopTask(task),
-            );
-          }),
-          const SizedBox(height: 20),
-        ],
+    return StaggerScope(
+      // 任务页是 MainScreen 里的第 1 个 Tab
+      slotIndex: 1,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH,
+          0,
+          AppSpacing.screenH,
+          AppSpacing.navInset,
+        ),
+        children: [
+          // 进行中的任务
+          if (provider.activeTimers.isNotEmpty) ...[
+            staged(
+              _buildSectionTitle(
+                '进行中',
+                provider.activeTimers.length,
+                AppColors.success,
+              ),
+            ),
+            ...provider.activeTimers.keys.map((taskId) {
+              // 从所有任务中查找，而不是只从活跃任务中查找
+              final task = allTasks.where((t) => t.id == taskId).firstOrNull;
+              if (task == null) return const SizedBox.shrink();
 
-        // 常驻任务
-        if (repeatableTasks.isNotEmpty) ...[
-          _buildSectionTitle('常驻任务', repeatableTasks.length, AppColors.info),
-          ...repeatableTasks.map((task) {
-            final isRunning = provider.isTaskRunning(task.id);
-            return TaskCard(
-              task: task,
-              isRunning: isRunning,
-              elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
-              dailyDuration: _dailyDurations[task.id] ?? 0,
-              onComplete: () => _completeTask(task),
-              onEdit: () => _editTask(task),
-              onDelete: () => _deleteTask(task),
-              onStart: () => _startTask(task),
-              onStop: () => _stopTask(task),
-            );
-          }),
-          const SizedBox(height: 20),
-        ],
+              return staged(
+                TaskCard(
+                  task: task,
+                  isRunning: true,
+                  elapsedSeconds: provider.getTaskElapsedSeconds(taskId),
+                  dailyDuration: _dailyDurations[taskId] ?? 0,
+                  onComplete: () => _completeTask(task),
+                  onEdit: () => _editTask(task),
+                  onDelete: () => _deleteTask(task),
+                  onStart: () => _stopTask(task),
+                  onStop: () => _stopTask(task),
+                ),
+              );
+            }),
+            const SizedBox(height: 20),
+          ],
 
-        // 待完成任务
-        if (oneTimeTasks.isNotEmpty) ...[
-          _buildSectionTitle('待完成任务', oneTimeTasks.length, AppColors.warning),
-          ...oneTimeTasks.map((task) {
-            final isRunning = provider.isTaskRunning(task.id);
-            return TaskCard(
-              task: task,
-              isRunning: isRunning,
-              elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
-              dailyDuration: _dailyDurations[task.id] ?? 0,
-              onComplete: () => _completeTask(task),
-              onEdit: () => _editTask(task),
-              onDelete: () => _deleteTask(task),
-              onStart: () => _startTask(task),
-              onStop: () => _stopTask(task),
-            );
-          }),
+          // 常驻任务
+          if (repeatableTasks.isNotEmpty) ...[
+            staged(
+              _buildSectionTitle(
+                '常驻任务',
+                repeatableTasks.length,
+                AppColors.info,
+              ),
+            ),
+            ...repeatableTasks.map((task) {
+              final isRunning = provider.isTaskRunning(task.id);
+              return staged(
+                TaskCard(
+                  task: task,
+                  isRunning: isRunning,
+                  elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
+                  dailyDuration: _dailyDurations[task.id] ?? 0,
+                  onComplete: () => _completeTask(task),
+                  onEdit: () => _editTask(task),
+                  onDelete: () => _deleteTask(task),
+                  onStart: () => _startTask(task),
+                  onStop: () => _stopTask(task),
+                ),
+              );
+            }),
+            const SizedBox(height: 20),
+          ],
+
+          // 待完成任务
+          if (oneTimeTasks.isNotEmpty) ...[
+            staged(
+              _buildSectionTitle(
+                '待完成任务',
+                oneTimeTasks.length,
+                AppColors.warning,
+              ),
+            ),
+            ...oneTimeTasks.map((task) {
+              final isRunning = provider.isTaskRunning(task.id);
+              return staged(
+                TaskCard(
+                  task: task,
+                  isRunning: isRunning,
+                  elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
+                  dailyDuration: _dailyDurations[task.id] ?? 0,
+                  onComplete: () => _completeTask(task),
+                  onEdit: () => _editTask(task),
+                  onDelete: () => _deleteTask(task),
+                  onStart: () => _startTask(task),
+                  onStop: () => _stopTask(task),
+                ),
+              );
+            }),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -532,15 +525,16 @@ class _TaskScreenState extends State<TaskScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const Icon(
+              Icons.check_circle,
+              color: AppColors.textOnPrimary,
+              size: 20,
+            ),
             const SizedBox(width: 10),
             Text(task.isRepeatable ? '完成次数 +1' : '任务已完成'),
           ],
         ),
         backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -551,7 +545,6 @@ class _TaskScreenState extends State<TaskScreen> {
       builder: (context) => AlertDialog(
         title: const Text('删除任务'),
         content: Text('确定要删除「${task.title}」吗？此操作不可撤销。'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -584,9 +577,6 @@ class _TaskScreenState extends State<TaskScreen> {
           ],
         ),
         backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -602,7 +592,6 @@ class _TaskScreenState extends State<TaskScreen> {
       builder: (context) => AlertDialog(
         title: const Text('结束计时'),
         content: Text(content),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -620,25 +609,20 @@ class _TaskScreenState extends State<TaskScreen> {
                 SnackBar(
                   content: Row(
                     children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                      const Icon(
+                        Icons.check_circle,
+                        color: AppColors.textOnPrimary,
+                        size: 20,
+                      ),
                       const SizedBox(width: 10),
                       Text(isCountUp ? '时间已记录' : '任务已完成'),
                     ],
                   ),
                   backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  margin: const EdgeInsets.all(16),
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: const Text('结束计时'),
           ),
         ],
