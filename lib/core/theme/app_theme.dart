@@ -1,66 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class AppColors {
-  // 主色调 - 更高级的青绿色系
-  static const Color primary = Color(0xFF00BFA5);
-  static const Color primaryDark = Color(0xFF00897B);
-  static const Color primaryLight = Color(0xFFB2DFDB);
-  static const Color primarySubtle = Color(0xFFE0F2F1);
-  static const Color accent = Color(0xFF64FFDA);
+import 'app_colors.dart';
+import 'app_radius.dart';
+import 'app_spacing.dart';
+import 'app_text.dart';
 
-  // 背景色 - 更柔和
-  static const Color background = Color(0xFFF8FAFB);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF1F5F9);
+// 令牌层统一从这里再导出，页面只需 import 本文件即可拿到
+// AppColors / AppRadius / AppSpacing / AppShadows / AppText。
+//
+// Dart 的 export 是传递性的，因此改造前就存在的 10 处
+// `import '.../core/theme/app_theme.dart'` 一行都不用改。
+export 'app_colors.dart';
+export 'app_radius.dart';
+export 'app_shadows.dart';
+export 'app_spacing.dart';
+export 'app_text.dart';
 
-  // 文字色 - 更柔和的对比度
-  static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
-  static const Color textHint = Color(0xFF94A3B8);
-  static const Color textOnPrimary = Color(0xFFFFFFFF);
-
-  // 功能色
-  static const Color divider = Color(0xFFE2E8F0);
-  static const Color error = Color(0xFFEF4444);
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color info = Color(0xFF3B82F6);
-
-  // 阴影色
-  static const Color shadow = Color(0x08000000);
-  static const Color shadowMedium = Color(0x12000000);
-
-  // 热力图颜色 - 更丰富的渐变
-  static const List<Color> heatMapColors = [
-    Color(0xFFE0F2F1),
-    Color(0xFFB2DFDB),
-    Color(0xFF80CBC4),
-    Color(0xFF4DB6AC),
-    Color(0xFF26A69A),
-    Color(0xFF009688),
-    Color(0xFF00897B),
-    Color(0xFF00796B),
-    Color(0xFF00695C),
-    Color(0xFF004D40),
-  ];
-
-  // 图表颜色 - 更鲜艳
-  static const List<Color> chartColors = [
-    Color(0xFF00BFA5),
-    Color(0xFF26A69A),
-    Color(0xFF4DB6AC),
-    Color(0xFF80CBC4),
-    Color(0xFFB2DFDB),
-    Color(0xFF00897B),
-    Color(0xFF00796B),
-    Color(0xFF00695C),
-    Color(0xFF004D40),
-    Color(0xFFA7FFEB),
-  ];
-}
-
+/// 主题装配层。
+///
+/// 这里只做两件事：把令牌层组装成 `ThemeData`，以及配置那些
+/// 「框架组件会自己去读」的主题入口（输入框、对话框、SnackBar 等）。
+/// 页面不通过 `Theme.of(context)` 取样式——绝大多数样式走
+/// 编译期常量，以保持 `const` 与低分配开销。
 class AppTheme {
+  AppTheme._();
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -68,72 +33,51 @@ class AppTheme {
         seedColor: AppColors.primary,
         brightness: Brightness.light,
         primary: AppColors.primary,
+        secondary: AppColors.accent,
         surface: AppColors.surface,
         error: AppColors.error,
+        // 补齐下面几项：只覆盖 4 个字段时，Switch / datePicker /
+        // 未显式着色的框架组件会取到 seed 派生色，与设计系统不一致。
+        onSurface: AppColors.textPrimary,
+        onSurfaceVariant: AppColors.textSecondary,
+        surfaceContainerHighest: AppColors.surfaceVariant,
+        outlineVariant: AppColors.divider,
       ),
       scaffoldBackgroundColor: AppColors.background,
 
-      // AppBar主题
-      appBarTheme: AppBarTheme(
+      // ═ 保留：现有页面在真实消费 ═══════════════════════════
+      //
+      // 注意 appBarTheme 与 floatingActionButtonTheme 目前**不能删**：
+      // 6 个页面有 `appBar: AppBar(...)`、3 处有 `FloatingActionButton`，
+      // 删掉会立刻改变它们的背景色与标题对齐方式。
+      // 待 Phase 4 迁移到 GlassAppBar / GlassFab 后再移除。
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0.5,
         centerTitle: true,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           color: AppColors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.3,
         ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
         ),
       ),
 
-      // 卡片主题 - 更精致的阴影和圆角
-      cardTheme: CardThemeData(
-        color: AppColors.surface,
-        elevation: 0,
-        shadowColor: AppColors.shadow,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 6),
-      ),
-
-      // FAB主题
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         elevation: 4,
         highlightElevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.brXl),
       ),
 
-      // 底部导航栏主题
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textHint,
-        type: BottomNavigationBarType.fixed,
-        elevation: 0,
-        selectedLabelStyle: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.2,
-        ),
-      ),
-
-      // 输入框主题 - 更圆润
+      // 圆角数值与改造前一致（16/12/16），本阶段无视觉变化
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceVariant,
@@ -141,35 +85,33 @@ class AppTheme {
           color: AppColors.textHint,
           fontSize: 14,
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+        border: const OutlineInputBorder(
+          borderRadius: AppRadius.brLg,
           borderSide: BorderSide.none,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.brLg,
           borderSide: BorderSide.none,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.brLg,
+          borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.error, width: 1),
+        errorBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.brLg,
+          borderSide: BorderSide(color: AppColors.error, width: 1),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
       ),
 
-      // 按钮主题 - 更精致
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: AppSpacing.md),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.brLg),
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -181,10 +123,8 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.brMd),
           textStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -196,10 +136,8 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: AppSpacing.md),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.brLg),
           side: const BorderSide(color: AppColors.primary, width: 1.5),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -209,120 +147,89 @@ class AppTheme {
         ),
       ),
 
-      // Chip主题
-      chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surfaceVariant,
-        selectedColor: AppColors.primarySubtle,
-        labelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      ),
-
-      // 分割线主题
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
         thickness: 0.5,
         space: 0,
       ),
 
-      // 文字主题
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
-          height: 1.2,
+      // ═ 新增：一次性消掉大量重复的内联样式 ═════════════════
+      //
+      // 这些主题项让 Phase 4 可以直接删掉调用点上重复的
+      // `shape:` / `behavior:` / `margin:` 参数。
+      // 调用点仍传内联值时以内联为准，因此本阶段不产生回归。
+
+      dialogTheme: DialogThemeData(
+        // 对话框是文字最密的表面，走 91% 白强填充而非真模糊：
+        // AlertDialog 不是可替换 builder 的容器，注入 BackdropFilter
+        // 需自写 dialog 路由，而背后模糊对可读性零贡献、还多一次 saveLayer。
+        backgroundColor: AppColors.glassFillStrong,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.brXl),
+      ),
+
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.brMd),
+        insetPadding: const EdgeInsets.all(AppSpacing.md),
+        elevation: 0,
+      ),
+
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        linearTrackColor: AppColors.surfaceVariant,
+        linearMinHeight: 6,
+      ),
+
+      listTileTheme: const ListTileThemeData(
+        iconColor: AppColors.textSecondary,
+      ),
+
+      // 与 planning_screen 里原有的内联 SliderTheme 逐值一致
+      sliderTheme: SliderThemeData(
+        activeTrackColor: AppColors.primary,
+        inactiveTrackColor: AppColors.background,
+        thumbColor: AppColors.primary,
+        overlayColor: AppColors.primary.withValues(alpha: 0.2),
+        trackHeight: 6,
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+      ),
+
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: AppColors.textPrimary.withValues(alpha: 0.92),
+          borderRadius: AppRadius.brSm,
         ),
-        displayMedium: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.3,
-          height: 1.2,
-        ),
-        displaySmall: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.2,
-          height: 1.3,
-        ),
-        headlineLarge: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.1,
-          height: 1.3,
-        ),
-        headlineMedium: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0,
-          height: 1.4,
-        ),
-        headlineSmall: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.1,
-          height: 1.4,
-        ),
-        titleLarge: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.15,
-          height: 1.5,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.15,
-          height: 1.5,
-        ),
-        titleSmall: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.1,
-          height: 1.5,
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0.15,
-          height: 1.6,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0.15,
-          height: 1.6,
-        ),
-        bodySmall: TextStyle(
+        textStyle: const TextStyle(
+          color: AppColors.textOnPrimary,
           fontSize: 12,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0.15,
-          height: 1.6,
         ),
-        labelLarge: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.3,
-          height: 1.4,
-        ),
-        labelMedium: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.3,
-          height: 1.4,
-        ),
-        labelSmall: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.3,
-          height: 1.4,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
         ),
       ),
+
+      // ══ 文字 ══════════════════════════════════════════════
+      //
+      // 由 AppText.asTextTheme() 生成，输出与改造前逐字一致。
+      // 意义在于：所有未显式给 style 的 Text / ListTile / SnackBar /
+      // AlertDialog / Tooltip 都能拿到正确字号，textTheme 从
+      // 「零消费」变成隐式全覆盖。
+      textTheme: AppText.asTextTheme(),
+
+      // ══ 已删除（核实过零使用）═══════════════════════════════
+      //
+      // cardTheme                  → 真 `Card(` 0 处，改由 GlassCard 承担
+      // chipTheme                  → 真 `Chip(` 家族 0 处，改由 GlassChip 承担
+      // bottomNavigationBarTheme   → 真 `BottomNavigationBar(` 0 处，
+      //                              底部导航是自绘 Container+Row，
+      //                              改由 GlassNavBar 承担
+      //
+      // 暂缓：bottomSheetTheme
+      //   7 处 showModalBottomSheet 里有 4 处（planning ×3、settings ×1）
+      //   依赖默认背景色。现在全局设成 transparent 会让它们失去底板。
+      //   待 Phase 3 的 GlassSheet 自带背景后再加。
     );
   }
 }
