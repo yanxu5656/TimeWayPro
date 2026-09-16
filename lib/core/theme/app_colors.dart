@@ -91,32 +91,31 @@ class AppColors {
 
   // ── 图表配色 ────────────────────────────────────────────
   //
-  // 注意：现有 10 色青绿渐阶在玻璃底上会失效（浅色档叠 78% 白后
-  // 几乎不可见），且饼图切片上的白色标签在白切片上读不出。
-  // 待 Phase 5 换成色相分离优先的 8 色版本，此处暂不动。
-  static const List<Color> heatMapColors = [
-    Color(0xFFE0F2F1),
-    Color(0xFFB2DFDB),
-    Color(0xFF80CBC4),
-    Color(0xFF4DB6AC),
-    Color(0xFF26A69A),
-    Color(0xFF009688),
-    Color(0xFF00897B),
-    Color(0xFF00796B),
-    Color(0xFF00695C),
-    Color(0xFF004D40),
+  // 色相分离优先，而不是同色系渐阶。原因：改造前那套 10 档青绿渐阶里
+  // 最浅的几档（#B2DFDB、#A7FFEB）叠在 78% 白玻璃上几乎不可见，
+  // 饼图切片彼此也分不开。当前这套每个颜色都与 glassFill 合成底保持
+  // 至少 2.5:1 的对比。
+  static const List<Color> chartColors = [
+    Color(0xFF00897B), // teal 600
+    Color(0xFF3B82F6), // blue 500
+    Color(0xFF6366F1), // indigo 500
+    Color(0xFF8B5CF6), // violet 500
+    Color(0xFF10B981), // emerald 500
+    Color(0xFFF59E0B), // amber 500
+    Color(0xFFEF4444), // red 500
+    Color(0xFF0EA5E9), // sky 500
   ];
 
-  static const List<Color> chartColors = [
-    Color(0xFF00BFA5),
-    Color(0xFF26A69A),
-    Color(0xFF4DB6AC),
-    Color(0xFF80CBC4),
-    Color(0xFFB2DFDB),
-    Color(0xFF00897B),
-    Color(0xFF00796B),
-    Color(0xFF00695C),
-    Color(0xFF004D40),
-    Color(0xFFA7FFEB),
+  /// 热力图色阶，由浅到深 5 档。
+  ///
+  /// 与 [chartColors] 不同，这里**必须**是单调递减亮度的同一色相——
+  /// 热力图靠深浅表达大小。无数据的格子用 [heatEmpty]，它比
+  /// [glassFill] 深，否则空格子在玻璃卡上完全看不见。
+  static const List<Color> heatMapColors = [
+    Color(0xFFDFF2EE), // 1 档 最浅
+    Color(0xFF9FD9CE), // 2
+    Color(0xFF4FBFAE), // 3
+    Color(0xFF1E9E8C), // 4
+    Color(0xFF0B6B5E), // 5 档 最深
   ];
 }

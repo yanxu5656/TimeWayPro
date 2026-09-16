@@ -431,7 +431,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           final date = startDate.add(Duration(days: i));
           final key = DateFormat('yyyy-MM-dd').format(date);
           final duration = dailyMap[key] ?? 0;
-          final intensity = duration / maxDuration;
+          final level = _heatLevel(duration, maxDuration);
           final isSelected =
               date.year == _selectedDate.year &&
               date.month == _selectedDate.month &&
@@ -451,7 +451,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: _getHeatMapColor(intensity),
+                    color: _heatCellColor(level),
                     borderRadius: BorderRadius.circular(8),
                     border: isSelected
                         ? Border.all(color: AppColors.primary, width: 2)
@@ -462,9 +462,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       '${date.day}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: intensity > 0.5
-                            ? AppColors.textOnPrimary
-                            : AppColors.textSecondary,
+                        color: _heatTextColor(level),
                         fontWeight: isSelected
                             ? FontWeight.w700
                             : FontWeight.w500,
@@ -487,7 +485,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final date = startDate.add(Duration(days: i));
         final key = DateFormat('yyyy-MM-dd').format(date);
         final duration = dailyMap[key] ?? 0;
-        final intensity = duration / maxDuration;
+        final level = _heatLevel(duration, maxDuration);
         final isSelected =
             _selectedPeriod == 0 &&
             date.year == _selectedDate.year &&
@@ -501,7 +499,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             width: _selectedPeriod == 2 ? 36 : 40,
             height: _selectedPeriod == 2 ? 36 : 40,
             decoration: BoxDecoration(
-              color: _getHeatMapColor(intensity),
+              color: _heatCellColor(level),
               borderRadius: BorderRadius.circular(6),
               border: isSelected
                   ? Border.all(color: AppColors.primary, width: 2)
@@ -512,9 +510,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 '${date.day}',
                 style: TextStyle(
                   fontSize: 11,
-                  color: intensity > 0.5
-                      ? AppColors.textOnPrimary
-                      : AppColors.textSecondary,
+                  color: _heatTextColor(level),
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
@@ -525,14 +521,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Color _getHeatMapColor(double intensity) {
-    if (intensity == 0) return AppColors.surfaceVariant;
-    if (intensity < 0.2) return AppColors.heatMapColors[0];
-    if (intensity < 0.4) return AppColors.heatMapColors[2];
-    if (intensity < 0.6) return AppColors.heatMapColors[4];
-    if (intensity < 0.8) return AppColors.heatMapColors[6];
-    return AppColors.heatMapColors[8];
+  /// 热力图档位：0 = 无数据，1..N 对应 AppColors.heatMapColors 的下标 + 1。
+  ///
+  /// 用离散档位而不是连续强度，是为了让**格子颜色与文字颜色成对切换**——
+  /// 原先文字阈值写死 `intensity > 0.5`，与色阶档位并不对齐，实测下来
+  /// 会出现"中等底色配白字"这种读不出的组合。
+  int _heatLevel(int duration, int maxDuration) {
+    if (duration <= 0) return 0;
+    final ratio = duration / maxDuration;
+    return (ratio * AppColors.heatMapColors.length).ceil().clamp(
+      1,
+      AppColors.heatMapColors.length,
+    );
   }
+
+  Color _heatCellColor(int level) =>
+      level == 0 ? AppColors.heatEmpty : AppColors.heatMapColors[level - 1];
+
+  /// 1-3 档底色还够浅，用深色字；4-5 档才用白字
+  Color _heatTextColor(int level) =>
+      level >= 4 ? AppColors.textOnPrimary : AppColors.textPrimary;
 
   Widget _buildPieChart(_StatsData stats) {
     if (stats.taskDurations.isEmpty) {
