@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/daily_task.dart';
 import '../../providers/daily_provider.dart';

@@ -6,13 +6,6 @@ class DailyRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final _uuid = const Uuid();
 
-  // 初始化 daily_tasks 表
-  Future<void> _ensureTable() async {
-    final data = await _dbHelper.query('daily_tasks');
-    // 如果表不存在（返回空列表），不需要额外操作
-    // 因为 database_helper 会自动处理
-  }
-
   // 获取指定日期的任务
   Future<List<DailyTask>> getTasksByDate(String dateKey) async {
     try {
