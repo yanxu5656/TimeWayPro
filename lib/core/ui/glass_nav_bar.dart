@@ -33,10 +33,13 @@ class GlassNavBar extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final double blurSigma;
 
-  static const List<_NavItemData> items = <_NavItemData>[
+  static const List<_NavItemData> _items = <_NavItemData>[
     _NavItemData(Icons.today_outlined, Icons.today_rounded, '待办'),
     _NavItemData(
-        Icons.check_circle_outline_rounded, Icons.check_circle_rounded, '任务'),
+      Icons.check_circle_outline_rounded,
+      Icons.check_circle_rounded,
+      '任务',
+    ),
     _NavItemData(Icons.bar_chart_rounded, Icons.bar_chart_rounded, '统计'),
     _NavItemData(Icons.account_tree_outlined, Icons.account_tree_rounded, '规划'),
     _NavItemData(Icons.settings_outlined, Icons.settings_rounded, '设置'),
@@ -50,8 +53,9 @@ class GlassNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: ClipRRect(
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
           child: Container(
@@ -67,7 +71,7 @@ class GlassNavBar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
-                    final double itemW = constraints.maxWidth / items.length;
+                    final double itemW = constraints.maxWidth / _items.length;
 
                     return Stack(
                       children: <Widget>[
@@ -82,17 +86,16 @@ class GlassNavBar extends StatelessWidget {
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               color: AppColors.glassTintPrimary,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.md),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
                             ),
                           ),
                         ),
                         Row(
                           children: <Widget>[
-                            for (int i = 0; i < items.length; i++)
+                            for (int i = 0; i < _items.length; i++)
                               Expanded(
                                 child: _NavItem(
-                                  data: items[i],
+                                  data: _items[i],
                                   selected: i == index,
                                   onTap: () => onChanged(i),
                                 ),
@@ -138,16 +141,19 @@ class _NavItem extends StatelessWidget {
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 180),
                   switchInCurve: Curves.easeOutCubic,
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: ScaleTransition(
-                        scale: Tween<double>(begin: 0.86, end: 1.0)
-                            .animate(animation),
-                        child: child,
-                      ),
-                    );
-                  },
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: Tween<double>(
+                              begin: 0.86,
+                              end: 1.0,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
                   child: Icon(
                     selected ? data.activeIcon : data.icon,
                     // key 必须随选中态变化，否则 AnimatedSwitcher
@@ -165,8 +171,8 @@ class _NavItem extends StatelessWidget {
               curve: Curves.easeInOut,
               style: (selected ? AppText.navLabelActive : AppText.navLabel)
                   .copyWith(
-                color: selected ? AppColors.primary : AppColors.textHint,
-              ),
+                    color: selected ? AppColors.primary : AppColors.textHint,
+                  ),
               child: Text(data.label),
             ),
           ],

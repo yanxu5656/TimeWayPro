@@ -56,7 +56,10 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
               decoration: const BoxDecoration(
                 color: AppColors.glassFillWeak,
                 border: Border(
-                  bottom: BorderSide(color: AppColors.glassEdgeBottom, width: 0.5),
+                  bottom: BorderSide(
+                    color: AppColors.glassEdgeBottom,
+                    width: 0.5,
+                  ),
                 ),
               ),
               child: SafeArea(
@@ -65,8 +68,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                   height: kToolbarHeight,
                   child: Row(
                     children: <Widget>[
-                      if (automaticallyImplyLeading)
-                        _buildLeading(context),
+                      if (automaticallyImplyLeading) _buildLeading(context),
                       if (titleIcon != null) ...<Widget>[
                         Container(
                           padding: const EdgeInsets.all(6),
@@ -93,7 +95,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                           ),
                         ),
                       const Spacer(),
-                      if (actions != null) ...actions!,
+                      ...?actions,
                       const SizedBox(width: AppSpacing.xs),
                     ],
                   ),

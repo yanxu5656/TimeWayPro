@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 import 'app_radius.dart';
@@ -45,46 +44,16 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: AppColors.background,
 
-      // ═ 保留：现有页面在真实消费 ═══════════════════════════
-      //
-      // 注意 appBarTheme 与 floatingActionButtonTheme 目前**不能删**：
-      // 6 个页面有 `appBar: AppBar(...)`、3 处有 `FloatingActionButton`，
-      // 删掉会立刻改变它们的背景色与标题对齐方式。
-      // 待 Phase 4 迁移到 GlassAppBar / GlassFab 后再移除。
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        scrolledUnderElevation: 0.5,
-        centerTitle: true,
-        titleTextStyle: TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.3,
-        ),
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-        ),
-      ),
-
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
-        elevation: 4,
-        highlightElevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.brXl),
-      ),
+      // 现已删除 appBarTheme 与 floatingActionButtonTheme：
+      // Phase 4 迁移到 GlassAppBar / GlassFab 后，全仓真正使用
+      // AppBar / FloatingActionButton 的只剩 timer_screen.dart
+      // 这个死代码文件（Phase 6 删除）。
 
       // 圆角数值与改造前一致（16/12/16），本阶段无视觉变化
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceVariant,
-        hintStyle: const TextStyle(
-          color: AppColors.textHint,
-          fontSize: 14,
-        ),
+        hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
         border: const OutlineInputBorder(
           borderRadius: AppRadius.brLg,
           borderSide: BorderSide.none,
@@ -101,8 +70,10 @@ class AppTheme {
           borderRadius: AppRadius.brLg,
           borderSide: BorderSide(color: AppColors.error, width: 1),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -110,7 +81,10 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: AppSpacing.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 28,
+            vertical: AppSpacing.md,
+          ),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.brLg),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -123,7 +97,10 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.brMd),
           textStyle: const TextStyle(
             fontSize: 14,
@@ -136,7 +113,10 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: AppSpacing.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 28,
+            vertical: AppSpacing.md,
+          ),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.brLg),
           side: const BorderSide(color: AppColors.primary, width: 1.5),
           textStyle: const TextStyle(
@@ -158,7 +138,6 @@ class AppTheme {
       // 这些主题项让 Phase 4 可以直接删掉调用点上重复的
       // `shape:` / `behavior:` / `margin:` 参数。
       // 调用点仍传内联值时以内联为准，因此本阶段不产生回归。
-
       dialogTheme: DialogThemeData(
         // 对话框是文字最密的表面，走 91% 白强填充而非真模糊：
         // AlertDialog 不是可替换 builder 的容器，注入 BackdropFilter
@@ -226,10 +205,15 @@ class AppTheme {
       //                              底部导航是自绘 Container+Row，
       //                              改由 GlassNavBar 承担
       //
-      // 暂缓：bottomSheetTheme
-      //   7 处 showModalBottomSheet 里有 4 处（planning ×3、settings ×1）
-      //   依赖默认背景色。现在全局设成 transparent 会让它们失去底板。
-      //   待 Phase 3 的 GlassSheet 自带背景后再加。
+      // 7 处底部弹窗现已全部走 showGlassSheet（自带玻璃底板 + 顶角 28），
+      // 不再有任何一处依赖 route 的默认背景色，因此这里可以安全地设成透明。
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Colors.transparent,
+        modalBackgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.brSheetTop),
+      ),
     );
   }
 }
