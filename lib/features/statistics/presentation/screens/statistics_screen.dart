@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/ui/glass.dart';
 import '../../../task/providers/task_provider.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -24,18 +24,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // 透明：让 MainScreen 的极光层透出来
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('统计'),
-      ),
+    return GlassScaffold(
+      title: '统计',
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
           // 检查是否需要刷新
           final currentTaskCount = provider.tasks.length;
-          final currentDateKey = '$_selectedPeriod-${_selectedDate.toIso8601String().substring(0, 10)}';
-          final needRefresh = _lastPeriod != _selectedPeriod ||
+          final currentDateKey =
+              '$_selectedPeriod-${_selectedDate.toIso8601String().substring(0, 10)}';
+          final needRefresh =
+              _lastPeriod != _selectedPeriod ||
               _cachedStats == null ||
               currentTaskCount != _lastTaskCount ||
               _lastDateKey != currentDateKey;
@@ -96,30 +94,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildDateSelector() {
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         children: [
-          // 时间段切换
-          Row(
-            children: [
-              _buildPeriodTab('日', 0),
-              const SizedBox(width: 4),
-              _buildPeriodTab('周', 1),
-              const SizedBox(width: 4),
-              _buildPeriodTab('月', 2),
+          // 时间段切换。换成带滑动指示块的分段控件——
+          // 原来的实现只有背景色在变，看不出"从哪滑到哪"
+          SegmentedControl<int>(
+            segments: const [
+              Segment<int>(0, '日'),
+              Segment<int>(1, '周'),
+              Segment<int>(2, '月'),
             ],
+            value: _selectedPeriod,
+            onChanged: (index) {
+              if (_selectedPeriod != index) {
+                setState(() {
+                  _selectedPeriod = index;
+                  _cachedStats = null;
+                });
+              }
+            },
           ),
           const SizedBox(height: 12),
 
@@ -133,12 +128,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Expanded(
                 child: GestureDetector(
                   onTap: _selectDate,
-                  child: Container(
+                  child: GlassCard(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySubtle,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    tone: GlassTone.subtle,
+                    radius: AppRadius.md,
+                    tint: AppColors.primary,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -174,53 +168,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildPeriodTab(String label, int index) {
-    final isSelected = _selectedPeriod == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          if (_selectedPeriod != index) {
-            setState(() {
-              _selectedPeriod = index;
-              _cachedStats = null;
-            });
-          }
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? Colors.white : AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildNavButton({
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return GlassIconButton(
+      icon: icon,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        child: Icon(
-          icon,
-          size: 22,
-          color: AppColors.textSecondary,
-        ),
-      ),
+      color: AppColors.textSecondary,
+      size: 40,
+      iconSize: 22,
     );
   }
 
@@ -233,7 +190,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             _selectedDate.day == now.day;
       case 1: // 周
         final currentWeekStart = now.subtract(Duration(days: now.weekday - 1));
-        final selectedWeekStart = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+        final selectedWeekStart = _selectedDate.subtract(
+          Duration(days: _selectedDate.weekday - 1),
+        );
         return currentWeekStart.year == selectedWeekStart.year &&
             currentWeekStart.month == selectedWeekStart.month &&
             currentWeekStart.day == selectedWeekStart.day;
@@ -251,7 +210,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         if (_isCurrentPeriod()) return '今天';
         return DateFormat('yyyy年MM月dd日').format(_selectedDate);
       case 1: // 周
-        final weekStart = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+        final weekStart = _selectedDate.subtract(
+          Duration(days: _selectedDate.weekday - 1),
+        );
         final weekEnd = weekStart.add(const Duration(days: 6));
         if (_isCurrentPeriod()) return '本周';
         return '${DateFormat('MM/dd').format(weekStart)} - ${DateFormat('MM/dd').format(weekEnd)}';
@@ -273,7 +234,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           _selectedDate = _selectedDate.subtract(const Duration(days: 7));
           break;
         case 2: // 月
-          _selectedDate = DateTime(_selectedDate.year, _selectedDate.month - 1, 1);
+          _selectedDate = DateTime(
+            _selectedDate.year,
+            _selectedDate.month - 1,
+            1,
+          );
           break;
       }
       _cachedStats = null;
@@ -290,7 +255,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           _selectedDate = _selectedDate.add(const Duration(days: 7));
           break;
         case 2: // 月
-          _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + 1, 1);
+          _selectedDate = DateTime(
+            _selectedDate.year,
+            _selectedDate.month + 1,
+            1,
+          );
           break;
       }
       _cachedStats = null;
@@ -329,14 +298,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       children: [
         _buildStatCard(
           '总时长',
-          _formatDuration(stats.totalDuration),
+          stats.totalDuration,
+          formatDurationShort,
           Icons.timer_outlined,
           AppColors.primary,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.sm),
         _buildStatCard(
           '完成任务',
-          '${stats.completedCount}',
+          stats.completedCount,
+          (v) => '$v',
           Icons.check_circle_outline,
           AppColors.success,
         ),
@@ -345,21 +316,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildStatCard(
-      String label, String value, IconData icon, Color color) {
+    String label,
+    int value,
+    String Function(int) format,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+      child: GlassCard(
+        // 数字密集，走 strong 档保对比度
+        tone: GlassTone.strong,
+        radius: AppRadius.xl,
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -367,26 +335,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(height: 16),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: color,
-                letterSpacing: -0.5,
-              ),
+            const SizedBox(height: AppSpacing.md),
+            CountUpText(
+              value: value,
+              format: format,
+              style: AppText.numXl.copyWith(color: color),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textHint,
+              style: AppText.caption.copyWith(
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -397,19 +360,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildHeatMap(_StatsData stats) {
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -418,10 +370,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             children: [
               const Text(
                 '热力图',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               if (_selectedPeriod == 0)
                 Text(
@@ -450,7 +399,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         days = DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
         break;
       case 1: // 周 - 显示当周
-        startDate = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+        startDate = _selectedDate.subtract(
+          Duration(days: _selectedDate.weekday - 1),
+        );
         days = 7;
         break;
       case 2: // 月 - 显示当月
@@ -481,7 +432,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           final key = DateFormat('yyyy-MM-dd').format(date);
           final duration = dailyMap[key] ?? 0;
           final intensity = duration / maxDuration;
-          final isSelected = date.year == _selectedDate.year &&
+          final isSelected =
+              date.year == _selectedDate.year &&
               date.month == _selectedDate.month &&
               date.day == _selectedDate.day;
 
@@ -489,14 +441,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             children: [
               Text(
                 ['一', '二', '三', '四', '五', '六', '日'][i],
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textHint,
-                ),
+                style: const TextStyle(fontSize: 11, color: AppColors.textHint),
               ),
               const SizedBox(height: 6),
               Tooltip(
-                message: '${DateFormat('MM/dd').format(date)}\n${_formatDuration(duration)}',
+                message:
+                    '${DateFormat('MM/dd').format(date)}\n${formatDurationShort(duration)}',
                 child: Container(
                   width: 36,
                   height: 36,
@@ -512,8 +462,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       '${date.day}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: intensity > 0.5 ? Colors.white : AppColors.textSecondary,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: intensity > 0.5
+                            ? AppColors.textOnPrimary
+                            : AppColors.textSecondary,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                     ),
                   ),
@@ -534,13 +488,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final key = DateFormat('yyyy-MM-dd').format(date);
         final duration = dailyMap[key] ?? 0;
         final intensity = duration / maxDuration;
-        final isSelected = _selectedPeriod == 0 &&
+        final isSelected =
+            _selectedPeriod == 0 &&
             date.year == _selectedDate.year &&
             date.month == _selectedDate.month &&
             date.day == _selectedDate.day;
 
         return Tooltip(
-          message: '${DateFormat('MM/dd').format(date)}\n${_formatDuration(duration)}',
+          message:
+              '${DateFormat('MM/dd').format(date)}\n${formatDurationShort(duration)}',
           child: Container(
             width: _selectedPeriod == 2 ? 36 : 40,
             height: _selectedPeriod == 2 ? 36 : 40,
@@ -556,7 +512,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 '${date.day}',
                 style: TextStyle(
                   fontSize: 11,
-                  color: intensity > 0.5 ? Colors.white : AppColors.textSecondary,
+                  color: intensity > 0.5
+                      ? AppColors.textOnPrimary
+                      : AppColors.textSecondary,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
@@ -578,19 +536,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildPieChart(_StatsData stats) {
     if (stats.taskDurations.isEmpty) {
-      return Container(
+      return GlassCard(
         padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
         child: Column(
           children: [
             Icon(
@@ -601,38 +548,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             const SizedBox(height: 16),
             const Text(
               '暂无数据',
-              style: TextStyle(
-                color: AppColors.textHint,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppColors.textHint, fontSize: 14),
             ),
           ],
         ),
       );
     }
 
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             '任务占比',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -660,16 +590,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ? (item['total_duration'] as int) / stats.totalDuration * 100
           : 0.0;
       final title = item['title'] as String;
-      final shortTitle = title.length > 4 ? '${title.substring(0, 4)}...' : title;
+      final shortTitle = title.length > 4
+          ? '${title.substring(0, 4)}...'
+          : title;
+
+      final Color sliceColor =
+          AppColors.chartColors[index % AppColors.chartColors.length];
+      // 浅色切片用深色字，否则白字读不出
+      final bool lightSlice =
+          ThemeData.estimateBrightnessForColor(sliceColor) == Brightness.light;
 
       return PieChartSectionData(
-        color: AppColors.chartColors[index % AppColors.chartColors.length],
+        color: sliceColor,
         value: item['total_duration'].toDouble(),
         title: '$shortTitle\n${percentage.toStringAsFixed(0)}%',
-        titleStyle: const TextStyle(
+        titleStyle: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: lightSlice ? AppColors.textPrimary : AppColors.textOnPrimary,
         ),
         radius: 70,
         titlePositionPercentageOffset: 0.6,
@@ -691,13 +629,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               width: 12,
               height: 12,
               decoration: BoxDecoration(
-                color: AppColors.chartColors[index % AppColors.chartColors.length],
+                color:
+                    AppColors.chartColors[index % AppColors.chartColors.length],
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
             const SizedBox(width: 6),
             Text(
-              '${item['title']} (${_formatDuration(item['total_duration'] as int)})',
+              '${item['title']} (${formatDurationShort(item['total_duration'] as int)})',
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -712,28 +651,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildTaskDetail(_StatsData stats) {
     if (stats.taskDurations.isEmpty) return const SizedBox();
 
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             '任务明细',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
           ...stats.taskDurations.asMap().entries.map((entry) {
@@ -775,8 +700,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             value: percentage / 100,
                             backgroundColor: AppColors.surfaceVariant,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.chartColors[
-                                  index % AppColors.chartColors.length],
+                              AppColors.chartColors[index %
+                                  AppColors.chartColors.length],
                             ),
                             borderRadius: BorderRadius.circular(4),
                             minHeight: 6,
@@ -787,7 +712,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                   const SizedBox(width: 14),
                   Text(
-                    _formatDuration(item['total_duration'] as int),
+                    formatDurationShort(item['total_duration'] as int),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -806,13 +731,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Future<_StatsData> _loadStats(TaskProvider provider) async {
     final range = _getDateRange();
     final totalDuration = await provider.getTotalDurationByDateRange(
-        range.start, range.end);
+      range.start,
+      range.end,
+    );
     final completedCount = await provider.getCompletedTaskCountByDateRange(
-        range.start, range.end);
-    final taskDurations =
-        await provider.getTaskDurationSummary(range.start, range.end);
-    final dailyMap =
-        await provider.getDailyDurationMap(range.start, range.end);
+      range.start,
+      range.end,
+    );
+    final taskDurations = await provider.getTaskDurationSummary(
+      range.start,
+      range.end,
+    );
+    final dailyMap = await provider.getDailyDurationMap(range.start, range.end);
 
     return _StatsData(
       totalDuration: totalDuration,
@@ -826,19 +756,46 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     switch (_selectedPeriod) {
       case 0: // 日
         return DateTimeRange(
-          start: DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day),
-          end: DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, 23, 59, 59),
+          start: DateTime(
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day,
+          ),
+          end: DateTime(
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day,
+            23,
+            59,
+            59,
+          ),
         );
       case 1: // 周
-        final weekStart = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+        final weekStart = _selectedDate.subtract(
+          Duration(days: _selectedDate.weekday - 1),
+        );
         return DateTimeRange(
           start: DateTime(weekStart.year, weekStart.month, weekStart.day),
-          end: DateTime(weekStart.year, weekStart.month, weekStart.day + 6, 23, 59, 59),
+          end: DateTime(
+            weekStart.year,
+            weekStart.month,
+            weekStart.day + 6,
+            23,
+            59,
+            59,
+          ),
         );
       case 2: // 月
         return DateTimeRange(
           start: DateTime(_selectedDate.year, _selectedDate.month, 1),
-          end: DateTime(_selectedDate.year, _selectedDate.month + 1, 0, 23, 59, 59),
+          end: DateTime(
+            _selectedDate.year,
+            _selectedDate.month + 1,
+            0,
+            23,
+            59,
+            59,
+          ),
         );
       default:
         final now = DateTime.now();
@@ -847,14 +804,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           end: DateTime(now.year, now.month, now.day, 23, 59, 59),
         );
     }
-  }
-
-  String _formatDuration(int seconds) {
-    if (seconds < 60) return '${seconds}s';
-    if (seconds < 3600) return '${seconds ~/ 60}m';
-    final hours = seconds ~/ 3600;
-    final minutes = (seconds % 3600) ~/ 60;
-    return '${hours}h ${minutes}m';
   }
 }
 
@@ -879,4 +828,16 @@ class _StatsData {
       dailyMap: {},
     );
   }
+}
+
+/// 时长的紧凑展示（`3h 20m` / `45m` / `12s`）。
+///
+/// 提到文件级是为了让 [CountUpText] 能直接把它当 `format:` 传进去——
+/// 数字滚动的动画作用在整数秒上，渲染时才格式化。
+String formatDurationShort(int seconds) {
+  if (seconds < 60) return '${seconds}s';
+  if (seconds < 3600) return '${seconds ~/ 60}m';
+  final hours = seconds ~/ 3600;
+  final minutes = (seconds % 3600) ~/ 60;
+  return '${hours}h ${minutes}m';
 }
