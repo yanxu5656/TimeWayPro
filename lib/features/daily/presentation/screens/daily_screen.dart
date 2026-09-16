@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/ui/glass.dart';
 import '../../data/models/daily_task.dart';
 import '../../providers/daily_provider.dart';
 
@@ -22,30 +22,9 @@ class _DailyScreenState extends State<DailyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // 透明：让 MainScreen 的极光层透出来
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.primarySubtle,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.today_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text('每日待办'),
-          ],
-        ),
-      ),
+    return GlassScaffold(
+      title: '每日待办',
+      titleIcon: Icons.today_rounded,
       body: Consumer<DailyProvider>(
         builder: (context, provider, child) {
           return Column(
@@ -63,40 +42,35 @@ class _DailyScreenState extends State<DailyScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: GlassFab(
         heroTag: 'daily_fab',
+        label: '添加待办',
         onPressed: () => _showAddTaskDialog(context),
-        icon: const Icon(Icons.add_rounded, size: 22),
-        label: const Text('添加待办'),
-        elevation: 4,
-        highlightElevation: 8,
       ),
     );
   }
 
   Widget _buildHeader(DailyProvider provider) {
     final now = DateTime.now();
-    final isToday = provider.selectedDate.year == now.year &&
+    final isToday =
+        provider.selectedDate.year == now.year &&
         provider.selectedDate.month == now.month &&
         provider.selectedDate.day == now.day;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenH,
+        AppSpacing.xs,
+        AppSpacing.screenH,
+        AppSpacing.md,
+      ),
       child: Column(
         children: [
           // 日期选择器
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadow,
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          GlassCard(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xxs,
+              vertical: AppSpacing.xxs,
             ),
             child: Row(
               children: [
@@ -110,7 +84,9 @@ class _DailyScreenState extends State<DailyScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: isToday ? AppColors.primarySubtle : Colors.transparent,
+                        color: isToday
+                            ? AppColors.primarySubtle
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -127,7 +103,9 @@ class _DailyScreenState extends State<DailyScreen> {
                           Text(
                             isToday
                                 ? '今天'
-                                : DateFormat('MM月dd日').format(provider.selectedDate),
+                                : DateFormat(
+                                    'MM月dd日',
+                                  ).format(provider.selectedDate),
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -159,19 +137,8 @@ class _DailyScreenState extends State<DailyScreen> {
           const SizedBox(height: 16),
 
           // 进度条和统计
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadow,
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+          GlassCard(
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
               children: [
                 Row(
@@ -179,19 +146,17 @@ class _DailyScreenState extends State<DailyScreen> {
                   children: [
                     Text(
                       '今日进度',
-                      style: TextStyle(
-                        fontSize: 14,
+                      style: AppText.body.copyWith(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    Text(
-                      '${provider.completedTasks}/${provider.totalTasks}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
+                    // 数字滚动：分母是字符串拼接，只让分子动
+                    CountUpText(
+                      value: provider.completedTasks,
+                      format: (v) => '$v/${provider.totalTasks}',
+                      duration: const Duration(milliseconds: 450),
+                      style: AppText.title.copyWith(color: AppColors.primary),
                     ),
                   ],
                 ),
@@ -221,16 +186,12 @@ class _DailyScreenState extends State<DailyScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return GlassIconButton(
+      icon: icon,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        child: Icon(
-          icon,
-          size: 22,
-          color: AppColors.textSecondary,
-        ),
-      ),
+      color: AppColors.textSecondary,
+      size: 40,
+      iconSize: 22,
     );
   }
 
@@ -239,30 +200,70 @@ class _DailyScreenState extends State<DailyScreen> {
       return _buildEmptyState();
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenH, 0, AppSpacing.screenH, AppSpacing.navInset),
-      children: [
-        // 上午
-        if (provider.morningTasks.isNotEmpty) ...[
-          _buildSectionTitle('上午', Icons.wb_sunny_outlined, AppColors.warning),
-          ...provider.morningTasks.map((task) => _buildTaskCard(task, provider)),
-          const SizedBox(height: 16),
-        ],
+    // 错峰入场：三段待办拍平后统一编号，序号跨分组连续。
+    // 注意 StaggeredEntrance 在第 maxItems 项之后直接返回 child，
+    // 所以这里用 ListView(children:) 的 eager 构建不会产生多余的动画对象，
+    // 无需为此改成 ListView.builder。
+    var slot = 0;
+    Widget staged(Widget child) =>
+        StaggeredEntrance(index: slot++, child: child);
 
-        // 下午
-        if (provider.afternoonTasks.isNotEmpty) ...[
-          _buildSectionTitle('下午', Icons.wb_cloudy_outlined, AppColors.info),
-          ...provider.afternoonTasks.map((task) => _buildTaskCard(task, provider)),
-          const SizedBox(height: 16),
-        ],
+    return StaggerScope(
+      // 每日待办是 MainScreen 里的第 0 个 Tab
+      slotIndex: 0,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH,
+          0,
+          AppSpacing.screenH,
+          AppSpacing.navInset,
+        ),
+        children: [
+          // 上午
+          if (provider.morningTasks.isNotEmpty) ...[
+            staged(
+              _buildSectionTitle(
+                '上午',
+                Icons.wb_sunny_outlined,
+                AppColors.warning,
+              ),
+            ),
+            ...provider.morningTasks.map(
+              (task) => staged(_buildTaskCard(task, provider)),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
 
-        // 晚上
-        if (provider.eveningTasks.isNotEmpty) ...[
-          _buildSectionTitle('晚上', Icons.nights_stay_outlined, AppColors.primary),
-          ...provider.eveningTasks.map((task) => _buildTaskCard(task, provider)),
+          // 下午
+          if (provider.afternoonTasks.isNotEmpty) ...[
+            staged(
+              _buildSectionTitle(
+                '下午',
+                Icons.wb_cloudy_outlined,
+                AppColors.info,
+              ),
+            ),
+            ...provider.afternoonTasks.map(
+              (task) => staged(_buildTaskCard(task, provider)),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
+          // 晚上
+          if (provider.eveningTasks.isNotEmpty) ...[
+            staged(
+              _buildSectionTitle(
+                '晚上',
+                Icons.nights_stay_outlined,
+                AppColors.primary,
+              ),
+            ),
+            ...provider.eveningTasks.map(
+              (task) => staged(_buildTaskCard(task, provider)),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -296,10 +297,7 @@ class _DailyScreenState extends State<DailyScreen> {
           const SizedBox(height: 8),
           Text(
             '点击下方按钮添加今日待办',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textHint,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textHint),
           ),
         ],
       ),
@@ -345,7 +343,7 @@ class _DailyScreenState extends State<DailyScreen> {
           color: AppColors.error,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.delete_outline, color: Colors.white),
+        child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
@@ -353,7 +351,9 @@ class _DailyScreenState extends State<DailyScreen> {
           builder: (context) => AlertDialog(
             title: const Text('删除待办'),
             content: Text('确定要删除「${task.title}」吗？'),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -371,120 +371,101 @@ class _DailyScreenState extends State<DailyScreen> {
       onDismissed: (direction) {
         provider.deleteTask(task.id);
       },
-      child: Container(
+      child: GlassCard(
+        // 含标题 + 备注两行文字，走 strong 档保对比度
+        tone: GlassTone.strong,
         margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: task.isCompleted
-                ? AppColors.success.withValues(alpha: 0.3)
-                : AppColors.divider.withValues(alpha: 0.5),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+        tint: task.isCompleted ? AppColors.success : null,
+        onTap: () => provider.toggleComplete(task.id),
+        onLongPress: () => _showEditDialog(context, task, provider),
+        child: Row(
+          children: [
+            // 完成按钮
+            GestureDetector(
+              onTap: () => provider.toggleComplete(task.id),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: task.isCompleted
+                        ? AppColors.success
+                        : AppColors.textHint.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                  color: task.isCompleted
+                      ? AppColors.success
+                      : Colors.transparent,
+                ),
+                child: task.isCompleted
+                    ? const Icon(
+                        Icons.check,
+                        size: 16,
+                        color: AppColors.textOnPrimary,
+                      )
+                    : null,
+              ),
             ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => provider.toggleComplete(task.id),
-            onLongPress: () => _showEditDialog(context, task, provider),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+            const SizedBox(width: 14),
+
+            // 任务信息
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 完成按钮
-                  GestureDetector(
-                    onTap: () => provider.toggleComplete(task.id),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: task.isCompleted
-                              ? AppColors.success
-                              : AppColors.textHint.withValues(alpha: 0.5),
-                          width: 2,
-                        ),
-                        color: task.isCompleted
-                            ? AppColors.success
-                            : Colors.transparent,
-                      ),
-                      child: task.isCompleted
-                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  Text(
+                    task.title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: task.isCompleted
+                          ? AppColors.textHint
+                          : AppColors.textPrimary,
+                      decoration: task.isCompleted
+                          ? TextDecoration.lineThrough
                           : null,
                     ),
                   ),
-                  const SizedBox(width: 14),
-
-                  // 任务信息
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          task.title,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: task.isCompleted
-                                ? AppColors.textHint
-                                : AppColors.textPrimary,
-                            decoration: task.isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
-                        ),
-                        if (task.description != null &&
-                            task.description!.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            task.description!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textHint,
-                              decoration: task.isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  // 已完成标记
-                  if (task.isCompleted)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                  if (task.description != null &&
+                      task.description!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      task.description!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textHint,
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
-                      child: const Text(
-                        '已完成',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.success,
-                        ),
-                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                  ],
                 ],
               ),
             ),
-          ),
+
+            // 已完成标记
+            if (task.isCompleted)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  '已完成',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.success,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -520,20 +501,16 @@ class _DailyScreenState extends State<DailyScreen> {
   }
 
   void _showAddTaskDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const _AddDailyTaskSheet(),
-    );
+    showGlassSheet(context, builder: (context) => const _AddDailyTaskSheet());
   }
 
   void _showEditDialog(
-      BuildContext context, DailyTask task, DailyProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    BuildContext context,
+    DailyTask task,
+    DailyProvider provider,
+  ) {
+    showGlassSheet(
+      context,
       builder: (context) => _EditDailyTaskSheet(task: task),
     );
   }
@@ -567,157 +544,97 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    // 键盘避让 / SafeArea / 滚动 / 拖拽把手 / 玻璃底板均由 GlassSheet 提供
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          '添加待办',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.divider,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  '添加待办',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 24),
+        const SizedBox(height: 24),
 
-                // 任务名称
-                const Text(
-                  '待办内容',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _titleController,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: '输入待办内容',
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // 备注
-                const Text(
-                  '备注（可选）',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _descController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: '输入备注',
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // 时间段选择
-                const Text(
-                  '时间段',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _buildPeriodChip('上午', Icons.wb_sunny_outlined,
-                        TimePeriod.morning, AppColors.warning),
-                    const SizedBox(width: 10),
-                    _buildPeriodChip('下午', Icons.wb_cloudy_outlined,
-                        TimePeriod.afternoon, AppColors.info),
-                    const SizedBox(width: 10),
-                    _buildPeriodChip('晚上', Icons.nights_stay_outlined,
-                        TimePeriod.evening, AppColors.primary),
-                  ],
-                ),
-                const SizedBox(height: 30),
-
-                // 添加按钮
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _addTask,
-                    child: const Text('添加'),
-                  ),
-                ),
-              ],
-            ),
+        // 任务名称
+        const Text(
+          '待办内容',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
           ),
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 8),
+        TextField(
+          controller: _titleController,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '输入待办内容'),
+        ),
+        const SizedBox(height: 20),
 
-  Widget _buildPeriodChip(
-      String label, IconData icon, TimePeriod period, Color color) {
-    final isSelected = _selectedPeriod == period;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedPeriod = period),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.15) : AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isSelected ? color : Colors.transparent,
-              width: 2,
-            ),
+        // 备注
+        const Text(
+          '备注（可选）',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
           ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 22,
-                color: isSelected ? color : AppColors.textHint,
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _descController,
+          maxLines: 2,
+          decoration: const InputDecoration(hintText: '输入备注'),
+        ),
+        const SizedBox(height: 20),
+
+        // 时间段选择
+        const Text(
+          '时间段',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            for (final period in TimePeriod.values) ...[
+              GlassChip(
+                label: switch (period) {
+                  TimePeriod.morning => '上午',
+                  TimePeriod.afternoon => '下午',
+                  TimePeriod.evening => '晚上',
+                },
+                icon: switch (period) {
+                  TimePeriod.morning => Icons.wb_sunny_outlined,
+                  TimePeriod.afternoon => Icons.wb_cloudy_outlined,
+                  TimePeriod.evening => Icons.nights_stay_outlined,
+                },
+                tint: switch (period) {
+                  TimePeriod.morning => AppColors.warning,
+                  TimePeriod.afternoon => AppColors.info,
+                  TimePeriod.evening => AppColors.primary,
+                },
+                selected: _selectedPeriod == period,
+                onTap: () => setState(() => _selectedPeriod = period),
+                vertical: true,
               ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? color : AppColors.textSecondary,
-                ),
-              ),
+              if (period != TimePeriod.evening)
+                const SizedBox(width: AppSpacing.sm),
             ],
-          ),
+          ],
         ),
-      ),
+        const SizedBox(height: 30),
+
+        // 添加按钮
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(onPressed: _addTask, child: const Text('添加')),
+        ),
+      ],
     );
   }
 
@@ -725,12 +642,12 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
     if (_titleController.text.trim().isEmpty) return;
 
     context.read<DailyProvider>().addTask(
-          title: _titleController.text.trim(),
-          description: _descController.text.trim().isEmpty
-              ? null
-              : _descController.text.trim(),
-          timePeriod: _selectedPeriod,
-        );
+      title: _titleController.text.trim(),
+      description: _descController.text.trim().isEmpty
+          ? null
+          : _descController.text.trim(),
+      timePeriod: _selectedPeriod,
+    );
 
     Navigator.pop(context);
   }
@@ -754,7 +671,9 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.task.title);
-    _descController = TextEditingController(text: widget.task.description ?? '');
+    _descController = TextEditingController(
+      text: widget.task.description ?? '',
+    );
     _selectedPeriod = widget.task.timePeriod;
   }
 
@@ -767,156 +686,96 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    // 键盘避让 / SafeArea / 滚动 / 拖拽把手 / 玻璃底板均由 GlassSheet 提供
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          '编辑待办',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.divider,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  '编辑待办',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 24),
+        const SizedBox(height: 24),
 
-                // 任务名称
-                const Text(
-                  '待办内容',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    hintText: '输入待办内容',
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // 备注
-                const Text(
-                  '备注（可选）',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _descController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: '输入备注',
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // 时间段选择
-                const Text(
-                  '时间段',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _buildPeriodChip('上午', Icons.wb_sunny_outlined,
-                        TimePeriod.morning, AppColors.warning),
-                    const SizedBox(width: 10),
-                    _buildPeriodChip('下午', Icons.wb_cloudy_outlined,
-                        TimePeriod.afternoon, AppColors.info),
-                    const SizedBox(width: 10),
-                    _buildPeriodChip('晚上', Icons.nights_stay_outlined,
-                        TimePeriod.evening, AppColors.primary),
-                  ],
-                ),
-                const SizedBox(height: 30),
-
-                // 保存按钮
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saveTask,
-                    child: const Text('保存'),
-                  ),
-                ),
-              ],
-            ),
+        // 任务名称
+        const Text(
+          '待办内容',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
           ),
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 8),
+        TextField(
+          controller: _titleController,
+          decoration: const InputDecoration(hintText: '输入待办内容'),
+        ),
+        const SizedBox(height: 20),
 
-  Widget _buildPeriodChip(
-      String label, IconData icon, TimePeriod period, Color color) {
-    final isSelected = _selectedPeriod == period;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedPeriod = period),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.15) : AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isSelected ? color : Colors.transparent,
-              width: 2,
-            ),
+        // 备注
+        const Text(
+          '备注（可选）',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
           ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 22,
-                color: isSelected ? color : AppColors.textHint,
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _descController,
+          maxLines: 2,
+          decoration: const InputDecoration(hintText: '输入备注'),
+        ),
+        const SizedBox(height: 20),
+
+        // 时间段选择
+        const Text(
+          '时间段',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            for (final period in TimePeriod.values) ...[
+              GlassChip(
+                label: switch (period) {
+                  TimePeriod.morning => '上午',
+                  TimePeriod.afternoon => '下午',
+                  TimePeriod.evening => '晚上',
+                },
+                icon: switch (period) {
+                  TimePeriod.morning => Icons.wb_sunny_outlined,
+                  TimePeriod.afternoon => Icons.wb_cloudy_outlined,
+                  TimePeriod.evening => Icons.nights_stay_outlined,
+                },
+                tint: switch (period) {
+                  TimePeriod.morning => AppColors.warning,
+                  TimePeriod.afternoon => AppColors.info,
+                  TimePeriod.evening => AppColors.primary,
+                },
+                selected: _selectedPeriod == period,
+                onTap: () => setState(() => _selectedPeriod = period),
+                vertical: true,
               ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? color : AppColors.textSecondary,
-                ),
-              ),
+              if (period != TimePeriod.evening)
+                const SizedBox(width: AppSpacing.sm),
             ],
-          ),
+          ],
         ),
-      ),
+        const SizedBox(height: 30),
+
+        // 保存按钮
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(onPressed: _saveTask, child: const Text('保存')),
+        ),
+      ],
     );
   }
 
@@ -924,14 +783,14 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
     if (_titleController.text.trim().isEmpty) return;
 
     context.read<DailyProvider>().updateTask(
-          widget.task.copyWith(
-            title: _titleController.text.trim(),
-            description: _descController.text.trim().isEmpty
-                ? null
-                : _descController.text.trim(),
-            timePeriod: _selectedPeriod,
-          ),
-        );
+      widget.task.copyWith(
+        title: _titleController.text.trim(),
+        description: _descController.text.trim().isEmpty
+            ? null
+            : _descController.text.trim(),
+        timePeriod: _selectedPeriod,
+      ),
+    );
 
     Navigator.pop(context);
   }
