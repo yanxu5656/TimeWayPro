@@ -48,6 +48,8 @@ class _TaskScreenState extends State<TaskScreen> {
   Widget build(BuildContext context) {
     return GlassScaffold(
       title: '时途',
+      // 刻意不跟底部导航的图标（check_circle）对齐：这一页的顶栏标题是
+      // 应用名而不是「任务」，配时钟正好呼应「时途」
       titleIcon: Icons.access_time_rounded,
       actions: [
         GlassIconButton(

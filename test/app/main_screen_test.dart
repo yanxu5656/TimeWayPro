@@ -72,7 +72,8 @@ void main() {
       expect(lists, findsWidgets, reason: '「$label」应有可滚动列表');
 
       for (final Element element in lists.evaluate()) {
-        final EdgeInsetsGeometry? padding = (element.widget as ListView).padding;
+        final EdgeInsetsGeometry? padding =
+            (element.widget as ListView).padding;
         expect(padding, isNotNull, reason: '「$label」的列表应显式设置 padding');
         final EdgeInsets? resolved =
             padding!.resolve(TextDirection.ltr) as EdgeInsets?;
@@ -82,6 +83,34 @@ void main() {
           reason: '「$label」的列表底部 padding 未避让导航栏',
         );
       }
+    }
+  });
+
+  testWidgets('5 个 Tab 的顶栏都有图标徽标', (WidgetTester tester) async {
+    // 守 v1.3.1 的一致性修复：原先后三个 Tab 没传 titleIcon，而
+    // GlassAppBar 在 titleIcon 为空时连占位都不渲染，导致那三页的标题
+    // 比前两页整体靠左约 40px——不只是少了图标，是标题位置都对不齐。
+    await pumpSeededApp(tester);
+
+    const List<(String tab, IconData icon)> expected = <(String, IconData)>[
+      ('待办', Icons.today_rounded),
+      ('任务', Icons.access_time_rounded),
+      ('统计', Icons.bar_chart_rounded),
+      ('规划', Icons.account_tree_rounded),
+      ('设置', Icons.settings_rounded),
+    ];
+
+    for (final (String tab, IconData icon) in expected) {
+      if (tab != '待办') await switchToTab(tester, tab);
+
+      expect(
+        find.descendant(
+          of: find.byType(GlassAppBar),
+          matching: find.byIcon(icon),
+        ),
+        findsOneWidget,
+        reason: '「$tab」的顶栏应有 $icon 徽标',
+      );
     }
   });
 

@@ -19,6 +19,8 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassScaffold(
       title: '设置',
+      // 与底部导航「设置」项的图标一致
+      titleIcon: Icons.settings_rounded,
       body: Consumer<SettingsProvider>(
         builder: (context, provider, child) {
           return ListView(

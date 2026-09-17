@@ -17,6 +17,8 @@ class _PlanningScreenState extends State<PlanningScreen> {
   Widget build(BuildContext context) {
     return GlassScaffold(
       title: '人生规划',
+      // 与底部导航「规划」项的图标一致
+      titleIcon: Icons.account_tree_rounded,
       body: Consumer<PlanProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {

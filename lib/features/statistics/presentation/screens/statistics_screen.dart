@@ -26,6 +26,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget build(BuildContext context) {
     return GlassScaffold(
       title: '统计',
+      // 与底部导航「统计」项的图标一致
+      titleIcon: Icons.bar_chart_rounded,
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
           // 检查是否需要刷新

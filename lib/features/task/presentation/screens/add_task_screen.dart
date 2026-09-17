@@ -63,6 +63,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       // 没有那一层极光可透——所以自己带一层。
       standalone: true,
       title: isEditing ? '编辑任务' : '新建任务',
+      titleIcon: Icons.edit_note_rounded,
       actions: [
         if (isEditing)
           IconButton(
