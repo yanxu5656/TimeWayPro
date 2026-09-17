@@ -87,7 +87,7 @@ class _DailyScreenState extends State<DailyScreen> {
                         color: isToday
                             ? AppColors.primarySubtle
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -162,7 +162,7 @@ class _DailyScreenState extends State<DailyScreen> {
                 ),
                 const SizedBox(height: 10),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                   child: LinearProgressIndicator(
                     value: provider.progress,
                     backgroundColor: AppColors.surfaceVariant,
@@ -273,7 +273,7 @@ class _DailyScreenState extends State<DailyScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             decoration: BoxDecoration(
               color: AppColors.primarySubtle,
               shape: BoxShape.circle,
@@ -310,10 +310,10 @@ class _DailyScreenState extends State<DailyScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(AppSpacing.xs),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(icon, size: 16, color: color),
           ),
@@ -341,7 +341,7 @@ class _DailyScreenState extends State<DailyScreen> {
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
           color: AppColors.error,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
       ),
@@ -352,7 +352,7 @@ class _DailyScreenState extends State<DailyScreen> {
             title: const Text('删除待办'),
             content: Text('确定要删除「${task.title}」吗？'),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             actions: [
               TextButton(
@@ -454,7 +454,7 @@ class _DailyScreenState extends State<DailyScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: const Text(
                   '已完成',

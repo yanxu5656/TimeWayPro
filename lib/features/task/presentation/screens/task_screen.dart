@@ -98,7 +98,12 @@ class _TaskScreenState extends State<TaskScreen> {
     final repeatableTasks = tasks.where((t) => t.isRepeatable).length;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xs,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
       child: Column(
         children: [
           // 日期选择器
@@ -106,7 +111,7 @@ class _TaskScreenState extends State<TaskScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.shadow,
@@ -134,7 +139,7 @@ class _TaskScreenState extends State<TaskScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         color: AppColors.primarySubtle,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -274,7 +279,7 @@ class _TaskScreenState extends State<TaskScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             decoration: BoxDecoration(
               color: AppColors.primarySubtle,
               shape: BoxShape.circle,
@@ -430,7 +435,7 @@ class _TaskScreenState extends State<TaskScreen> {
             height: 16,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
           const SizedBox(width: 10),
@@ -448,7 +453,7 @@ class _TaskScreenState extends State<TaskScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Text(
               '$count',

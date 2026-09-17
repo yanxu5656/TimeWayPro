@@ -42,7 +42,7 @@ class SegmentedControl<T> extends StatelessWidget {
     return GlassSurface(
       radius: AppRadius.md,
       tone: GlassTone.subtle,
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(AppSpacing.xxs),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           final double segW = constraints.maxWidth / segments.length;

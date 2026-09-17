@@ -69,7 +69,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildContent(_StatsData stats) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         // 时间段选择器
         _buildDateSelector(),
@@ -95,7 +95,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildDateSelector() {
     return GlassCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       child: Column(
         children: [
           // 时间段切换。换成带滑动指示块的分段控件——
@@ -332,7 +332,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -361,7 +361,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildHeatMap(_StatsData stats) {
     return GlassCard(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -452,7 +452,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   height: 36,
                   decoration: BoxDecoration(
                     color: _heatCellColor(level),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                     border: isSelected
                         ? Border.all(color: AppColors.primary, width: 2)
                         : null,
@@ -500,7 +500,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             height: _selectedPeriod == 2 ? 36 : 40,
             decoration: BoxDecoration(
               color: _heatCellColor(level),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               border: isSelected
                   ? Border.all(color: AppColors.primary, width: 2)
                   : null,
@@ -545,7 +545,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildPieChart(_StatsData stats) {
     if (stats.taskDurations.isEmpty) {
       return GlassCard(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(AppSpacing.huge),
         child: Column(
           children: [
             Icon(
@@ -564,7 +564,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
 
     return GlassCard(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -639,7 +639,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               decoration: BoxDecoration(
                 color:
                     AppColors.chartColors[index % AppColors.chartColors.length],
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(AppRadius.xs),
               ),
             ),
             const SizedBox(width: 6),
@@ -660,7 +660,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (stats.taskDurations.isEmpty) return const SizedBox();
 
     return GlassCard(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -686,7 +686,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     decoration: BoxDecoration(
                       color: AppColors
                           .chartColors[index % AppColors.chartColors.length],
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -703,7 +703,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         ),
                         const SizedBox(height: 6),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(AppRadius.xs),
                           child: LinearProgressIndicator(
                             value: percentage / 100,
                             backgroundColor: AppColors.surfaceVariant,
@@ -711,7 +711,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               AppColors.chartColors[index %
                                   AppColors.chartColors.length],
                             ),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
                             minHeight: 6,
                           ),
                         ),

@@ -71,7 +71,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                       if (automaticallyImplyLeading) _buildLeading(context),
                       if (titleIcon != null) ...<Widget>[
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(AppSpacing.xs),
                           decoration: BoxDecoration(
                             color: AppColors.glassTintPrimary,
                             borderRadius: BorderRadius.circular(AppRadius.md),

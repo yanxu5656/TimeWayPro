@@ -115,7 +115,7 @@ class TaskCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.primarySubtle,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -140,7 +140,7 @@ class TaskCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
                             child: LinearProgressIndicator(
                               value: task.repeatCount > 0
                                   ? task.completedCount / task.repeatCount
@@ -229,7 +229,7 @@ class TaskCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.success.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -332,7 +332,7 @@ class TaskCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -376,10 +376,10 @@ class TaskCard extends StatelessWidget {
           ),
           ListTile(
             leading: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.xs),
               decoration: BoxDecoration(
                 color: AppColors.primarySubtle,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: const Icon(
                 Icons.edit_outlined,
@@ -395,10 +395,10 @@ class TaskCard extends StatelessWidget {
           ),
           ListTile(
             leading: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.xs),
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: const Icon(
                 Icons.delete_outline,

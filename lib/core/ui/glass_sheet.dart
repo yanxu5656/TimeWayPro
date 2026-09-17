@@ -11,7 +11,10 @@ class GlassSheetHandle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        margin: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.xxs),
+        margin: const EdgeInsets.only(
+          top: AppSpacing.sm,
+          bottom: AppSpacing.xxs,
+        ),
         width: 40,
         height: 4,
         decoration: BoxDecoration(
@@ -68,10 +71,7 @@ class GlassSheet extends StatelessWidget {
             children: <Widget>[
               if (showHandle) const GlassSheetHandle(),
               Flexible(
-                child: SingleChildScrollView(
-                  padding: padding,
-                  child: child,
-                ),
+                child: SingleChildScrollView(padding: padding, child: child),
               ),
             ],
           ),

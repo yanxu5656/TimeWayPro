@@ -107,7 +107,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
       child: GlassCard(
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
         radius: AppRadius.lg,
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(AppSpacing.md),
         onTap: () => _showPlanDetail(plan, provider),
         onLongPress: () => _showOptions(plan, provider),
         child: Column(
@@ -124,7 +124,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
                     decoration: BoxDecoration(
                       color: AppColors
                           .chartColors[depth % AppColors.chartColors.length],
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
                     ),
                   ),
 
@@ -158,7 +158,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
                     color: _getProgressColor(
                       plan.progress,
                     ).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Text(
                     plan.progressText,
@@ -175,7 +175,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
             // 进度条
             const SizedBox(height: 10),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
               child: LinearProgressIndicator(
                 value: plan.progress,
                 backgroundColor: AppColors.background,
@@ -437,7 +437,7 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
                   side: const BorderSide(color: AppColors.primary),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                 ),
               ),
