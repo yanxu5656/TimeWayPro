@@ -63,8 +63,12 @@ class AppColors {
   //
   // alpha 写成十六进制字节而非 withValues()，以保证这些是编译期常量。
   static const Color glassFill = Color(0xC7FFFFFF); // 78% 普通卡片
-  static const Color glassFillStrong = Color(0xE8FFFFFF); // 91% 文字密集卡 / 对话框 / sheet
-  static const Color glassFillWeak = Color(0x9EFFFFFF); // 62% 小表面 / chip / appbar / nav
+  static const Color glassFillStrong = Color(
+    0xE8FFFFFF,
+  ); // 91% 文字密集卡 / 对话框 / sheet
+  static const Color glassFillWeak = Color(
+    0x9EFFFFFF,
+  ); // 62% 小表面 / chip / appbar / nav
 
   /// 1px 内高光描边的起点（左上，被照亮的一侧）
   static const Color glassEdgeTop = Color(0xF2FFFFFF);

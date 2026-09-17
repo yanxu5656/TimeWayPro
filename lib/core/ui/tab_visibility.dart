@@ -14,19 +14,15 @@ import 'package:flutter/material.dart';
 /// `MainScreen` 的 `setState` 只会让依赖它的 `StaggerScope` 重跑
 /// `didChangeDependencies`（依赖者极少），不会重建整棵列表。
 class TabVisibility extends InheritedWidget {
-  const TabVisibility({
-    super.key,
-    required this.index,
-    required super.child,
-  });
+  const TabVisibility({super.key, required this.index, required super.child});
 
   final int index;
 
   /// 读取当前 Tab 序号。不在 [TabVisibility] 之下时返回 -1
   /// （表示"不受 Tab 切换管理"，独立路由属于这种情况）。
   static int maybeOf(BuildContext context) {
-    final TabVisibility? widget =
-        context.dependOnInheritedWidgetOfExactType<TabVisibility>();
+    final TabVisibility? widget = context
+        .dependOnInheritedWidgetOfExactType<TabVisibility>();
     return widget?.index ?? -1;
   }
 

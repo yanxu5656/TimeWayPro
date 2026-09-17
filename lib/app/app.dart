@@ -19,7 +19,8 @@ class TimeWayProApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TaskProvider()..loadTasks()),
         ChangeNotifierProvider(create: (_) => PlanProvider()..loadPlans()),
         ChangeNotifierProvider(
-            create: (_) => SettingsProvider()..loadSyncConfig()),
+          create: (_) => SettingsProvider()..loadSyncConfig(),
+        ),
       ],
       child: MaterialApp(
         title: 'TimeWayPro',

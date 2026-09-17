@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:time_way_pro/core/ui/glass.dart';
 
 Widget _host(Widget child) => MaterialApp(
-      home: Scaffold(body: Center(child: child)),
-      debugShowCheckedModeBanner: false,
-    );
+  home: Scaffold(body: Center(child: child)),
+  debugShowCheckedModeBanner: false,
+);
 
 /// 读取当前缩放值。
 ///
@@ -43,9 +43,9 @@ void main() {
   setUp(UiEffects.resetForTesting);
 
   testWidgets('按下缩小、抬起回到 1.0', (tester) async {
-    await tester.pumpWidget(_host(
-      const PressableScale(child: SizedBox(width: 100, height: 100)),
-    ));
+    await tester.pumpWidget(
+      _host(const PressableScale(child: SizedBox(width: 100, height: 100))),
+    );
 
     expect(_currentScale(tester), moreOrLessEquals(1.0, epsilon: 0.001));
 
@@ -62,9 +62,9 @@ void main() {
   });
 
   testWidgets('按下后移动超过 8px 会取消压下态（列表滚动不粘滞）', (tester) async {
-    await tester.pumpWidget(_host(
-      const PressableScale(child: SizedBox(width: 200, height: 200)),
-    ));
+    await tester.pumpWidget(
+      _host(const PressableScale(child: SizedBox(width: 200, height: 200))),
+    );
 
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(PressableScale)),
@@ -82,9 +82,9 @@ void main() {
   });
 
   testWidgets('小幅抖动（< 8px）不取消', (tester) async {
-    await tester.pumpWidget(_host(
-      const PressableScale(child: SizedBox(width: 200, height: 200)),
-    ));
+    await tester.pumpWidget(
+      _host(const PressableScale(child: SizedBox(width: 200, height: 200))),
+    );
 
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(PressableScale)),
@@ -100,12 +100,14 @@ void main() {
   });
 
   testWidgets('enabled:false 时按下不缩放', (tester) async {
-    await tester.pumpWidget(_host(
-      const PressableScale(
-        enabled: false,
-        child: SizedBox(width: 100, height: 100),
+    await tester.pumpWidget(
+      _host(
+        const PressableScale(
+          enabled: false,
+          child: SizedBox(width: 100, height: 100),
+        ),
       ),
-    ));
+    );
 
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(PressableScale)),
@@ -117,9 +119,9 @@ void main() {
   });
 
   testWidgets('释放曲线有过冲（easeOutBack），不是单调弹回', (tester) async {
-    await tester.pumpWidget(_host(
-      const PressableScale(child: SizedBox(width: 100, height: 100)),
-    ));
+    await tester.pumpWidget(
+      _host(const PressableScale(child: SizedBox(width: 100, height: 100))),
+    );
 
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(PressableScale)),
@@ -135,7 +137,9 @@ void main() {
     var minScale = 1.0;
     for (var i = 0; i < 12; i++) {
       await tester.pump(const Duration(milliseconds: 20));
-      minScale = minScale < _currentScale(tester) ? minScale : _currentScale(tester);
+      minScale = minScale < _currentScale(tester)
+          ? minScale
+          : _currentScale(tester);
     }
 
     expect(
@@ -152,9 +156,9 @@ void main() {
   testWidgets('快按快放（未跑完按下动画）走正向曲线，不回弹', (tester) async {
     // 这条钉住 CurvedAnimation 的固有语义：reverseCurve 只在正向动画
     // completed 之后才生效。看 PressableScale 的类文档。
-    await tester.pumpWidget(_host(
-      const PressableScale(child: SizedBox(width: 100, height: 100)),
-    ));
+    await tester.pumpWidget(
+      _host(const PressableScale(child: SizedBox(width: 100, height: 100))),
+    );
 
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(PressableScale)),
@@ -170,7 +174,9 @@ void main() {
     var minScale = 1.0;
     for (var i = 0; i < 12; i++) {
       await tester.pump(const Duration(milliseconds: 20));
-      minScale = minScale < _currentScale(tester) ? minScale : _currentScale(tester);
+      minScale = minScale < _currentScale(tester)
+          ? minScale
+          : _currentScale(tester);
     }
 
     // 不会缩过刚才按到的位置
@@ -181,17 +187,19 @@ void main() {
 
   testWidgets('与内层 GestureDetector 共存：按下被感知且 tap 仍触发', (tester) async {
     var taps = 0;
-    await tester.pumpWidget(_host(
-      PressableScale(
-        child: GestureDetector(
-          // opaque 是真实用法（GlassIconButton 也是这么写的）：
-          // deferToChild 下无实心内容的盒子收不到命中
-          behavior: HitTestBehavior.opaque,
-          onTap: () => taps++,
-          child: const SizedBox(width: 100, height: 100),
+    await tester.pumpWidget(
+      _host(
+        PressableScale(
+          child: GestureDetector(
+            // opaque 是真实用法（GlassIconButton 也是这么写的）：
+            // deferToChild 下无实心内容的盒子收不到命中
+            behavior: HitTestBehavior.opaque,
+            onTap: () => taps++,
+            child: const SizedBox(width: 100, height: 100),
+          ),
         ),
       ),
-    ));
+    );
 
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(PressableScale)),
@@ -208,9 +216,9 @@ void main() {
   testWidgets('空白区域也能接收按下（无子内容的 SizedBox）', (tester) async {
     // 这条守的是 HitTestBehavior.opaque：deferToChild 下无子内容的
     // SizedBox 不可命中，整个 Listener 收不到事件。
-    await tester.pumpWidget(_host(
-      const PressableScale(child: SizedBox(width: 300, height: 300)),
-    ));
+    await tester.pumpWidget(
+      _host(const PressableScale(child: SizedBox(width: 300, height: 300))),
+    );
 
     final gesture = await tester.startGesture(
       tester.getTopLeft(find.byType(PressableScale)) + const Offset(4, 4),

@@ -61,7 +61,9 @@ class SegmentedControl<T> extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: tint,
-                    borderRadius: BorderRadius.circular(AppRadius.sm + 1),
+                    // 与 GlassNavBar 的滑动指示块用同一档。两者是同一类
+                    // 东西（指示块），原先是 9(sm+1) vs 12，不该不一致。
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     boxShadow: AppShadows.e1,
                   ),
                 ),

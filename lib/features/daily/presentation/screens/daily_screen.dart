@@ -190,7 +190,7 @@ class _DailyScreenState extends State<DailyScreen> {
       icon: icon,
       onTap: onTap,
       color: AppColors.textSecondary,
-      size: 40,
+      size: GlassIconButton.sizeChrome,
       iconSize: 22,
     );
   }
@@ -380,33 +380,12 @@ class _DailyScreenState extends State<DailyScreen> {
         onLongPress: () => _showEditDialog(context, task, provider),
         child: Row(
           children: [
-            // 完成按钮
-            GestureDetector(
+            // 完成按钮。与任务页共用 GlassCheckCircle
+            // （原先这里是 26px，任务页是 28px）
+            GlassCheckCircle(
+              isChecked: task.isCompleted,
               onTap: () => provider.toggleComplete(task.id),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: task.isCompleted
-                        ? AppColors.success
-                        : AppColors.textHint.withValues(alpha: 0.5),
-                    width: 2,
-                  ),
-                  color: task.isCompleted
-                      ? AppColors.success
-                      : Colors.transparent,
-                ),
-                child: task.isCompleted
-                    ? const Icon(
-                        Icons.check,
-                        size: 16,
-                        color: AppColors.textOnPrimary,
-                      )
-                    : null,
-              ),
+              semanticLabel: task.title,
             ),
             const SizedBox(width: 14),
 

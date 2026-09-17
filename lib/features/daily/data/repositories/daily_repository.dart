@@ -63,9 +63,6 @@ class DailyRepository {
     final tasks = await getTasksByDate(dateKey);
     final total = tasks.length;
     final completed = tasks.where((t) => t.isCompleted).length;
-    return {
-      'total': total,
-      'completed': completed,
-    };
+    return {'total': total, 'completed': completed};
   }
 }

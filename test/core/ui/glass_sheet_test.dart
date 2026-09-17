@@ -54,7 +54,9 @@ void main() {
   });
 
   testWidgets('showHandle:false 时不渲染把手', (tester) async {
-    await tester.pumpWidget(hostWithButton(onPressed: () {}, showHandle: false));
+    await tester.pumpWidget(
+      hostWithButton(onPressed: () {}, showHandle: false),
+    );
     await tester.tap(find.text('打开'));
     await tester.pumpAndSettle();
 
@@ -110,26 +112,28 @@ void main() {
   testWidgets('pop 能带回返回值', (tester) async {
     int? result;
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Builder(
-          builder: (BuildContext context) => Center(
-            child: ElevatedButton(
-              onPressed: () async {
-                result = await showGlassSheet<int>(
-                  context,
-                  builder: (BuildContext ctx) => ElevatedButton(
-                    onPressed: () => Navigator.pop(ctx, 42),
-                    child: const Text('返回 42'),
-                  ),
-                );
-              },
-              child: const Text('打开'),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (BuildContext context) => Center(
+              child: ElevatedButton(
+                onPressed: () async {
+                  result = await showGlassSheet<int>(
+                    context,
+                    builder: (BuildContext ctx) => ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, 42),
+                      child: const Text('返回 42'),
+                    ),
+                  );
+                },
+                child: const Text('打开'),
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
 
     await tester.tap(find.text('打开'));
     await tester.pumpAndSettle();

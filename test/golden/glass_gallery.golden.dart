@@ -45,7 +45,8 @@ class _CjkFont {
 TextStyle _t(TextStyle base, Color color) =>
     base.copyWith(color: color, fontFamily: _CjkFont.family);
 
-Widget _label(String text) => Text(text, style: _t(AppText.label, AppColors.textSecondary));
+Widget _label(String text) =>
+    Text(text, style: _t(AppText.label, AppColors.textSecondary));
 
 /// 一档玻璃上的三档文字对比度
 Widget _contrastCard(GlassTone tone) {
@@ -93,7 +94,10 @@ Widget _gallery() {
       extendBody: true,
       // 让内容伸到顶栏之下，才能看出玻璃顶栏的磨砂
       extendBodyBehindAppBar: true,
-      appBar: const GlassAppBar(title: '时途', titleIcon: Icons.access_time_rounded),
+      appBar: const GlassAppBar(
+        title: '时途',
+        titleIcon: Icons.access_time_rounded,
+      ),
       body: Stack(
         children: <Widget>[
           const Positioned.fill(child: AuroraBackground(forceAnimated: false)),
@@ -149,11 +153,32 @@ Widget _gallery() {
                 // 会按内容收缩，不包 Expanded 就会缩成细条
                 Row(
                   children: <Widget>[
-                    Expanded(child: _periodChip('上午', Icons.wb_sunny_outlined, AppColors.warning, false)),
+                    Expanded(
+                      child: _periodChip(
+                        '上午',
+                        Icons.wb_sunny_outlined,
+                        AppColors.warning,
+                        false,
+                      ),
+                    ),
                     const SizedBox(width: AppSpacing.sm),
-                    Expanded(child: _periodChip('下午', Icons.wb_cloudy_outlined, AppColors.info, true)),
+                    Expanded(
+                      child: _periodChip(
+                        '下午',
+                        Icons.wb_cloudy_outlined,
+                        AppColors.info,
+                        true,
+                      ),
+                    ),
                     const SizedBox(width: AppSpacing.sm),
-                    Expanded(child: _periodChip('晚上', Icons.nights_stay_outlined, AppColors.primary, false)),
+                    Expanded(
+                      child: _periodChip(
+                        '晚上',
+                        Icons.nights_stay_outlined,
+                        AppColors.primary,
+                        false,
+                      ),
+                    ),
                   ],
                 ),
 
@@ -206,14 +231,23 @@ Widget _gallery() {
                             child: Center(
                               child: Text(
                                 '空',
-                                style: _t(AppText.labelSm, AppColors.textPrimary),
+                                style: _t(
+                                  AppText.labelSm,
+                                  AppColors.textPrimary,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.xxs),
-                          for (int i = 0; i < AppColors.heatMapColors.length; i++)
+                          for (
+                            int i = 0;
+                            i < AppColors.heatMapColors.length;
+                            i++
+                          )
                             Padding(
-                              padding: const EdgeInsets.only(right: AppSpacing.xxs),
+                              padding: const EdgeInsets.only(
+                                right: AppSpacing.xxs,
+                              ),
                               child: Container(
                                 width: 32,
                                 height: 32,

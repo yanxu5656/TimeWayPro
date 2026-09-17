@@ -3,10 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:time_way_pro/core/ui/aurora_background.dart';
 import 'package:time_way_pro/core/ui/ui_effects.dart';
 
-Widget _host(Widget child) => MaterialApp(
-      home: Scaffold(body: child),
-      debugShowCheckedModeBanner: false,
-    );
+Widget _host(Widget child) =>
+    MaterialApp(home: Scaffold(body: child), debugShowCheckedModeBanner: false);
 
 void main() {
   setUp(UiEffects.resetForTesting);
@@ -47,7 +45,9 @@ void main() {
     await tester.pump();
 
     // 换成静止模式（触发 didUpdateWidget）
-    await tester.pumpWidget(_host(const AuroraBackground(forceAnimated: false)));
+    await tester.pumpWidget(
+      _host(const AuroraBackground(forceAnimated: false)),
+    );
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
 
     // 卸载：dispose 必须取消 UiEffects 监听并释放 controller，
@@ -58,7 +58,9 @@ void main() {
   });
 
   testWidgets('自带 RepaintBoundary 隔离每帧重绘', (tester) async {
-    await tester.pumpWidget(_host(const AuroraBackground(forceAnimated: false)));
+    await tester.pumpWidget(
+      _host(const AuroraBackground(forceAnimated: false)),
+    );
 
     expect(
       find.descendant(
@@ -70,7 +72,9 @@ void main() {
   });
 
   testWidgets('CustomPaint 声明 willChange，避免被光栅缓存', (tester) async {
-    await tester.pumpWidget(_host(const AuroraBackground(forceAnimated: false)));
+    await tester.pumpWidget(
+      _host(const AuroraBackground(forceAnimated: false)),
+    );
 
     final paint = tester.widget<CustomPaint>(
       find

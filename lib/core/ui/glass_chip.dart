@@ -55,13 +55,18 @@ class GlassChip extends StatelessWidget {
     final Widget chip = AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
-      padding: padding ??
+      padding:
+          padding ??
           (vertical
-              ? const EdgeInsets.symmetric(vertical: 14)
-              : const EdgeInsets.symmetric(vertical: 12)),
+              ? const EdgeInsets.symmetric(vertical: AppSpacing.md)
+              : const EdgeInsets.symmetric(vertical: AppSpacing.sm)),
       decoration: BoxDecoration(
-        color: selected ? tint.withValues(alpha: 0.15) : AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(vertical ? 14 : AppRadius.md),
+        color: selected
+            ? tint.withValues(alpha: 0.15)
+            : AppColors.surfaceVariant,
+        // 两种朝向用同一个圆角档位。原先是竖排硬编码 14、横排 md(12)，
+        // 14 不在 token 集合里，是设计系统没落地干净的一处。
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: selected ? tint : Colors.transparent,
           width: selected ? 2 : 1,
@@ -69,7 +74,10 @@ class GlassChip extends StatelessWidget {
       ),
       child: vertical
           ? Column(mainAxisSize: MainAxisSize.min, children: children)
-          : Row(mainAxisAlignment: MainAxisAlignment.center, children: children),
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: children,
+            ),
     );
 
     return GestureDetector(
@@ -80,8 +88,8 @@ class GlassChip extends StatelessWidget {
   }
 
   TextStyle _labelStyle(Color color) => TextStyle(
-        fontSize: 13,
-        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-        color: color,
-      );
+    fontSize: 13,
+    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+    color: color,
+  );
 }

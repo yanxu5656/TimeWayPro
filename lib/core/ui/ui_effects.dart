@@ -27,8 +27,9 @@ enum UiEffectTier {
 class UiEffects {
   UiEffects._();
 
-  static final ValueNotifier<UiEffectTier> tier =
-      ValueNotifier<UiEffectTier>(UiEffectTier.full);
+  static final ValueNotifier<UiEffectTier> tier = ValueNotifier<UiEffectTier>(
+    UiEffectTier.full,
+  );
 
   // ── 组件读取的能力开关 ──
 

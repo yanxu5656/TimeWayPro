@@ -438,9 +438,8 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
+                  // 不再就地覆盖 shape：原先这里指定 md(12)，
+                  // 而主题里的 OutlinedButton 是 lg(16)，同一个 app 两个圆角
                 ),
               ),
             ),

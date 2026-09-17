@@ -35,12 +35,12 @@ class AppShadows {
   /// 强调态（计时进行中 / 选中）。替代原先硬编码的
   /// `primary.withOpacity(0.3)`、`success.withValues(alpha: 0.15)` 等。
   static List<BoxShadow> tint(Color color) => <BoxShadow>[
-        BoxShadow(
-          color: color.withValues(alpha: 0.16),
-          blurRadius: 20,
-          offset: const Offset(0, 6),
-        ),
-      ];
+    BoxShadow(
+      color: color.withValues(alpha: 0.16),
+      blurRadius: 20,
+      offset: const Offset(0, 6),
+    ),
+  ];
 }
 
 /// 渐变 token。
@@ -61,11 +61,11 @@ class AppGradients {
   /// 同色系低透明度双向渐变（计时条背景、圆形按钮底）。
   /// 收敛自 task_card 里 3 处同构的 LinearGradient。
   static LinearGradient softFill(Color color) => LinearGradient(
-        colors: <Color>[
-          color.withValues(alpha: 0.15),
-          color.withValues(alpha: 0.05),
-        ],
-      );
+    colors: <Color>[
+      color.withValues(alpha: 0.15),
+      color.withValues(alpha: 0.05),
+    ],
+  );
 
   /// 极光层的实底基色（极光本身是部分透明的，必须有底）
   static const LinearGradient auroraBase = LinearGradient(

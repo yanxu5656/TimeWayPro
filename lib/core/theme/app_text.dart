@@ -194,20 +194,20 @@ class AppText {
   /// 输出与改造前 `app_theme.dart` 里的 15 档定义**逐字一致**——
   /// Phase 1 不改变任何文字的渲染结果。
   static TextTheme asTextTheme() => const TextTheme(
-        displayLarge: display,
-        displayMedium: displayMd,
-        displaySmall: displaySm,
-        headlineLarge: h1,
-        headlineMedium: h2,
-        headlineSmall: h3,
-        titleLarge: title,
-        titleMedium: titleMd,
-        titleSmall: titleSm,
-        bodyLarge: bodyLg,
-        bodyMedium: body,
-        bodySmall: bodySm,
-        labelLarge: labelLg,
-        labelMedium: label,
-        labelSmall: labelSm,
-      );
+    displayLarge: display,
+    displayMedium: displayMd,
+    displaySmall: displaySm,
+    headlineLarge: h1,
+    headlineMedium: h2,
+    headlineSmall: h3,
+    titleLarge: title,
+    titleMedium: titleMd,
+    titleSmall: titleSm,
+    bodyLarge: bodyLg,
+    bodyMedium: body,
+    bodySmall: bodySm,
+    labelLarge: labelLg,
+    labelMedium: label,
+    labelSmall: labelSm,
+  );
 }

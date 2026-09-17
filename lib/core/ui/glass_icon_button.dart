@@ -16,11 +16,17 @@ class GlassIconButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.color = AppColors.primary,
-    this.size = 44,
+    this.size = sizeAction,
     this.iconSize = 24,
     this.tooltip,
     this.enabled = true,
   });
+
+  /// 顶栏 action、日期箭头。受顶栏高度（kToolbarHeight = 56）约束。
+  static const double sizeChrome = 40;
+
+  /// 列表内的动作按钮（开始 / 停止）。留够 44 的触摸目标。
+  static const double sizeAction = 44;
 
   final IconData icon;
   final VoidCallback? onTap;

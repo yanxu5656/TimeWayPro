@@ -28,10 +28,7 @@ class PlanRepository {
   }
 
   Future<Plan?> getPlanById(String id) async {
-    final maps = await _dbHelper.queryWhere(
-      'plans',
-      (map) => map['id'] == id,
-    );
+    final maps = await _dbHelper.queryWhere('plans', (map) => map['id'] == id);
     if (maps.isEmpty) return null;
     return Plan.fromMap(maps.first);
   }

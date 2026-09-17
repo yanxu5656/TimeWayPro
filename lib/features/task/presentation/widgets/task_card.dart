@@ -33,7 +33,8 @@ class TaskCard extends StatelessWidget {
     // 把重栅格化限制在真正变化的卡片上
     return RepaintBoundary(
       child: GlassCard(
-        radius: AppRadius.xl,
+        // 不指定 radius，用默认 lg(16)——与待办/规划页的列表项卡片一致。
+        // 原先这里是 xl(20)，同一类东西两个圆角。
         margin: const EdgeInsets.only(bottom: AppSpacing.sm),
         // 计时中：描边加粗 + success 强调色 + 开启隐式过渡
         animate: true,
@@ -194,33 +195,12 @@ class TaskCard extends StatelessWidget {
   }
 
   Widget _buildCompleteButton() {
-    return PressableScale(
-      child: GestureDetector(
-        onTap: onComplete,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: task.isCompleted
-                  ? AppColors.primary
-                  : AppColors.textHint.withValues(alpha: 0.5),
-              width: 2,
-            ),
-            color: task.isCompleted ? AppColors.primary : Colors.transparent,
-          ),
-          child: task.isCompleted
-              ? const Icon(
-                  Icons.check,
-                  size: 16,
-                  color: AppColors.textOnPrimary,
-                )
-              : null,
-        ),
-      ),
+    // 尺寸与配色统一走 GlassCheckCircle（28px + success 绿）。
+    // 原先这里是 28/primary，待办页是 26/success，两页观感不一致。
+    return GlassCheckCircle(
+      isChecked: task.isCompleted,
+      onTap: onComplete,
+      semanticLabel: task.title,
     );
   }
 

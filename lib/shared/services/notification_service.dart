@@ -7,7 +7,8 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
   Timer? _updateTimer;
   bool _isInitialized = false;
 
@@ -19,14 +20,19 @@ class NotificationService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const initSettings = InitializationSettings(android: androidSettings);
 
     await _plugin.initialize(initSettings);
 
     // 请求通知权限（Android 13+）
     if (Platform.isAndroid) {
-      final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (android != null) {
         await android.requestNotificationsPermission();
       }
@@ -43,7 +49,9 @@ class NotificationService {
     );
 
     await _plugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
 
     _isInitialized = true;
@@ -93,12 +101,7 @@ class NotificationService {
 
     final details = NotificationDetails(android: androidDetails);
 
-    await _plugin.show(
-      _timerNotificationId,
-      '⏱️ $taskTitle',
-      body,
-      details,
-    );
+    await _plugin.show(_timerNotificationId, '⏱️ $taskTitle', body, details);
   }
 
   // 更新计时通知

@@ -19,17 +19,17 @@ enum GlassTone {
 
 extension GlassToneX on GlassTone {
   Color get fill => switch (this) {
-        GlassTone.subtle => AppColors.glassFillWeak,
-        GlassTone.regular => AppColors.glassFill,
-        GlassTone.strong => AppColors.glassFillStrong,
-      };
+    GlassTone.subtle => AppColors.glassFillWeak,
+    GlassTone.regular => AppColors.glassFill,
+    GlassTone.strong => AppColors.glassFillStrong,
+  };
 
   /// 静置阴影。列表里的卡片只用 e1（blur 12 封顶）。
   List<BoxShadow> get shadows => switch (this) {
-        GlassTone.subtle => const <BoxShadow>[],
-        GlassTone.regular => AppShadows.e1,
-        GlassTone.strong => AppShadows.e1,
-      };
+    GlassTone.subtle => const <BoxShadow>[],
+    GlassTone.regular => AppShadows.e1,
+    GlassTone.strong => AppShadows.e1,
+  };
 }
 
 /// 描边的位置。
@@ -139,10 +139,7 @@ class GlassSurface extends StatelessWidget {
     return LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: <Color>[
-        c.withValues(alpha: 0.55),
-        c.withValues(alpha: 0.18),
-      ],
+      colors: <Color>[c.withValues(alpha: 0.55), c.withValues(alpha: 0.18)],
     );
   }
 

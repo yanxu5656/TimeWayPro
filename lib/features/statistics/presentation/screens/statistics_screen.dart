@@ -185,7 +185,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       icon: icon,
       onTap: onTap,
       color: AppColors.textSecondary,
-      size: 40,
+      size: GlassIconButton.sizeChrome,
       iconSize: 22,
     );
   }
@@ -335,7 +335,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: GlassCard(
         // 数字密集，走 strong 档保对比度
         tone: GlassTone.strong,
-        radius: AppRadius.xl,
+        // 用默认 lg(16)：统计页其余四张卡都是 16，原先只有概览卡是 20
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

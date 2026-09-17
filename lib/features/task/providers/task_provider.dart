@@ -69,11 +69,9 @@ class TaskProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   Map<String, TimerState> get activeTimers => _activeTimers;
 
-  List<Task> get activeTasks =>
-      _tasks.where((t) => !t.isCompleted).toList();
+  List<Task> get activeTasks => _tasks.where((t) => !t.isCompleted).toList();
 
-  List<Task> get completedTasks =>
-      _tasks.where((t) => t.isCompleted).toList();
+  List<Task> get completedTasks => _tasks.where((t) => t.isCompleted).toList();
 
   // 检查任务是否正在计时
   bool isTaskRunning(String taskId) => _activeTimers.containsKey(taskId);
@@ -177,14 +175,18 @@ class TaskProvider extends ChangeNotifier {
   Future<void> _autoStopTimer(String taskId, TimerState timerState) async {
     try {
       final records = await _repository.getRecordsByTaskId(taskId);
-      final record = records.where((r) => r.id == timerState.recordId).firstOrNull;
+      final record = records
+          .where((r) => r.id == timerState.recordId)
+          .firstOrNull;
 
       if (record != null) {
-        await _repository.updateRecord(record.copyWith(
-          endTime: DateTime.now(),
-          duration: timerState.currentElapsedSeconds,
-          completedAt: DateTime.now(),
-        ));
+        await _repository.updateRecord(
+          record.copyWith(
+            endTime: DateTime.now(),
+            duration: timerState.currentElapsedSeconds,
+            completedAt: DateTime.now(),
+          ),
+        );
       }
     } catch (e) {
       debugPrint('Error auto-stopping timer: $e');
@@ -294,11 +296,7 @@ class TaskProvider extends ChangeNotifier {
     final now = DateTime.now();
 
     // 创建记录
-    final record = TaskRecord(
-      id: '',
-      taskId: taskId,
-      startTime: now,
-    );
+    final record = TaskRecord(id: '', taskId: taskId, startTime: now);
     final recordId = await _repository.insertRecord(record);
 
     // 创建计时状态
@@ -348,13 +346,17 @@ class TaskProvider extends ChangeNotifier {
     // 更新记录
     final records = await _repository.getRecordsByTaskId(taskId);
     if (records.isNotEmpty) {
-      final record = records.where((r) => r.id == timerState.recordId).firstOrNull ?? records.first;
+      final record =
+          records.where((r) => r.id == timerState.recordId).firstOrNull ??
+          records.first;
 
-      await _repository.updateRecord(record.copyWith(
-        endTime: DateTime.now(),
-        duration: actualElapsed,
-        completedAt: DateTime.now(),
-      ));
+      await _repository.updateRecord(
+        record.copyWith(
+          endTime: DateTime.now(),
+          duration: actualElapsed,
+          completedAt: DateTime.now(),
+        ),
+      );
     }
 
     // 获取任务信息
@@ -420,7 +422,9 @@ class TaskProvider extends ChangeNotifier {
     if (task == null) return;
 
     // 创建新的 TimerState，重新设置开始时间
-    final newStartTime = DateTime.now().subtract(Duration(seconds: oldTimerState.elapsedSeconds));
+    final newStartTime = DateTime.now().subtract(
+      Duration(seconds: oldTimerState.elapsedSeconds),
+    );
     final newTimerState = TimerState(
       taskId: oldTimerState.taskId,
       recordId: oldTimerState.recordId,
@@ -448,12 +452,13 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<List<TaskRecord>> getRecordsByDateRange(
-      DateTime start, DateTime end) async {
+    DateTime start,
+    DateTime end,
+  ) async {
     return await _repository.getRecordsByDateRange(start, end);
   }
 
-  Future<int> getTotalDurationByDateRange(
-      DateTime start, DateTime end) async {
+  Future<int> getTotalDurationByDateRange(DateTime start, DateTime end) async {
     return await _repository.getTotalDurationByDateRange(start, end);
   }
 
@@ -462,7 +467,10 @@ class TaskProvider extends ChangeNotifier {
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = DateTime(now.year, now.month, now.day + 1);
-    final records = await _repository.getRecordsByDateRange(startOfDay, endOfDay);
+    final records = await _repository.getRecordsByDateRange(
+      startOfDay,
+      endOfDay,
+    );
     int total = 0;
     for (var record in records) {
       if (record.taskId == taskId) {
@@ -477,26 +485,36 @@ class TaskProvider extends ChangeNotifier {
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = DateTime(now.year, now.month, now.day + 1);
-    final records = await _repository.getRecordsByDateRange(startOfDay, endOfDay);
+    final records = await _repository.getRecordsByDateRange(
+      startOfDay,
+      endOfDay,
+    );
     Map<String, int> durationMap = {};
     for (var record in records) {
-      durationMap[record.taskId] = (durationMap[record.taskId] ?? 0) + record.duration;
+      durationMap[record.taskId] =
+          (durationMap[record.taskId] ?? 0) + record.duration;
     }
     return durationMap;
   }
 
   Future<int> getCompletedTaskCountByDateRange(
-      DateTime start, DateTime end) async {
+    DateTime start,
+    DateTime end,
+  ) async {
     return await _repository.getCompletedTaskCountByDateRange(start, end);
   }
 
   Future<List<Map<String, dynamic>>> getTaskDurationSummary(
-      DateTime start, DateTime end) async {
+    DateTime start,
+    DateTime end,
+  ) async {
     return await _repository.getTaskDurationSummary(start, end);
   }
 
   Future<Map<String, int>> getDailyDurationMap(
-      DateTime start, DateTime end) async {
+    DateTime start,
+    DateTime end,
+  ) async {
     return await _repository.getDailyDurationMap(start, end);
   }
 

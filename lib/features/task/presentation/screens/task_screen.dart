@@ -56,7 +56,7 @@ class _TaskScreenState extends State<TaskScreen> {
           icon: Icons.calendar_today_rounded,
           onTap: _selectDate,
           color: AppColors.textPrimary,
-          size: 40,
+          size: GlassIconButton.sizeChrome,
           iconSize: 20,
           tooltip: '选择日期',
         ),
@@ -232,7 +232,7 @@ class _TaskScreenState extends State<TaskScreen> {
       icon: icon,
       onTap: onTap,
       color: AppColors.textSecondary,
-      size: 40,
+      size: GlassIconButton.sizeChrome,
       iconSize: 22,
     );
   }

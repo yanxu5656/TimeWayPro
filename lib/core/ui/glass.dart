@@ -10,6 +10,7 @@ export 'aurora_background.dart';
 export 'count_up_text.dart';
 export 'glass_app_bar.dart';
 export 'glass_card.dart';
+export 'glass_check_circle.dart';
 export 'glass_chip.dart';
 export 'glass_fab.dart';
 export 'glass_icon_button.dart';

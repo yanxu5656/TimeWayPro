@@ -60,8 +60,8 @@ class StaggerScope extends StatefulWidget {
 
 class _StaggerScopeState extends State<StaggerScope>
     with SingleTickerProviderStateMixin {
-  late final Duration _total = widget.itemDelay * widget.maxItems +
-      widget.itemDuration;
+  late final Duration _total =
+      widget.itemDelay * widget.maxItems + widget.itemDuration;
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
@@ -142,14 +142,21 @@ class StaggeredEntrance extends StatelessWidget {
       return child;
     }
 
-    final double start = ((index * data.itemDelayMs) / data.totalMs).clamp(0, 1);
+    final double start = ((index * data.itemDelayMs) / data.totalMs).clamp(
+      0,
+      1,
+    );
     // 单项动画跨度占整条时间轴的比例。总时长 = maxItems*delay + duration，
     // 所以最后一项的区间末尾是 (maxItems-1)*delay+duration < total，不会越界。
     final double span = (data.itemDurationMs / data.totalMs).clamp(0.05, 1.0);
 
     final Animation<double> animation = CurvedAnimation(
       parent: data.controller,
-      curve: Interval(start, (start + span).clamp(0, 1), curve: Curves.easeOutCubic),
+      curve: Interval(
+        start,
+        (start + span).clamp(0, 1),
+        curve: Curves.easeOutCubic,
+      ),
     );
 
     return FadeTransition(

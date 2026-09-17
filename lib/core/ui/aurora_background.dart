@@ -42,8 +42,10 @@ class _AuroraBackgroundState extends State<AuroraBackground>
   /// 48 秒周期——足够慢，肉眼几乎察觉不到在动，但细看又不是静止的。
   static const Duration _cycle = Duration(seconds: 48);
 
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: _cycle);
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _cycle,
+  );
 
   @override
   void initState() {
@@ -162,9 +164,7 @@ class _AuroraPainter extends CustomPainter {
 
     // 实底基色：极光层是部分透明的，必须有不透明的底
     final base = Paint()
-      ..shader = AppGradients.auroraBase.createShader(
-        Offset.zero & size,
-      );
+      ..shader = AppGradients.auroraBase.createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, base);
 
     final t = phase.value * 2 * math.pi;
@@ -173,10 +173,10 @@ class _AuroraPainter extends CustomPainter {
     for (final blob in _blobs) {
       final cx =
           (blob.center.dx + blob.amp.dx * math.sin(t * 48 / blob.period.dx)) *
-              size.width;
+          size.width;
       final cy =
           (blob.center.dy + blob.amp.dy * math.cos(t * 48 / blob.period.dy)) *
-              size.height;
+          size.height;
       final r = blob.radiusFactor * size.shortestSide;
 
       // shader 建在局部坐标系原点，配合 translate 使用，

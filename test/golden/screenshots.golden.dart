@@ -47,9 +47,9 @@ Future<void> _loadFont(String family, File file) async {
     throw StateError('找不到字体 $file，无法生成可用的截图');
   }
   final Uint8List bytes = await file.readAsBytes();
-  await (FontLoader(family)
-        ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes))))
-      .load();
+  await (FontLoader(
+    family,
+  )..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
 }
 
 /// 测试环境既没有正文字体也没有图标字体，两者都得手动加载，
@@ -67,8 +67,10 @@ Future<void> _loadFonts() async {
   }
   await _loadFont(
     'MaterialIcons',
-    File('$flutterRoot/bin/cache/artifacts/material_fonts/'
-        'materialicons-regular.otf'),
+    File(
+      '$flutterRoot/bin/cache/artifacts/material_fonts/'
+      'materialicons-regular.otf',
+    ),
   );
 }
 

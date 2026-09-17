@@ -146,7 +146,9 @@ class DatabaseHelper {
       list[index] = record;
       await _saveData();
     } else {
-      print('Warning: Record not found for update in $table with $idField=${record[idField]}');
+      print(
+        'Warning: Record not found for update in $table with $idField=${record[idField]}',
+      );
     }
   }
 
@@ -157,10 +159,7 @@ class DatabaseHelper {
     await _saveData();
   }
 
-  Future<void> deleteWhere(
-    String table,
-    bool Function(dynamic) test,
-  ) async {
+  Future<void> deleteWhere(String table, bool Function(dynamic) test) async {
     await _ensureInitialized();
     final list = _data[table] as List? ?? [];
     list.removeWhere(test);
@@ -176,11 +175,15 @@ class DatabaseHelper {
 
   Future<void> importAll(Map<String, dynamic> data) async {
     // 验证数据格式
-    if (!data.containsKey('tasks') || !data.containsKey('task_records') || !data.containsKey('plans')) {
+    if (!data.containsKey('tasks') ||
+        !data.containsKey('task_records') ||
+        !data.containsKey('plans')) {
       throw Exception('Invalid data format: missing required fields');
     }
 
-    if (data['tasks'] is! List || data['task_records'] is! List || data['plans'] is! List) {
+    if (data['tasks'] is! List ||
+        data['task_records'] is! List ||
+        data['plans'] is! List) {
       throw Exception('Invalid data format: fields must be lists');
     }
 

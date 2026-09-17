@@ -23,10 +23,7 @@ class TaskRepository {
   }
 
   Future<Task?> getTaskById(String id) async {
-    final maps = await _dbHelper.queryWhere(
-      'tasks',
-      (map) => map['id'] == id,
-    );
+    final maps = await _dbHelper.queryWhere('tasks', (map) => map['id'] == id);
     if (maps.isEmpty) return null;
     return Task.fromMap(maps.first);
   }
@@ -49,10 +46,7 @@ class TaskRepository {
   Future<void> deleteTask(String id) async {
     await _dbHelper.delete('tasks', 'id', id);
     // 删除相关记录
-    await _dbHelper.deleteWhere(
-      'task_records',
-      (map) => map['task_id'] == id,
-    );
+    await _dbHelper.deleteWhere('task_records', (map) => map['task_id'] == id);
   }
 
   Future<void> completeTask(String taskId) async {
@@ -60,16 +54,20 @@ class TaskRepository {
     if (task == null) return;
 
     if (task.repeatType == RepeatType.none) {
-      await updateTask(task.copyWith(
-        isCompleted: true,
-        completedCount: task.completedCount + 1,
-        lastCompletedDate: DateTime.now(),
-      ));
+      await updateTask(
+        task.copyWith(
+          isCompleted: true,
+          completedCount: task.completedCount + 1,
+          lastCompletedDate: DateTime.now(),
+        ),
+      );
     } else {
-      await updateTask(task.copyWith(
-        completedCount: task.completedCount + 1,
-        lastCompletedDate: DateTime.now(),
-      ));
+      await updateTask(
+        task.copyWith(
+          completedCount: task.completedCount + 1,
+          lastCompletedDate: DateTime.now(),
+        ),
+      );
     }
   }
 
@@ -84,15 +82,14 @@ class TaskRepository {
   }
 
   Future<List<TaskRecord>> getRecordsByDateRange(
-      DateTime start, DateTime end) async {
-    final maps = await _dbHelper.queryWhere(
-      'task_records',
-      (map) {
-        final startTime = DateTime.parse(map['start_time']);
-        // 使用 !isBefore 来包含 start 时刻
-        return !startTime.isBefore(start) && startTime.isBefore(end);
-      },
-    );
+    DateTime start,
+    DateTime end,
+  ) async {
+    final maps = await _dbHelper.queryWhere('task_records', (map) {
+      final startTime = DateTime.parse(map['start_time']);
+      // 使用 !isBefore 来包含 start 时刻
+      return !startTime.isBefore(start) && startTime.isBefore(end);
+    });
     return maps.map((map) => TaskRecord.fromMap(map)).toList();
   }
 
@@ -118,8 +115,7 @@ class TaskRepository {
 
   // ==================== 统计方法 ====================
 
-  Future<int> getTotalDurationByDateRange(
-      DateTime start, DateTime end) async {
+  Future<int> getTotalDurationByDateRange(DateTime start, DateTime end) async {
     final records = await getRecordsByDateRange(start, end);
     int total = 0;
     for (var record in records) {
@@ -129,14 +125,18 @@ class TaskRepository {
   }
 
   Future<int> getCompletedTaskCountByDateRange(
-      DateTime start, DateTime end) async {
+    DateTime start,
+    DateTime end,
+  ) async {
     final records = await getRecordsByDateRange(start, end);
     final taskIds = records.map((r) => r.taskId).toSet();
     return taskIds.length;
   }
 
   Future<List<Map<String, dynamic>>> getTaskDurationSummary(
-      DateTime start, DateTime end) async {
+    DateTime start,
+    DateTime end,
+  ) async {
     final records = await getRecordsByDateRange(start, end);
     final tasks = await getAllTasks();
     final taskMap = {for (var t in tasks) t.id: t};
@@ -151,20 +151,21 @@ class TaskRepository {
     durationMap.forEach((taskId, duration) {
       final task = taskMap[taskId];
       if (task != null) {
-        result.add({
-          'title': task.title,
-          'total_duration': duration,
-        });
+        result.add({'title': task.title, 'total_duration': duration});
       }
     });
 
-    result.sort((a, b) =>
-        (b['total_duration'] as int).compareTo(a['total_duration'] as int));
+    result.sort(
+      (a, b) =>
+          (b['total_duration'] as int).compareTo(a['total_duration'] as int),
+    );
     return result;
   }
 
   Future<Map<String, int>> getDailyDurationMap(
-      DateTime start, DateTime end) async {
+    DateTime start,
+    DateTime end,
+  ) async {
     final records = await getRecordsByDateRange(start, end);
     Map<String, int> map = {};
 

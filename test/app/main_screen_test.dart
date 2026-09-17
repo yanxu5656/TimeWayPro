@@ -114,6 +114,25 @@ void main() {
     }
   });
 
+  testWidgets('页面内的卡片不用 xl 圆角', (WidgetTester tester) async {
+    // xl(20) 的语义已收窄为「对话框」。页面内卡片一律 lg(16)——
+    // 原先任务卡与统计概览卡用了 20，而同类的待办/规划卡是 16，
+    // 观感上就是「有的卡圆一点有的方一点」。
+    await pumpSeededApp(tester);
+
+    for (final String label in const <String>['待办', '任务', '统计', '规划', '设置']) {
+      if (label != '待办') await switchToTab(tester, label);
+
+      for (final Element element in find.byType(GlassCard).evaluate()) {
+        expect(
+          (element.widget as GlassCard).radius,
+          isNot(AppRadius.xl),
+          reason: '「$label」有卡片用了 xl 圆角，页面内卡片应统一 lg',
+        );
+      }
+    }
+  });
+
   testWidgets('窄屏（320dp）下导航栏 5 项不溢出', (WidgetTester tester) async {
     await pumpSeededApp(tester, size: const Size(320, 640));
 

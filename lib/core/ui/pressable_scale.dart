@@ -72,14 +72,14 @@ class _PressableScaleState extends State<PressableScale>
     reverseDuration: widget.releaseDuration,
   );
 
-  late final Animation<double> _scale = Tween<double>(
-    begin: 1.0,
-    end: widget.scale,
-  ).animate(CurvedAnimation(
-    parent: _controller,
-    curve: Curves.easeOut,
-    reverseCurve: Curves.easeOutBack,
-  ));
+  late final Animation<double> _scale =
+      Tween<double>(begin: 1.0, end: widget.scale).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Curves.easeOut,
+          reverseCurve: Curves.easeOutBack,
+        ),
+      );
 
   final Set<int> _pointers = <int>{};
   Offset? _origin;

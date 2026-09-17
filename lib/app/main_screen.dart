@@ -88,10 +88,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               Positioned.fill(
                 // 双向隔离：列表滚动不触发极光层重栅格化，极光漂移也不重绘列表
                 child: RepaintBoundary(
-                  child: IndexedStack(
-                    index: _currentIndex,
-                    children: _screens,
-                  ),
+                  child: IndexedStack(index: _currentIndex, children: _screens),
                 ),
               ),
             ],

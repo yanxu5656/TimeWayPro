@@ -48,44 +48,49 @@ Map<String, dynamic> _seed() {
     int repeatCount = 1,
     bool completed = false,
     int completedCount = 0,
-  }) =>
-      <String, dynamic>{
-        'id': id,
-        'title': title,
-        'description': desc,
-        'timer_type': timerType,
-        'duration': duration,
-        'repeat_type': repeatType,
-        'repeat_count': repeatCount,
-        'due_date': null,
-        'reminder_minutes': null,
-        'is_completed': completed ? 1 : 0,
-        'completed_count': completedCount,
-        'last_completed_date': completedCount > 0 ? nowIso : null,
-        'created_at': nowIso,
-        'updated_at': nowIso,
-      };
+  }) => <String, dynamic>{
+    'id': id,
+    'title': title,
+    'description': desc,
+    'timer_type': timerType,
+    'duration': duration,
+    'repeat_type': repeatType,
+    'repeat_count': repeatCount,
+    'due_date': null,
+    'reminder_minutes': null,
+    'is_completed': completed ? 1 : 0,
+    'completed_count': completedCount,
+    'last_completed_date': completedCount > 0 ? nowIso : null,
+    'created_at': nowIso,
+    'updated_at': nowIso,
+  };
 
   Map<String, dynamic> record(
     String id,
     String taskId,
     int hour,
     int minutes,
-  ) =>
-      <String, dynamic>{
-        'id': id,
-        'task_id': taskId,
-        'start_time': _todayAt(hour).toIso8601String(),
-        'end_time': _todayAt(hour, minutes).toIso8601String(),
-        'duration': minutes * 60,
-        'completed_at': _todayAt(hour, minutes).toIso8601String(),
-      };
+  ) => <String, dynamic>{
+    'id': id,
+    'task_id': taskId,
+    'start_time': _todayAt(hour).toIso8601String(),
+    'end_time': _todayAt(hour, minutes).toIso8601String(),
+    'duration': minutes * 60,
+    'completed_at': _todayAt(hour, minutes).toIso8601String(),
+  };
 
   return <String, dynamic>{
     'tasks': <Map<String, dynamic>>[
       task('t1', '写周报', desc: '总结本周进展'),
-      task('t2', '冥想', timerType: 1, duration: 900, repeatType: 1, repeatCount: 2,
-          completedCount: 1),
+      task(
+        't2',
+        '冥想',
+        timerType: 1,
+        duration: 900,
+        repeatType: 1,
+        repeatCount: 2,
+        completedCount: 1,
+      ),
       task('t3', '读书', repeatType: 1, repeatCount: 3, completedCount: 2),
       task('t4', '整理书桌', completed: true, completedCount: 1),
     ],
