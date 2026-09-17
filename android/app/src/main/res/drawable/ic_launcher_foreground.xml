@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 由 tool/make_app_icon.py 生成，勿手改 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 不闭合的圆环：缺口 70° 居中于右上 -->
+    <path
+        android:pathData="M75.666,50.18 A22,22 0 1 1 57.82,32.334"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5.28"
+        android:strokeLineCap="butt" />
+
+    <!-- 缺口端点的实心圆点：当下 -->
+    <path
+        android:pathData="M57.82,32.334 m-3.696,0 a3.696,3.696 0 1,0 7.392,0 a3.696,3.696 0 1,0 -7.392,0"
+        android:fillColor="#FFFFFFFF" />
+</vector>

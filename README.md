@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/icon.png" width="96" alt="时途">
+
 # 时途 TimeWayPro
 
 **时间规划与人生规划助手**
@@ -277,6 +279,9 @@ flutter test test/golden/glass_gallery.golden.dart --update-goldens
 flutter test test/golden/app_with_data.golden.dart --update-goldens
 flutter test test/golden/screenshots.golden.dart --update-goldens
 python tool/make_readme_shots.py     # 把截图缩成 README 用的 WebP
+
+# 重新生成应用图标（改设计参数后跑这个，各平台资源一并重出）
+python tool/make_app_icon.py
 ```
 
 ---
