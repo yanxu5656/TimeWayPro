@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.3.0-00BFA5)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.3.1-00BFA5)](#版本迭代)
 
 <p>
   <img src="docs/screenshots/daily.webp" width="180" alt="每日待办">
@@ -68,6 +68,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ### 📝 每日待办
 
 - **独立于任务模块的轻量清单** —— 按日期存储，适合当天临时事项
+- **本周目标** —— 页首一张卡记录「这周大概要完成什么」，逐条勾选，勾选进度即完成度。只显示本周，旧周数据保留
 - **时间段分类** —— 上午 / 下午 / 晚上三段分组，添加时自动定位当前时段
 - **完成进度** —— 点击圆圈勾选，顶部进度条实时显示今日完成度
 - **滑动删除**（带二次确认）与**长按编辑**
@@ -86,6 +87,29 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.3.1 — 一致性与本周目标
+*2026-09-17*
+
+**新增**
+
+- 待办页新增「本周目标」：可勾选的周目标清单，勾选进度即完成度。只显示本周，旧周数据保留可回溯
+
+**一致性修复**
+
+- **顶栏图标**：5 个 Tab 里只有前两个带图标徽标。而且 `GlassAppBar` 在没传图标时连占位都不渲染，导致后三页的标题整体靠左约 40px —— 不只是少了图标，是标题位置都没对齐
+- **圆角按控件角色统一**：chip 竖排的硬编码 14、两个「滑动指示块」一个 9 一个 12、任务卡与统计概览卡用 20 而同类的待办 / 规划卡是 16、完成勾选钮两页尺寸与颜色都不同、规划页有个按钮就地覆盖了主题圆角
+
+**应用图标**
+
+- 设计并生成全套图标：青绿径向渐变底 + 不闭合的圆环，缺口端点的圆点是「当下」
+- 补上 **Android 自适应图标** —— 此前完全缺失，Android 8+ 上系统会把那张方图缩小塞进白底形状
+- 应用名从包名 `time_way_pro` 改为「时途」
+
+**工程**
+
+- 抽出 `lib/core/utils/week.dart`：「本周周一是哪天」原先在统计页内联重复了 4 处
+- `DatabaseHelper` 的表清单原先在文件里重复 6 次（加一张表要同步改 5 个地方），收敛为一处；顺带修掉 `importAll` 不跑兜底、导入旧备份后新表键缺失的问题
 
 ### v1.3.0 — 浅色极光玻璃
 *2026-09-17*
