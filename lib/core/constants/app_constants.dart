@@ -1,7 +1,7 @@
 class AppConstants {
   static const String appName = 'TimeWayPro';
   static const String appNameCn = '时途';
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '1.3.0';
 
   // WebDAV默认配置
   static const String defaultWebDavUrl = 'https://dav.jianguoyun.com/dav/';
