@@ -45,9 +45,8 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.background,
 
       // 现已删除 appBarTheme 与 floatingActionButtonTheme：
-      // Phase 4 迁移到 GlassAppBar / GlassFab 后，全仓真正使用
-      // AppBar / FloatingActionButton 的只剩 timer_screen.dart
-      // 这个死代码文件（Phase 6 删除）。
+      // Phase 4 迁移到 GlassAppBar / GlassFab 后，全仓使用
+      // AppBar / FloatingActionButton 的地方已归零。
 
       // 圆角数值与改造前一致（16/12/16），本阶段无视觉变化
       inputDecorationTheme: InputDecorationTheme(
