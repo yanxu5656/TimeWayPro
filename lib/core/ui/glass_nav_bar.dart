@@ -12,6 +12,31 @@ class _NavItemData {
   final String label;
 }
 
+/// 广播玻璃底部导航的**实测高度**。
+///
+/// 为什么需要它：各页的 FAB 挂在页面自己的 `GlassScaffold` 上，而底部导航
+/// 挂在 `MainScreen` 的 Scaffold 上。`MainScreen` 开了 `extendBody: true`
+/// 让内容（和导航栏的模糊）延伸到屏幕底部，于是**内层 Scaffold 的底边就是
+/// 屏幕底边**——它的 FAB 会被摆到 `屏幕高 - 16 - FAB高`，也就是压在导航栏
+/// 底下。实测过：导航栏顶边 y=840.5，FAB 占 y=828..884，被盖住 43.5px。
+///
+/// 内层拿不到这个高度（外层的 Scaffold 不会把它注入 MediaQuery），所以由
+/// [MainScreen] 实测后经这个 InheritedWidget 往下传。
+class NavBarInset extends InheritedWidget {
+  const NavBarInset({super.key, required this.height, required super.child});
+
+  /// 玻璃导航栏的总高度（含设备底部安全区）；未测量到之前为 0
+  final double height;
+
+  /// 读取高度。不在 [NavBarInset] 之下（独立路由）时返回 0。
+  static double of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<NavBarInset>()?.height ?? 0;
+
+  @override
+  bool updateShouldNotify(NavBarInset oldWidget) =>
+      (oldWidget.height - height).abs() > 0.5;
+}
+
 /// 玻璃底部导航。
 ///
 /// 取代改造前 `main_screen.dart` 里 68 行手写实现。原实现有三个问题：

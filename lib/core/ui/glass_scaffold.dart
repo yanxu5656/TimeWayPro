@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'aurora_background.dart';
 import 'glass_app_bar.dart';
+import 'glass_nav_bar.dart';
 
 /// 页面级玻璃容器。
 ///
@@ -41,8 +42,7 @@ class GlassScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          standalone ? AppColors.background : Colors.transparent,
+      backgroundColor: standalone ? AppColors.background : Colors.transparent,
       extendBody: standalone,
       appBar: GlassAppBar(
         title: title,
@@ -54,14 +54,29 @@ class GlassScaffold extends StatelessWidget {
           ? Stack(
               children: <Widget>[
                 const Positioned.fill(child: AuroraBackground()),
-                Positioned.fill(
-                  child: RepaintBoundary(child: body),
-                ),
+                Positioned.fill(child: RepaintBoundary(child: body)),
               ],
             )
           : body,
-      floatingActionButton: floatingActionButton,
+      // 包一层底 padding 把 FAB 抬到玻璃导航栏之上。
+      //
+      // Scaffold 按 FAB 这个「盒子」的底边定位（contentBottom - 16），
+      // 加了 padding 之后盒子变高、可视的 FAB 就被顶上去了。
+      // standalone（独立路由）没有导航栏，不要这个偏移。
+      floatingActionButton: floatingActionButton == null
+          ? null
+          : _withNavBarInset(context, floatingActionButton!),
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+    );
+  }
+
+  Widget _withNavBarInset(BuildContext context, Widget fab) {
+    if (standalone) return fab;
+    final double inset = NavBarInset.of(context);
+    if (inset <= 0) return fab;
+    return Padding(
+      padding: EdgeInsets.only(bottom: inset),
+      child: fab,
     );
   }
 }
