@@ -12,6 +12,7 @@
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
 [![Version](https://img.shields.io/badge/Version-1.3.1-00BFA5)](#版本迭代)
+[![Release](https://img.shields.io/badge/Release-下载安装包-00BFA5?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
   <img src="docs/screenshots/daily.webp" width="180" alt="每日待办">
@@ -33,6 +34,18 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 与常见的待办清单不同，时途不满足于「打勾」，而是记录**每件事真实消耗了多少时间** —— 这些记录会沉淀为热力图、饼图和任务明细，让「我很忙」变成「我忙在了这件事上，一共 3 小时 20 分」。
 
 界面在 1.3.0 重做为**浅色极光玻璃**：缓慢漂移的青绿光晕托着一层磨砂卡片。设计取舍写在下面的[设计系统](#设计系统)一节。
+
+---
+
+## 安装
+
+到 [**Releases**](https://github.com/yanxu5656/TimeWayPro/releases) 下载最新的 `app-release.apk`，直接装到手机上即可。
+
+**环境要求**：Android 7.0（API 24）及以上。
+
+> ⚠️ 目前的安装包用的是 Flutter 默认的**调试签名**。自己侧载完全没问题，但**不能上架应用商店**；而且如果之后换了签名，覆盖安装会失败（需要先卸载旧版）。
+>
+> 想自己构建见下面的[快速开始](#快速开始)。
 
 ---
 
