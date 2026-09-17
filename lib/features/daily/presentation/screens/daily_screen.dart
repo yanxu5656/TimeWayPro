@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/ui/glass.dart';
 import '../../data/models/daily_task.dart';
 import '../../providers/daily_provider.dart';
+import '../widgets/weekly_goals_card.dart';
 
 class DailyScreen extends StatefulWidget {
   const DailyScreen({super.key});
@@ -66,6 +67,11 @@ class _DailyScreenState extends State<DailyScreen> {
       ),
       child: Column(
         children: [
+          // 本周目标。放在最上面是有意的：周是比天更大的时间尺度，
+          // 从上往下读是「宏观 → 微观」。
+          WeeklyGoalsCard(provider: provider),
+          const SizedBox(height: AppSpacing.md),
+
           // 日期选择器
           GlassCard(
             padding: const EdgeInsets.symmetric(

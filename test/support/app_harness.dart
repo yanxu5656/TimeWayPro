@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:time_way_pro/app/app.dart';
 import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/utils/week.dart';
 import 'package:time_way_pro/shared/database/database_helper.dart';
 
 /// widget 测试的共用脚手架。
@@ -140,6 +141,26 @@ Map<String, dynamic> seedData() {
           'sort_order': 0,
           'created_at': nowIso,
         },
+    ],
+    'weekly_goals': <Map<String, dynamic>>[
+      for (int i = 0; i < 3; i++)
+        <String, dynamic>{
+          'id': 'w$i',
+          'title': '本周目标 $i',
+          'is_completed': i == 0 ? 1 : 0,
+          'week_key': weekKeyOf(now),
+          'sort_order': i,
+          'created_at': nowIso,
+        },
+      // 上一周的目标：用来验证「只显示本周」
+      <String, dynamic>{
+        'id': 'w-old',
+        'title': '上周的目标（不该显示）',
+        'is_completed': 0,
+        'week_key': weekKeyOf(now.subtract(const Duration(days: 7))),
+        'sort_order': 0,
+        'created_at': nowIso,
+      },
     ],
     'sync_config': <Map<String, dynamic>>[],
   };

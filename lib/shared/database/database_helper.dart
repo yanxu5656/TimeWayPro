@@ -8,13 +8,35 @@ class DatabaseHelper {
   factory DatabaseHelper() => _instance;
   DatabaseHelper._internal();
 
-  Map<String, dynamic> _data = {
-    'tasks': [],
-    'task_records': [],
-    'plans': [],
-    'daily_tasks': [],
-    'sync_config': [],
+  /// 所有逻辑表。**加新表只需要改这一处**。
+  ///
+  /// 原先这份清单在文件里重复了 6 次（3 处完整 Map 字面量 + 2 处 `??=` 兜底
+  /// + 1 处初始值），加一张表要同步改 5 个地方，漏任何一处新表就会在
+  /// 「首次启动 / 无文件 / 备份损坏」某条路径下不存在。
+  static const List<String> _tables = <String>[
+    'tasks',
+    'task_records',
+    'plans',
+    'daily_tasks',
+    'weekly_goals',
+    'sync_config',
+  ];
+
+  static Map<String, dynamic> _emptyData() => <String, dynamic>{
+    for (final String table in _tables) table: <dynamic>[],
   };
+
+  /// 补齐缺失的表。
+  ///
+  /// 读取旧版本写的文件、或导入旧备份时，新加的表在数据里不存在——
+  /// 这里统一补成空列表，后续 `query` / `insert` 就不必各写各的兜底。
+  static void _ensureTables(Map<String, dynamic> data) {
+    for (final String table in _tables) {
+      data[table] ??= <dynamic>[];
+    }
+  }
+
+  Map<String, dynamic> _data = _emptyData();
 
   bool _initialized = false;
   Future<void>? _initFuture;
@@ -48,12 +70,7 @@ class DatabaseHelper {
       if (await file.exists()) {
         final contents = await file.readAsString();
         _data = jsonDecode(contents);
-        // 确保所有必要的表都存在
-        _data['tasks'] ??= [];
-        _data['task_records'] ??= [];
-        _data['plans'] ??= [];
-        _data['daily_tasks'] ??= [];
-        _data['sync_config'] ??= [];
+        _ensureTables(_data);
       }
     } catch (e) {
       print('Error loading data: $e');
@@ -63,31 +80,14 @@ class DatabaseHelper {
         if (await backupFile.exists()) {
           final contents = await backupFile.readAsString();
           _data = jsonDecode(contents);
-          // 确保所有必要的表都存在
-          _data['tasks'] ??= [];
-          _data['task_records'] ??= [];
-          _data['plans'] ??= [];
-          _data['daily_tasks'] ??= [];
-          _data['sync_config'] ??= [];
+          _ensureTables(_data);
           print('Restored from backup');
         } else {
-          _data = {
-            'tasks': [],
-            'task_records': [],
-            'plans': [],
-            'daily_tasks': [],
-            'sync_config': [],
-          };
+          _data = _emptyData();
         }
       } catch (e2) {
         print('Error loading backup: $e2');
-        _data = {
-          'tasks': [],
-          'task_records': [],
-          'plans': [],
-          'daily_tasks': [],
-          'sync_config': [],
-        };
+        _data = _emptyData();
       }
     }
   }
@@ -188,6 +188,10 @@ class DatabaseHelper {
     }
 
     _data = data;
+    // 导入的是旧版本备份时，新加的表不在里面——补成空列表。
+    // 原先这里直接赋值、不跑兜底，于是导入后新表的 key 是 null；
+    // 访问器虽然都对 null 容错不会崩，但数据形状不一致。
+    _ensureTables(_data);
     _initialized = true;
     await _saveData();
   }

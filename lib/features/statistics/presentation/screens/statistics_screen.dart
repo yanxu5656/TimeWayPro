@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/ui/glass.dart';
+import '../../../../core/utils/week.dart';
 import '../../../task/providers/task_provider.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -198,13 +199,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             _selectedDate.month == now.month &&
             _selectedDate.day == now.day;
       case 1: // 周
-        final currentWeekStart = now.subtract(Duration(days: now.weekday - 1));
-        final selectedWeekStart = _selectedDate.subtract(
-          Duration(days: _selectedDate.weekday - 1),
-        );
-        return currentWeekStart.year == selectedWeekStart.year &&
-            currentWeekStart.month == selectedWeekStart.month &&
-            currentWeekStart.day == selectedWeekStart.day;
+        return startOfWeek(now) == startOfWeek(_selectedDate);
       case 2: // 月
         return _selectedDate.year == now.year &&
             _selectedDate.month == now.month;
@@ -219,9 +214,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         if (_isCurrentPeriod()) return '今天';
         return DateFormat('yyyy年MM月dd日').format(_selectedDate);
       case 1: // 周
-        final weekStart = _selectedDate.subtract(
-          Duration(days: _selectedDate.weekday - 1),
-        );
+        final weekStart = startOfWeek(_selectedDate);
         final weekEnd = weekStart.add(const Duration(days: 6));
         if (_isCurrentPeriod()) return '本周';
         return '${DateFormat('MM/dd').format(weekStart)} - ${DateFormat('MM/dd').format(weekEnd)}';
@@ -408,9 +401,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         days = DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
         break;
       case 1: // 周 - 显示当周
-        startDate = _selectedDate.subtract(
-          Duration(days: _selectedDate.weekday - 1),
-        );
+        startDate = startOfWeek(_selectedDate);
         days = 7;
         break;
       case 2: // 月 - 显示当月
@@ -788,19 +779,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
         );
       case 1: // 周
-        final weekStart = _selectedDate.subtract(
-          Duration(days: _selectedDate.weekday - 1),
-        );
         return DateTimeRange(
-          start: DateTime(weekStart.year, weekStart.month, weekStart.day),
-          end: DateTime(
-            weekStart.year,
-            weekStart.month,
-            weekStart.day + 6,
-            23,
-            59,
-            59,
-          ),
+          start: startOfWeek(_selectedDate),
+          end: endOfWeek(_selectedDate),
         );
       case 2: // 月
         return DateTimeRange(
