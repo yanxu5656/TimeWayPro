@@ -16,6 +16,7 @@ class GlassCard extends StatelessWidget {
     this.margin = EdgeInsets.zero,
     this.radius = AppRadius.lg,
     this.tone = GlassTone.regular,
+    this.fill,
     this.tint,
     this.edgeWidth = 1.0,
     this.onTap,
@@ -34,6 +35,12 @@ class GlassCard extends StatelessWidget {
 
   final double radius;
   final GlassTone tone;
+
+  /// 直接指定填充色，覆盖 [tone] 派生的值。
+  ///
+  /// 用在**嵌套**场景：玻璃叠玻璃会几乎同色（62% 白盖在 78% 白上边界完全
+  /// 读不出来），此时需要换成不透明的下沉面表面色。
+  final Color? fill;
 
   /// 强调色（计时进行中 = success）。非空时描边与阴影走该色的强调态。
   final Color? tint;
@@ -63,6 +70,7 @@ class GlassCard extends StatelessWidget {
     Widget surface = GlassSurface(
       radius: radius,
       tone: tone,
+      fill: fill,
       tint: tint,
       edgeWidth: edgeWidth,
       shadows: shadows,
@@ -80,9 +88,12 @@ class GlassCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(
                   (radius - edgeWidth).clamp(0.0, double.infinity),
                 ),
-                splashColor: (tint ?? AppColors.primary).withValues(alpha: 0.08),
-                highlightColor:
-                    (tint ?? AppColors.primary).withValues(alpha: 0.04),
+                splashColor: (tint ?? AppColors.primary).withValues(
+                  alpha: 0.08,
+                ),
+                highlightColor: (tint ?? AppColors.primary).withValues(
+                  alpha: 0.04,
+                ),
                 child: Padding(padding: padding, child: child),
               ),
             )
@@ -90,7 +101,11 @@ class GlassCard extends StatelessWidget {
     );
 
     if (semanticLabel != null) {
-      surface = Semantics(label: semanticLabel, container: true, child: surface);
+      surface = Semantics(
+        label: semanticLabel,
+        container: true,
+        child: surface,
+      );
     }
 
     return margin == EdgeInsets.zero

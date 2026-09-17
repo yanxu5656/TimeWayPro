@@ -69,7 +69,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildContent(_StatsData stats) {
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      // 底部要避让玻璃导航栏（MainScreen 开了 extendBody），
+      // 否则滚到底时最后一张卡会被压在导航栏下面
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.navInset,
+      ),
       children: [
         // 时间段选择器
         _buildDateSelector(),

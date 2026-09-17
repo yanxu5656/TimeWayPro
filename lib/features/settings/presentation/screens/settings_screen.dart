@@ -155,9 +155,14 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildSyncStatus(SettingsProvider provider) {
     return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      tone: GlassTone.subtle,
       radius: AppRadius.md,
       padding: const EdgeInsets.all(AppSpacing.sm),
+      // 这一块嵌套在外层 GlassCard 之内。玻璃叠玻璃会几乎同色——
+      // 62% 白盖在 78% 白上，边界完全读不出来（出图确认过）。
+      // 所以这里用不透明的下沉面表面色，让层次立住。
+      fill: provider.isConfigured
+          ? AppColors.success.withValues(alpha: 0.12)
+          : AppColors.surfaceVariant,
       // 已连接时描边与阴影走 success 强调色
       tint: provider.isConfigured ? AppColors.success : null,
       child: Row(

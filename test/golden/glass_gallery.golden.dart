@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -295,5 +294,32 @@ void main() {
       find.byType(TimeWayProApp),
       matchesGoldenFile('goldens/app_daily.png'),
     );
+  });
+
+  testWidgets('5 个 Tab 逐个出图', (WidgetTester tester) async {
+    // FAB 被导航栏遮挡那个回归就是在"没看过的页面"里藏着的，
+    // 所以每个 Tab 都出图过一遍。
+    UiEffects.resetForTesting();
+    UiEffects.tier.value = UiEffectTier.reduced;
+
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const TimeWayProApp());
+    await tester.pump();
+    await tester.pump(); // 等 MainScreen 回填导航栏高度
+
+    const List<String> labels = <String>['待办', '任务', '统计', '规划', '设置'];
+    for (int i = 0; i < labels.length; i++) {
+      if (i > 0) {
+        await tester.tap(find.text(labels[i]));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 600));
+      }
+      await expectLater(
+        find.byType(TimeWayProApp),
+        matchesGoldenFile('goldens/tab_$i.png'),
+      );
+    }
   });
 }
