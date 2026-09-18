@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.3.2-00BFA5)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.3.3-00BFA5)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-00BFA5?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -90,7 +90,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 - **坚果云 WebDAV 同步** —— 一键备份 / 恢复，配置步骤见[下文](#坚果云同步配置)
 - **本地导入导出** —— 导出为 JSON 文件、从 JSON 文件导入
-- **自动备份机制** —— 本地写入前留存上一份数据，读取失败时自动回滚
+- **自动备份与原子写入** —— 写入走临时文件 + 改名替换，中断也不会写出半截 JSON；正式文件异常时自动从 `.bak` 回滚
 
 ### 🔔 通知栏常驻通知
 
@@ -100,6 +100,25 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.3.3 — 写入可靠性与任务页日期
+*2026-09-18*
+
+**修复**
+
+- **保存不再是「先覆盖再说」**。原先每写一次都是「把正式文件整个复制成 `.bak`，再直接覆盖正式文件」——写到一半被杀进程，正式文件就是**半截 JSON**，下次启动只能回滚到上一次，刚做的改动丢掉。现在改为：写临时文件（`flush` 落盘）→ 旧的正式文件改名成 `.bak` → 临时文件改名顶替。两次 `rename` 都只改元数据，调用方要么看到旧的、要么看到新的，**不存在中间态**。顺带不再有每次写入都整文件复制的开销。
+- **正式文件缺失时不再静默当作「没有数据」**。原先只在**读取抛异常**时回退到 `.bak`；文件**不存在**时会以空表启动——对全部价值就是这份数据的应用来说，这是个静默的数据丢失路径。现在文件缺失也会先试备份。
+- **任务页的日期选择器接上了真实数据**。原先它只改标题：卡片上那个「今日 X分钟」的数据源把「今天」写死在方法体里，翻到上周三，标题变了、数字还是今天的。现在翻到哪天就聚合哪天的记录，今天显示「今日」、其它日期显示「当日」。
+- 卡上那个时长文字从 `textHint` 换到 `textSecondary`：12px 且承载真实数据，前者在玻璃底上只有约 3.1:1 对比度，低于 [对比度规则](#玻璃的对比度约束)要求的门槛。
+
+**边界**
+
+- 任务**列表内容不随日期变化**：任何日期都列出完整列表，日期只影响那个时长数字。这是刻意的——若按日期过滤，今天会看不到尚未开始的任务，也就无法开始它们。
+- 记录的日期归属只看 `start_time`，所以跨午夜的计时整段算在开始那天。
+
+**说明**
+
+- 「原子性」这条属性**没有单元测试**，是刻意的：同进程内「写——读」永远看到完整文件，测不出差别（写过一版假的，反证时发现旧实现也能过，已删）。靠代码结构保证：正式文件只经 `rename` 替换，从不被就地覆写。
 
 ### v1.3.2 — 修复添加待办弹窗
 *2026-09-18*
@@ -317,10 +336,10 @@ flutter build apk --release
 
 ```bash
 flutter analyze          # 当前基线：0 error / 0 warning
-flutter test             # 75 个测试
+flutter test             # 158 个测试
 ```
 
-另有两类不在默认 test run 里的 golden（文件名不以 `_test.dart` 结尾，避免像素跨平台漂移影响别人的机器）：
+另有三类不在默认 test run 里的 golden（文件名不以 `_test.dart` 结尾，避免像素跨平台漂移影响别人的机器）：
 
 ```bash
 # 玻璃设计系统的视觉探针 + 各 Tab 截图（后者用于生成本文档的配图）
@@ -340,11 +359,12 @@ python tool/make_app_icon.py
 应用的所有数据保存在本地**单个 JSON 文件**中：
 
 ```
-<应用文档目录>/time_way_pro_data.json
+<应用文档目录>/time_way_pro_data.json       # 正式数据
 <应用文档目录>/time_way_pro_data.json.bak   # 上一份数据，用于异常回滚
+<应用文档目录>/time_way_pro_data.json.tmp   # 写入中转，rename 后即消失
 ```
 
-文件内包含五张逻辑表：
+文件内包含六张逻辑表：
 
 | 表名 | 说明 |
 | --- | --- |
@@ -352,9 +372,10 @@ python tool/make_app_icon.py
 | `task_records` | 计时记录（每次计时的开始 / 结束 / 时长） |
 | `plans` | 人生规划目标（含父子层级） |
 | `daily_tasks` | 每日待办 |
+| `weekly_goals` | 每周目标 |
 | `sync_config` | 云同步配置 |
 
-每次写入前会先把现有文件复制为 `.bak`，下次启动读取失败时自动从备份回滚。
+写入用「临时文件 → 改名替换」完成：新内容先落到 `.tmp` 并 `flush` 落盘，旧的正式文件改名成 `.bak`，再由 `.tmp` 改名顶替。两次改名都只动元数据、不复制数据体，因此在任何时刻被中断，正式文件要么是旧的、要么是新的，不会出现半截 JSON。启动时若正式文件缺失或读取失败，会自动从 `.bak` 恢复。
 
 ---
 
