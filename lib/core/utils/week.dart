@@ -35,3 +35,18 @@ String weekKeyOf(DateTime date) {
   final String d = monday.day.toString().padLeft(2, '0');
   return '$y-$m-$d';
 }
+
+/// 某天 00:00
+DateTime startOfDay(DateTime date) =>
+    DateTime(date.year, date.month, date.day);
+
+/// 次日 00:00 —— 与 [startOfDay] 一起构成**半开区间** `[start, end)`
+///
+/// 为什么不返回当天 `23:59:59`：`getRecordsByDateRange`
+/// （`task_repository.dart`）的判定是
+/// `!startTime.isBefore(start) && startTime.isBefore(end)`，
+/// 半开区间正好与之匹配，而且**不会漏掉 `23:59:59.xxx` 的记录**。
+/// 统计页 `_getDateRange()` 现在用的是闭区间 `23, 59, 59`，会漏掉最后一秒
+/// 内的记录——不要照搬那个写法。
+DateTime nextDayStart(DateTime date) =>
+    DateTime(date.year, date.month, date.day + 1);

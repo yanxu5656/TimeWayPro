@@ -8,6 +8,11 @@ class TaskCard extends StatelessWidget {
   final bool isRunning;
   final int elapsedSeconds;
   final int dailyDuration;
+
+  /// 那个时长的前缀文案。任务页会传「今日」或「当日」——
+  /// 选中今天是「今日 X分钟」，翻到别的日期是「当日 X分钟」。
+  final String durationLabel;
+
   final VoidCallback onComplete;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -20,6 +25,7 @@ class TaskCard extends StatelessWidget {
     this.isRunning = false,
     this.elapsedSeconds = 0,
     this.dailyDuration = 0,
+    this.durationLabel = '今日',
     required this.onComplete,
     required this.onEdit,
     required this.onDelete,
@@ -160,7 +166,11 @@ class TaskCard extends StatelessWidget {
                     ),
                   ],
 
-                  // 今日累计时长
+                  // 当日累计时长。
+                  //
+                  // 颜色用 textSecondary 而不是 textHint：这是 12px 且承载
+                  // 真实数据，而 textHint 在玻璃底上只有约 3.1:1，
+                  // 按 AppColors 里写明的规则不得用于 <18px 的语义文字。
                   if (dailyDuration > 0) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -168,14 +178,14 @@ class TaskCard extends StatelessWidget {
                         const Icon(
                           Icons.access_time,
                           size: 14,
-                          color: AppColors.textHint,
+                          color: AppColors.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '今日 ${_formatDuration(dailyDuration)}',
+                          '$durationLabel ${_formatDuration(dailyDuration)}',
                           style: const TextStyle(
                             fontSize: 12,
-                            color: AppColors.textHint,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],

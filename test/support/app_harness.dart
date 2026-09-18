@@ -109,6 +109,29 @@ Map<String, dynamic> seedData() {
       record('r1', 't1', 9, 80),
       record('r2', 't2', 8, 15),
       record('r3', 't3', 21, 45),
+      // 昨天的一条，用来验证任务页翻日期时那个数字会跟着变。
+      // 它不会出现在"今天"的视图里，所以不影响截图基线。
+      <String, dynamic>{
+        'id': 'r-yesterday',
+        'task_id': 't1',
+        'start_time': DateTime(
+          now.year,
+          now.month,
+          now.day - 1,
+          10,
+        ).toIso8601String(),
+        'end_time': DateTime(
+          now.year,
+          now.month,
+          now.day - 1,
+          10,
+          37,
+        ).toIso8601String(),
+        // 故意用一个今天不存在的数值（今天是 80/15/45 分钟），
+        // 否则断言可能因为数字撞车而在有 bug 时也通过——踩过这个坑
+        'duration': 37 * 60,
+        'completed_at': null,
+      },
     ],
     'plans': <Map<String, dynamic>>[
       <String, dynamic>{

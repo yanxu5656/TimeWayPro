@@ -123,4 +123,64 @@ void main() {
       ]);
     });
   });
+
+  group('startOfDay / nextDayStart —— 半开日区间', () {
+    test('startOfDay 取当天 00:00', () {
+      expect(
+        startOfDay(DateTime(2026, 9, 18, 15, 30, 45)),
+        DateTime(2026, 9, 18),
+      );
+    });
+
+    test('nextDayStart 取次日 00:00', () {
+      expect(nextDayStart(DateTime(2026, 9, 18, 15)), DateTime(2026, 9, 19));
+    });
+
+    test('两者相隔正好一天', () {
+      for (int day = 1; day <= 28; day++) {
+        final DateTime d = DateTime(2026, 4, day, 9, 15);
+        expect(nextDayStart(d).difference(startOfDay(d)).inDays, 1);
+      }
+    });
+
+    test('跨月：9 月 30 日的次日是 10 月 1 日', () {
+      expect(nextDayStart(DateTime(2026, 9, 30)), DateTime(2026, 10, 1));
+    });
+
+    test('跨年：12 月 31 日的次日是次年 1 月 1 日', () {
+      expect(nextDayStart(DateTime(2026, 12, 31)), DateTime(2027, 1, 1));
+    });
+
+    test('闰年：2 月 28 日的次日是 2 月 29 日', () {
+      // 2028 是闰年
+      expect(nextDayStart(DateTime(2028, 2, 28)), DateTime(2028, 2, 29));
+      expect(nextDayStart(DateTime(2028, 2, 29)), DateTime(2028, 3, 1));
+    });
+
+    test('非闰年：2 月 28 日的次日是 3 月 1 日', () {
+      expect(nextDayStart(DateTime(2026, 2, 28)), DateTime(2026, 3, 1));
+    });
+
+    test('区间是半开的：23:59:59.999 落在当天，次日 00:00 不落在', () {
+      final DateTime day = DateTime(2026, 9, 18);
+      final DateTime start = startOfDay(day);
+      final DateTime end = nextDayStart(day);
+
+      bool inRange(DateTime t) => !t.isBefore(start) && t.isBefore(end);
+
+      expect(inRange(DateTime(2026, 9, 18)), isTrue, reason: '当天 00:00 应算在内');
+      expect(
+        inRange(DateTime(2026, 9, 18, 23, 59, 59, 999)),
+        isTrue,
+        reason: '最后一毫秒的记录不能被漏掉——这正是闭区间 23:59:59 的问题',
+      );
+      expect(inRange(DateTime(2026, 9, 19)), isFalse, reason: '次日 00:00 不该算在内');
+    });
+
+    test('时刻部分被丢弃（不受传入时间的分秒影响）', () {
+      final DateTime a = startOfDay(DateTime(2026, 9, 18, 0, 0, 0));
+      final DateTime b = startOfDay(DateTime(2026, 9, 18, 23, 59, 59));
+      expect(a, b);
+    });
+  });
 }

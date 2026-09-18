@@ -19,19 +19,44 @@ class _TaskScreenState extends State<TaskScreen> {
   Map<String, int> _dailyDurations = {};
   bool _isLoadingDurations = false;
 
+  /// 加载中又来了新请求时置位，等当前这次结束后补跑一次。
+  /// 见 [_loadDailyDurations] 的说明。
+  bool _pendingDurationReload = false;
+
+  /// 卡片上那个时长的前缀。选中今天是「今日」，翻到别的日期是「当日」。
+  String get _durationLabel => _isToday(_selectedDate) ? '今日' : '当日';
+
   @override
   void initState() {
     super.initState();
     _loadDailyDurations();
   }
 
+  /// 换日期。三个入口（前一天 / 后一天 / 日期选择器）都走这里，
+  /// 保证换日期的同时一定会重新拉那一天的时长——
+  /// 原先三处都只 setState，所以标题变了、数字不变。
+  void _changeDate(DateTime newDate) {
+    if (newDate == _selectedDate) return;
+    setState(() => _selectedDate = newDate);
+    _loadDailyDurations();
+  }
+
   Future<void> _loadDailyDurations() async {
-    if (_isLoadingDurations) return;
+    // 已经在加载中：**记下还需要再跑一次**，而不是直接丢弃请求。
+    // 原先是 `if (_isLoadingDurations) return;`，快速连点日期箭头时
+    // 后面的请求会被全部跳过，数字停在半路。
+    if (_isLoadingDurations) {
+      _pendingDurationReload = true;
+      return;
+    }
     _isLoadingDurations = true;
 
     try {
       final provider = context.read<TaskProvider>();
-      final durations = await provider.getAllTaskDailyDurations();
+      // 传入选中的日期——「今天」不再写死在 provider 里
+      final durations = await provider.getAllTaskDailyDurations(
+        day: _selectedDate,
+      );
       if (mounted) {
         setState(() {
           _dailyDurations = durations;
@@ -41,6 +66,10 @@ class _TaskScreenState extends State<TaskScreen> {
       debugPrint('Error loading daily durations: $e');
     } finally {
       _isLoadingDurations = false;
+      if (_pendingDurationReload && mounted) {
+        _pendingDurationReload = false;
+        _loadDailyDurations();
+      }
     }
   }
 
@@ -126,13 +155,9 @@ class _TaskScreenState extends State<TaskScreen> {
               children: [
                 _buildDateButton(
                   icon: Icons.chevron_left_rounded,
-                  onTap: () {
-                    setState(() {
-                      _selectedDate = _selectedDate.subtract(
-                        const Duration(days: 1),
-                      );
-                    });
-                  },
+                  onTap: () => _changeDate(
+                    _selectedDate.subtract(const Duration(days: 1)),
+                  ),
                 ),
                 Expanded(
                   child: GestureDetector(
@@ -181,13 +206,8 @@ class _TaskScreenState extends State<TaskScreen> {
                 ),
                 _buildDateButton(
                   icon: Icons.chevron_right_rounded,
-                  onTap: () {
-                    setState(() {
-                      _selectedDate = _selectedDate.add(
-                        const Duration(days: 1),
-                      );
-                    });
-                  },
+                  onTap: () =>
+                      _changeDate(_selectedDate.add(const Duration(days: 1))),
                 ),
               ],
             ),
@@ -357,6 +377,7 @@ class _TaskScreenState extends State<TaskScreen> {
                   isRunning: true,
                   elapsedSeconds: provider.getTaskElapsedSeconds(taskId),
                   dailyDuration: _dailyDurations[taskId] ?? 0,
+                  durationLabel: _durationLabel,
                   onComplete: () => _completeTask(task),
                   onEdit: () => _editTask(task),
                   onDelete: () => _deleteTask(task),
@@ -385,6 +406,7 @@ class _TaskScreenState extends State<TaskScreen> {
                   isRunning: isRunning,
                   elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
                   dailyDuration: _dailyDurations[task.id] ?? 0,
+                  durationLabel: _durationLabel,
                   onComplete: () => _completeTask(task),
                   onEdit: () => _editTask(task),
                   onDelete: () => _deleteTask(task),
@@ -413,6 +435,7 @@ class _TaskScreenState extends State<TaskScreen> {
                   isRunning: isRunning,
                   elapsedSeconds: provider.getTaskElapsedSeconds(task.id),
                   dailyDuration: _dailyDurations[task.id] ?? 0,
+                  durationLabel: _durationLabel,
                   onComplete: () => _completeTask(task),
                   onEdit: () => _editTask(task),
                   onDelete: () => _deleteTask(task),
@@ -503,7 +526,7 @@ class _TaskScreenState extends State<TaskScreen> {
       },
     );
     if (picked != null) {
-      setState(() => _selectedDate = picked);
+      _changeDate(picked);
     }
   }
 

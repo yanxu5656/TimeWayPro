@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/week.dart';
 import '../data/models/task.dart';
 import '../data/models/task_record.dart';
 import '../data/repositories/task_repository.dart';
@@ -462,14 +463,14 @@ class TaskProvider extends ChangeNotifier {
     return await _repository.getTotalDurationByDateRange(start, end);
   }
 
-  // 获取指定任务今日累计时长
-  Future<int> getTaskDailyDuration(String taskId) async {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = DateTime(now.year, now.month, now.day + 1);
+  // 获取指定任务在某一天的累计时长（默认今天）
+  Future<int> getTaskDailyDuration(String taskId, {DateTime? day}) async {
+    final DateTime target = day ?? DateTime.now();
+    // 半开区间 [当天 00:00, 次日 00:00)——与 getRecordsByDateRange 的判定
+    // 严格匹配，且不会漏掉 23:59:59.xxx 的记录
     final records = await _repository.getRecordsByDateRange(
-      startOfDay,
-      endOfDay,
+      startOfDay(target),
+      nextDayStart(target),
     );
     int total = 0;
     for (var record in records) {
@@ -480,14 +481,16 @@ class TaskProvider extends ChangeNotifier {
     return total;
   }
 
-  // 获取所有任务今日累计时长
-  Future<Map<String, int>> getAllTaskDailyDurations() async {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = DateTime(now.year, now.month, now.day + 1);
+  // 获取所有任务在某一天的累计时长（默认今天）
+  //
+  // 任务页的日期选择器就靠这个：传入选中的日期即可拿到那天的时长。
+  // 原先「今天」是写死在方法体里的（DateTime.now()），所以翻日期时
+  // 标题变了、数字不变。
+  Future<Map<String, int>> getAllTaskDailyDurations({DateTime? day}) async {
+    final DateTime target = day ?? DateTime.now();
     final records = await _repository.getRecordsByDateRange(
-      startOfDay,
-      endOfDay,
+      startOfDay(target),
+      nextDayStart(target),
     );
     Map<String, int> durationMap = {};
     for (var record in records) {
