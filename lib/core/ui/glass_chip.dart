@@ -80,11 +80,21 @@ class GlassChip extends StatelessWidget {
             ),
     );
 
-    return GestureDetector(
+    final Widget tappable = GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: expanded ? Expanded(child: chip) : chip,
+      child: chip,
     );
+
+    // 顺序很重要：Expanded 是 ParentDataWidget，**必须是 Flex 的直接子节点**。
+    // 如果把 Expanded 包在 GestureDetector 里面（先前就是那样写的），它上方
+    // 就隔了一个 RenderObjectWidget，父数据会挂到错误的 RenderObject 上——
+    // 于是抛出 "Incorrect use of ParentDataWidget"，并且在 **release 构建**里
+    // 该子树会被替换成 ErrorWidget，也就是一块纯灰色方块（用户看到的
+    // 「整个时间段被很大的灰色方块挡住了」就是这个）。
+    // 所以 Expanded 必须在 build 的顶层返回，让 caller 的 Row/Column 直接看到它；
+    // 中间隔着 StatelessWidget 没问题，隔着 RenderObjectWidget 才有问题。
+    return expanded ? Expanded(child: tappable) : tappable;
   }
 
   TextStyle _labelStyle(Color color) => TextStyle(

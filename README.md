@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.3.1-00BFA5)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.3.2-00BFA5)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-00BFA5?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -100,6 +100,18 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.3.2 — 修复添加待办弹窗
+*2026-09-18*
+
+**修复**
+
+- 「添加待办」弹窗里的**时间段选择被一块灰色方块挡住，且待办创建不了**。
+
+  根因是 `GlassChip` 把 `Expanded` 包在了 `GestureDetector` 里面。`Expanded` 是 `ParentDataWidget`，**必须是 Flex 的直接子节点**；隔着一个 RenderObjectWidget 会让父数据挂到错误的 RenderObject 上。这个误用在 debug 下单抛异常，在 **release 构建**里则会把该子树替换成 `ErrorWidget` —— 也就是一块纯灰色方块。随后布局异常又让整帧不可交互，所以「也创建不了」。
+
+- 补上对应的回归测试（打开弹窗、chip 等宽、键盘弹起时的布局、真实创建流程）与弹窗截图。此前**测试与截图都只覆盖 5 个 Tab 页，从未打开过这个弹窗**，所以一直没暴露。
+- 测试脚手架补上 `path_provider` mock 与「真实 IO 放行」工具，现在可以覆盖新建 / 编辑 / 删除这类写入流程了（此前任何写入都会在 FakeAsync 里挂死，等于没测过）。
 
 ### v1.3.1 — 一致性与本周目标
 *2026-09-17*

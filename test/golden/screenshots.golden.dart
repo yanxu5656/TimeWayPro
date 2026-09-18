@@ -154,4 +154,33 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('弹窗截图', (WidgetTester tester) async {
+    // 之前这个文件只拍 5 个 Tab 页，导致「添加待办」弹窗里的
+    // ParentDataWidget 误用一直没被发现（release 下会变成一块灰色方块）。
+    UiEffects.resetForTesting();
+    UiEffects.tier.value = UiEffectTier.reduced;
+
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.runAsync(() => DatabaseHelper().importAll(seedData()));
+
+    await tester.pumpWidget(_appWithRealFont());
+    for (int i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    // 每日待办页的 FAB 打开「添加待办」
+    await tester.tap(find.byType(GlassFab));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(tester.takeException(), isNull);
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/readme_screenshots/sheet_add.png'),
+    );
+  });
 }

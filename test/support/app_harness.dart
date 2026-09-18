@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:time_way_pro/app/app.dart';
@@ -185,6 +188,12 @@ Future<void> pumpSeededApp(
   // 永不完成，isLoading 会一直卡在 true，页面就只剩一个 spinner。
   SharedPreferences.setMockInitialValues(<String, Object>{});
 
+  // path_provider 也要 mock：DatabaseHelper 每次写入都会先
+  // getApplicationDocumentsDirectory()。未 mock 时这一步直接抛
+  // MissingPluginException（被 _saveData 吞掉），看似无害——但配合下面的
+  // 真实 IO 说明就有问题了。
+  _mockPathProvider();
+
   await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -199,14 +208,41 @@ Future<void> pumpSeededApp(
   }
 }
 
+Directory? _tempDir;
+
+void _mockPathProvider() {
+  _tempDir ??= Directory.systemTemp.createTempSync('timewaypro_test');
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (MethodCall call) async => _tempDir!.path,
+      );
+}
+
+/// 让**真实的文件 IO** 有机会完成。
+///
+/// 触发了写入的交互（新建 / 编辑 / 删除）必须包在这个里面跑：`_saveData`
+/// 会 File.writeAsString，而 `dart:io` 的真实 Future 在 FakeAsync 区里永不
+/// 完成——不包的话 `insert` 不返回、provider 的 `loadTasks()` 永远不执行，
+/// 表现为"操作了但列表没变"，而且测试会挂到超时。
+///
+/// 用法：
+/// ```dart
+/// await tapAndFlush(tester, find.text('添加'));
+/// ```
+Future<void> tapAndFlush(WidgetTester tester, Finder finder) async {
+  await tester.runAsync(() async {
+    await tester.tap(finder);
+    // 让写入 + 随后的 loadTasks 走完
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+  });
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 600));
+}
+
 /// 切到指定 Tab 并等动画落定
 Future<void> switchToTab(WidgetTester tester, String label) async {
   await tester.tap(find.text(label));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 600));
-}
-
-/// 清掉可能残留的 mock
-void resetHarness() {
-  SharedPreferences.setMockInitialValues(<String, Object>{});
 }
