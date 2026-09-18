@@ -39,7 +39,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 ## 安装
 
-到 [**Releases**](https://github.com/yanxu5656/TimeWayPro/releases) 下载最新的 `app-release.apk`，直接装到手机上即可。
+到 [**Releases**](https://github.com/yanxu5656/TimeWayPro/releases) 下载最新版本的 APK（文件名带版本号，形如 `app-release-1.3.3.apk`），直接装到手机上即可。
 
 **环境要求**：Android 7.0（API 24）及以上。
 
@@ -330,6 +330,8 @@ flutter run
 # 构建 Android 安装包
 flutter build apk --release
 # 产物：build/app/outputs/flutter-apk/app-release.apk
+# 发布到 Releases 时复制一份带版本号的，方便区分：
+#   cp .../app-release.apk .../app-release-1.3.3.apk
 ```
 
 ### 测试
