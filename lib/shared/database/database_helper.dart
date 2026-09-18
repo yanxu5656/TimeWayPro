@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -64,46 +66,84 @@ class DatabaseHelper {
     return File(p.join(path, 'time_way_pro_data.json.bak'));
   }
 
+  /// 读取本地数据文件。
+  ///
+  /// 三条路径，顺序不能变：
+  /// 1. 正式文件存在 → 正常读
+  /// 2. 正式文件**不存在**或读坏了 → 从 `.bak` 恢复
+  /// 3. 两个都没有 → 确实是首次启动，用空表
+  ///
+  /// 第 2 条是本次新增的。原先只在**读取抛异常**时回退到备份，
+  /// 正式文件不存在时不回退、`_data` 保持初始空表——也就是**静默地当作
+  /// "没有数据"**。`_saveData` 改成原子写入后，它中间有一小段正式文件
+  /// 不存在的窗口，所以这条回退是必需的。
   Future<void> _loadData() async {
     try {
-      final file = await _localFile;
+      final File file = await _localFile;
+
       if (await file.exists()) {
-        final contents = await file.readAsString();
-        _data = jsonDecode(contents);
-        _ensureTables(_data);
+        try {
+          _data = jsonDecode(await file.readAsString());
+          _ensureTables(_data);
+          return;
+        } catch (e) {
+          print('Error loading data: $e');
+          // 读坏了，落到下面走备份
+        }
+      } else {
+        print('Data file missing, trying backup');
       }
-    } catch (e) {
-      print('Error loading data: $e');
-      // 尝试从备份恢复
-      try {
-        final backupFile = await _backupFile;
-        if (await backupFile.exists()) {
-          final contents = await backupFile.readAsString();
-          _data = jsonDecode(contents);
+
+      final File backupFile = await _backupFile;
+      if (await backupFile.exists()) {
+        try {
+          _data = jsonDecode(await backupFile.readAsString());
           _ensureTables(_data);
           print('Restored from backup');
-        } else {
-          _data = _emptyData();
+          return;
+        } catch (e) {
+          print('Error loading backup: $e');
         }
-      } catch (e2) {
-        print('Error loading backup: $e2');
-        _data = _emptyData();
       }
+
+      // 两份都没有或都坏了：确实是首次启动
+      _data = _emptyData();
+    } catch (e) {
+      // 连路径都拿不到（比如 path_provider 不可用）
+      print('Error loading data: $e');
+      _data = _emptyData();
     }
   }
 
   Future<void> _saveData() async {
     try {
-      final file = await _localFile;
-      final backupFile = await _backupFile;
+      final File file = await _localFile;
+      final File backupFile = await _backupFile;
+      final File tmpFile = File('${file.path}.tmp');
 
-      // 先备份当前文件
+      // 1. 先写临时文件。flush: true 让它真正落盘，而不是停在 OS 缓存里。
+      await tmpFile.writeAsString(jsonEncode(_data), flush: true);
+
+      // 2. 把当前这份留作备份。
+      //
+      //    用 rename 而不是 copy：同一目录内的 rename 只改元数据、不复制
+      //    数据体，于是「每次写入都全量复制一份备份」这个 O(文件大小) 的
+      //    开销没有了，而备份频率与原先完全一致（每次写都更新）。
+      //
+      //    必须先删旧备份——Windows 上 rename 到已存在的路径会失败。
       if (await file.exists()) {
-        await file.copy(backupFile.path);
+        if (await backupFile.exists()) {
+          await backupFile.delete();
+        }
+        await file.rename(backupFile.path);
       }
 
-      // 写入新数据
-      await file.writeAsString(jsonEncode(_data));
+      // 3. 原子替换正式文件。
+      //
+      //    走到这里，正式文件要么是旧内容、要么不存在；这一步之后要么是
+      //    旧内容、要么是新内容，**永远不会是半截 JSON**。
+      //    原先的 writeAsString 是直接覆盖，写到一半被杀进程就废了。
+      await tmpFile.rename(file.path);
     } catch (e) {
       print('Error saving data: $e');
     }
@@ -198,5 +238,16 @@ class DatabaseHelper {
 
   Future<void> close() async {
     // JSON存储不需要关闭连接
+  }
+
+  /// 仅供测试：清空内存状态，让下一次访问重新从磁盘读。
+  ///
+  /// 这是个单例，`_initialized` 一旦为真就再也不会走 `_loadData()`。
+  /// 要验证「从磁盘恢复」这类行为必须有办法把它打回未初始化。
+  @visibleForTesting
+  void resetForTesting() {
+    _data = _emptyData();
+    _initialized = false;
+    _initFuture = null;
   }
 }
