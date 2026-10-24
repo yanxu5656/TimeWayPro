@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 
-/// 文字样式 token。
+/// 文字样式 token —— 静白志。
 ///
-/// 收敛自原代码里 93 处硬写的 `TextStyle`（页面侧 `Theme.of(context).textTheme`
-/// 引用次数为 0）。
+/// 分三组：
+/// - **M3 槽位组**（[display] ~ [labelSm]）：装配回 `ThemeData.textTheme`，
+///   让未显式给 style 的 `Text`/`ListTile`/`AlertDialog` 拿到正确字号。
+/// - **衬线组**（[masthead] ~ [serifNum]）：编辑风的灵魂。数字用 Playfair
+///   （assets 里打包的拉丁衬线），中文标题与账本行用思源宋
+///   （NotoSerifSC 子集）。衬线只承担「主角」——大数字、刊头、账本行；
+///   按钮 / 输入框 / 导航等 UI 元件仍用无衬线，保证操作性。
+/// - **补充组**（[taskTitle] ~ [navLabelActive]）：页面实际在用但
+///   M3 槽位里没有对应档位的样式。
 ///
-/// 分两组：
-/// - **M3 槽位组**（[display] ~ [labelSm]）：与 `app_theme.dart` 里原有的
-///   15 档 `TextTheme` 逐字一致，由 [asTextTheme] 装配回 `ThemeData`，
-///   让未显式给 style 的 `Text`/`ListTile`/`SnackBar`/`AlertDialog` 拿到
-///   正确字号——`textTheme` 从"零消费"变成隐式全覆盖，且**渲染结果不变**。
-/// - **补充组**（[taskTitle] ~ [navLabelActive]）：页面实际在用但 M3 槽位
-///   里没有对应档位的样式。
+/// 字体文件由 `tool/subset_fonts.py` 生成（改字符集重跑脚本）。
 class AppText {
   AppText._();
 
-  // ═ M3 槽位组（与原有 textTheme 逐字一致）══════════════════
+  // ═ M3 槽位组 ═════════════════════════════════════════════
 
   /// → displayLarge
   static const TextStyle display = TextStyle(
     fontSize: 32,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w700,
     letterSpacing: -0.5,
     height: 1.2,
   );
@@ -28,7 +29,7 @@ class AppText {
   /// → displayMedium
   static const TextStyle displayMd = TextStyle(
     fontSize: 28,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w700,
     letterSpacing: -0.3,
     height: 1.2,
   );
@@ -36,7 +37,7 @@ class AppText {
   /// → displaySmall
   static const TextStyle displaySm = TextStyle(
     fontSize: 24,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     letterSpacing: -0.2,
     height: 1.3,
   );
@@ -60,7 +61,7 @@ class AppText {
   /// → headlineSmall
   static const TextStyle h3 = TextStyle(
     fontSize: 18,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     letterSpacing: 0.1,
     height: 1.4,
   );
@@ -68,7 +69,7 @@ class AppText {
   /// → titleLarge。卡片标题
   static const TextStyle title = TextStyle(
     fontSize: 16,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     letterSpacing: 0.15,
     height: 1.5,
   );
@@ -76,7 +77,7 @@ class AppText {
   /// → titleMedium
   static const TextStyle titleMd = TextStyle(
     fontSize: 15,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     letterSpacing: 0.15,
     height: 1.5,
   );
@@ -84,7 +85,7 @@ class AppText {
   /// → titleSmall
   static const TextStyle titleSm = TextStyle(
     fontSize: 14,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     letterSpacing: 0.1,
     height: 1.5,
   );
@@ -116,7 +117,7 @@ class AppText {
   /// → labelLarge
   static const TextStyle labelLg = TextStyle(
     fontSize: 14,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     letterSpacing: 0.3,
     height: 1.4,
   );
@@ -124,7 +125,7 @@ class AppText {
   /// → labelMedium
   static const TextStyle label = TextStyle(
     fontSize: 12,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     letterSpacing: 0.3,
     height: 1.4,
   );
@@ -132,8 +133,55 @@ class AppText {
   /// → labelSmall
   static const TextStyle labelSm = TextStyle(
     fontSize: 10,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     letterSpacing: 0.3,
+    height: 1.4,
+  );
+
+  // ══ 衬线组（编辑风的主角）════════════════════════════════
+
+  /// 刊头大标题（思源宋 SemiBold）。每页顶部的主标题
+  static const TextStyle masthead = TextStyle(
+    fontFamily: 'NotoSerifSC',
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.02,
+    height: 1.3,
+  );
+
+  /// 衬线区块标题（思源宋 SemiBold）。弹窗标题、账本分组标题
+  static const TextStyle titleSerif = TextStyle(
+    fontFamily: 'NotoSerifSC',
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.02,
+    height: 1.4,
+  );
+
+  /// 账本行正文（思源宋 Regular）。待办 / 每周目标的条目文字
+  static const TextStyle bodySerif = TextStyle(
+    fontFamily: 'NotoSerifSC',
+    fontSize: 15,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.02,
+    height: 1.5,
+  );
+
+  /// 衬线数字基座（Playfair Medium）。页面按需 copyWith(fontSize)
+  /// 拼分数、时长等；只含拉丁与数字字形，混排中文会回退无衬线
+  static const TextStyle serifNum = TextStyle(
+    fontFamily: 'Playfair',
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.01,
+    height: 1.1,
+  );
+
+  /// 刊头上方的英文小标（DAILY / WEEKLY / STATISTICS…）。
+  /// 字距放到 0.3em，这是编辑风的「眉题」
+  static const TextStyle kicker = TextStyle(
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 3,
     height: 1.4,
   );
 
@@ -153,18 +201,20 @@ class AppText {
     height: 1.6,
   );
 
-  /// 统计页大数字
+  /// 统计页大数字（衬线。数字是这个设计的主角）
   static const TextStyle numXl = TextStyle(
+    fontFamily: 'Playfair',
     fontSize: 26,
-    fontWeight: FontWeight.w800,
-    letterSpacing: -0.5,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.01,
   );
 
-  /// 任务页统计卡数字
+  /// 任务页统计卡数字（衬线）
   static const TextStyle numLg = TextStyle(
+    fontFamily: 'Playfair',
     fontSize: 22,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.5,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.01,
   );
 
   /// 计时显示（等宽，避免数字跳动）
@@ -190,9 +240,6 @@ class AppText {
   );
 
   /// 装配回 `ThemeData.textTheme`。
-  ///
-  /// 输出与改造前 `app_theme.dart` 里的 15 档定义**逐字一致**——
-  /// Phase 1 不改变任何文字的渲染结果。
   static TextTheme asTextTheme() => const TextTheme(
     displayLarge: display,
     displayMedium: displayMd,

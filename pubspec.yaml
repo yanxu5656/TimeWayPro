@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.4.0+5
+version: 1.5.0+6
 
 environment:
   sdk: ^3.12.2
@@ -86,6 +86,24 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # 静白志设计系统的两套衬线字体，由 tool/subset_fonts.py 从可变字体
+  # 实例化 + 子集化生成（改字符集后重跑脚本，不要手改这些文件）：
+  # - Playfair：数字与大写拉丁的显示衬线（1/3、时长、统计大数字）
+  # - NotoSerifSC：中文衬线（标题、账本行），子集到 GB2312 一级 + 应用文案
+  fonts:
+    - family: Playfair
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlayfairDisplay-Bold.ttf
+          weight: 700
+    - family: NotoSerifSC
+      fonts:
+        - asset: assets/fonts/NotoSerifSC-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSerifSC-SemiBold.ttf
+          weight: 600
 
   # To add assets to your application, add an assets section, like this:
   # assets:

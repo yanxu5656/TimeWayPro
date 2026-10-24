@@ -1,47 +1,41 @@
 import 'package:flutter/painting.dart';
 
-/// 圆角 token。
+/// 圆角 token —— 静白志。
 ///
-/// 收敛自原代码里散落的 153 处 `BorderRadius.circular(...)` 字面量。
+/// 编辑风的圆角整体收紧：层次靠细线，不靠大圆角。只有「浮起」的
+/// 东西（弹窗、输入框、按钮）保有明显圆角，长在纸面上的内容
+/// （账本行、分区）是直角的。
 ///
 /// ## 按控件角色分档（改圆角前先看这里）
 ///
 /// | 角色 | 取值 | 用在哪 |
 /// |---|---|---|
 /// | 纯图标按钮 | 圆形 | 日期箭头、完成勾选、开始/停止 |
-/// | 浮动主按钮 | [full] 胶囊 | 只有 FAB |
-/// | 小控件 | [md] 12 | chip、分段控件、滑动指示块、日期胶囊、小标签 |
-/// | 大块 | [lg] 16 | **所有内容卡**、输入框、主按钮 |
-/// | 底部弹窗顶角 | [sheet] 28 | |
-/// | 对话框 | [xl] 20 | 只剩这一处用途 |
-///
-/// 两条容易踩的规则：
-/// - **页面内的卡片一律 [lg]**，不要用 [xl]。原先任务卡与统计概览卡用了
-///   xl(20)，而同类的待办/规划卡是 lg(16)，是同一类东西两个圆角。
-/// - **[xl] 不要用在页面里**，它现在的语义只剩「对话框」（`app_theme.dart`
-///   的 `dialogTheme`）。[xl] 与 [lg] 的差别在卡片上完全看不出来，
-///   只会制造不一致。
+/// | 浮动主按钮 | [full] 胶囊 | FAB、主按钮 |
+/// | 小控件 | [md] 8 | chip、小标签、热力图格子 |
+/// | 浮起块 | [lg] 12 | 输入框、白底浮起卡 |
+/// | 对话框 | [xl] 14 | `app_theme.dart` 的 `dialogTheme` |
+/// | 底部弹窗顶角 | [sheet] 16 | |
 class AppRadius {
   AppRadius._();
 
   /// 进度条裁剪、把手细条
-  static const double xs = 4;
+  static const double xs = 2;
 
-  /// 标签、热力图格子、小徽标
-  static const double sm = 8;
+  /// 标签、小徽标
+  static const double sm = 4;
 
-  /// chip、小按钮、日期胶囊
-  static const double md = 12;
+  /// chip、热力图格子
+  static const double md = 8;
 
-  /// 标准卡片、输入框
-  static const double lg = 16;
+  /// 输入框、白底浮起卡
+  static const double lg = 12;
 
-  /// 对话框（`app_theme.dart` 的 `dialogTheme`）。
-  /// **页面内的卡片不要用它**，用 [lg]。
-  static const double xl = 20;
+  /// 对话框（`app_theme.dart` 的 `dialogTheme`）
+  static const double xl = 14;
 
-  /// 底部弹窗顶角。统一为 28，终结原先 20/24 并存的分裂
-  static const double sheet = 28;
+  /// 底部弹窗顶角
+  static const double sheet = 16;
 
   /// 胶囊 / 圆形
   static const double full = 999;

@@ -7,21 +7,23 @@ import 'app_text.dart';
 
 // 令牌层统一从这里再导出，页面只需 import 本文件即可拿到
 // AppColors / AppRadius / AppSpacing / AppShadows / AppText。
-//
-// Dart 的 export 是传递性的，因此改造前就存在的 10 处
-// `import '.../core/theme/app_theme.dart'` 一行都不用改。
 export 'app_colors.dart';
 export 'app_radius.dart';
 export 'app_shadows.dart';
 export 'app_spacing.dart';
 export 'app_text.dart';
 
-/// 主题装配层。
+/// 主题装配层 —— 静白志。
 ///
 /// 这里只做两件事：把令牌层组装成 `ThemeData`，以及配置那些
 /// 「框架组件会自己去读」的主题入口（输入框、对话框、SnackBar 等）。
 /// 页面不通过 `Theme.of(context)` 取样式——绝大多数样式走
 /// 编译期常量，以保持 `const` 与低分配开销。
+///
+/// 颜色的分工约定：**墨是操作色**（主按钮、选中态的文字与底），
+/// **朱砂是强调色**（焦点、选中的日期、进度、点缀）。框架组件
+/// （datePicker / slider / switch）读 colorScheme.primary = 朱砂，
+/// 显式样式的按钮走墨色。
 class AppTheme {
   AppTheme._();
 
@@ -32,11 +34,10 @@ class AppTheme {
         seedColor: AppColors.primary,
         brightness: Brightness.light,
         primary: AppColors.primary,
+        onPrimary: AppColors.textOnPrimary,
         secondary: AppColors.accent,
         surface: AppColors.surface,
         error: AppColors.error,
-        // 补齐下面几项：只覆盖 4 个字段时，Switch / datePicker /
-        // 未显式着色的框架组件会取到 seed 派生色，与设计系统不一致。
         onSurface: AppColors.textPrimary,
         onSurfaceVariant: AppColors.textSecondary,
         surfaceContainerHighest: AppColors.surfaceVariant,
@@ -44,11 +45,7 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: AppColors.background,
 
-      // 现已删除 appBarTheme 与 floatingActionButtonTheme：
-      // Phase 4 迁移到 GlassAppBar / GlassFab 后，全仓使用
-      // AppBar / FloatingActionButton 的地方已归零。
-
-      // 圆角数值与改造前一致（16/12/16），本阶段无视觉变化
+      // 输入框：暖灰填充、无描边；聚焦时朱砂细描边（唯一的强调时刻）
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceVariant,
@@ -63,7 +60,7 @@ class AppTheme {
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: AppRadius.brLg,
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: const OutlineInputBorder(
           borderRadius: AppRadius.brLg,
@@ -75,10 +72,12 @@ class AppTheme {
         ),
       ),
 
+      // 主按钮是墨色的（纸色文字）；朱砂留给强调不做操作底色
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textOnPrimary,
+          backgroundColor: AppColors.textPrimary,
+          foregroundColor: AppColors.textOnInk,
+          disabledBackgroundColor: AppColors.inkSubtle,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
             horizontal: 28,
@@ -87,7 +86,7 @@ class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.brLg),
           textStyle: const TextStyle(
             fontSize: 15,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
           ),
         ),
@@ -95,7 +94,7 @@ class AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: AppColors.textPrimary,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
@@ -111,44 +110,48 @@ class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: AppColors.textPrimary,
           padding: const EdgeInsets.symmetric(
             horizontal: 28,
             vertical: AppSpacing.md,
           ),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.brLg),
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
+          side: const BorderSide(color: AppColors.textPrimary, width: 1.2),
           textStyle: const TextStyle(
             fontSize: 15,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
           ),
         ),
       ),
 
+      // 发丝线是分层的第一工具：1px 暖灰
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
-        thickness: 0.5,
+        thickness: 1,
         space: 0,
       ),
 
-      // ═ 新增：一次性消掉大量重复的内联样式 ═════════════════
-      //
-      // 这些主题项让 Phase 4 可以直接删掉调用点上重复的
-      // `shape:` / `behavior:` / `margin:` 参数。
-      // 调用点仍传内联值时以内联为准，因此本阶段不产生回归。
       dialogTheme: DialogThemeData(
-        // 对话框是文字最密的表面，走 91% 白强填充而非真模糊：
-        // AlertDialog 不是可替换 builder 的容器，注入 BackdropFilter
-        // 需自写 dialog 路由，而背后模糊对可读性零贡献、还多一次 saveLayer。
-        backgroundColor: AppColors.glassFillStrong,
+        backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.brXl),
+        titleTextStyle: AppText.titleSerif.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        contentTextStyle: AppText.body.copyWith(
+          color: AppColors.textSecondary,
+        ),
       ),
 
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.textPrimary,
+        contentTextStyle: const TextStyle(
+          color: AppColors.textOnInk,
+          fontSize: 14,
+        ),
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.brMd),
         insetPadding: const EdgeInsets.all(AppSpacing.md),
         elevation: 0,
@@ -156,30 +159,29 @@ class AppTheme {
 
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         linearTrackColor: AppColors.surfaceVariant,
-        linearMinHeight: 6,
+        linearMinHeight: 4,
       ),
 
       listTileTheme: const ListTileThemeData(
         iconColor: AppColors.textSecondary,
       ),
 
-      // 与 planning_screen 里原有的内联 SliderTheme 逐值一致
       sliderTheme: SliderThemeData(
         activeTrackColor: AppColors.primary,
-        inactiveTrackColor: AppColors.background,
+        inactiveTrackColor: AppColors.surfaceVariant,
         thumbColor: AppColors.primary,
-        overlayColor: AppColors.primary.withValues(alpha: 0.2),
-        trackHeight: 6,
+        overlayColor: AppColors.primary.withValues(alpha: 0.15),
+        trackHeight: 4,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
       ),
 
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
-          color: AppColors.textPrimary.withValues(alpha: 0.92),
+          color: AppColors.textPrimary,
           borderRadius: AppRadius.brSm,
         ),
         textStyle: const TextStyle(
-          color: AppColors.textOnPrimary,
+          color: AppColors.textOnInk,
           fontSize: 12,
         ),
         padding: const EdgeInsets.symmetric(
@@ -190,22 +192,12 @@ class AppTheme {
 
       // ══ 文字 ══════════════════════════════════════════════
       //
-      // 由 AppText.asTextTheme() 生成，输出与改造前逐字一致。
-      // 意义在于：所有未显式给 style 的 Text / ListTile / SnackBar /
-      // AlertDialog / Tooltip 都能拿到正确字号，textTheme 从
-      // 「零消费」变成隐式全覆盖。
+      // 由 AppText.asTextTheme() 生成：所有未显式给 style的
+      // Text / ListTile / SnackBar / Tooltip 拿到正确字号。
       textTheme: AppText.asTextTheme(),
 
-      // ══ 已删除（核实过零使用）═══════════════════════════════
-      //
-      // cardTheme                  → 真 `Card(` 0 处，改由 GlassCard 承担
-      // chipTheme                  → 真 `Chip(` 家族 0 处，改由 GlassChip 承担
-      // bottomNavigationBarTheme   → 真 `BottomNavigationBar(` 0 处，
-      //                              底部导航是自绘 Container+Row，
-      //                              改由 GlassNavBar 承担
-      //
-      // 7 处底部弹窗现已全部走 showGlassSheet（自带玻璃底板 + 顶角 28），
-      // 不再有任何一处依赖 route 的默认背景色，因此这里可以安全地设成透明。
+      // 底部弹窗全部走 showPaperSheet（自带白底板 + 顶角），
+      // route 层保持透明。
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Colors.transparent,
         modalBackgroundColor: Colors.transparent,
