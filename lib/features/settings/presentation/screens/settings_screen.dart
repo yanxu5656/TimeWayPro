@@ -9,6 +9,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../task/data/repositories/task_repository.dart';
 import '../../../task/providers/task_provider.dart';
 import '../../../planning/providers/plan_provider.dart';
+import '../../../daily/providers/daily_provider.dart';
+import '../../../weekly/providers/weekly_provider.dart';
 import '../../models/sync_config.dart';
 import '../../providers/settings_provider.dart';
 
@@ -157,16 +159,14 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildSyncStatus(SettingsProvider provider) {
     return PaperCard(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      radius: AppRadius.md,
       padding: const EdgeInsets.all(AppSpacing.sm),
-      // 这一块嵌套在外层 PaperCard 之内。玻璃叠玻璃会几乎同色——
-      // 62% 白盖在 78% 白上，边界完全读不出来（出图确认过）。
-      // 所以这里用不透明的下沉面表面色，让层次立住。
-      fill: provider.isConfigured
-          ? AppColors.success.withValues(alpha: 0.12)
-          : AppColors.surfaceVariant,
-      // 已连接时描边与阴影走 success 强调色
+      // 浮起白卡（raised 档）：它嵌套在外层分区卡之内，纸面体系的
+      // 嵌套层次靠「浮起」表达——白底 + 微影 + success 细描边（tint
+      // 在 raised 档才生效；ruled 档会把 fill 画成色块并叠加双线）
+      tone: PaperTone.raised,
+      // 已连接时描边走 success 强调色
       tint: provider.isConfigured ? AppColors.success : null,
+      fill: provider.isConfigured ? null : AppColors.surfaceVariant,
       child: Row(
         children: [
           Icon(
@@ -333,20 +333,31 @@ class SettingsScreen extends StatelessWidget {
     );
 
     if (confirmed == true) {
+      // 先停表：恢复会整体替换数据，在途会话的记录随旧数据一起消失，
+      // 不停表的话 recordId 会指向新数据集里不存在的记录
+      await context.read<TaskProvider>().stopAllTimersForDataReset();
+
       final success = await provider.restore();
       if (context.mounted) {
-        // 重新加载数据
-        context.read<TaskProvider>().loadTasks();
-        context.read<PlanProvider>().loadPlans();
+        // 四个数据 provider 全部重载（原先只刷了任务/规划——
+        // IndexedStack 保活页面，待办/每周页会继续显示旧数据）
+        await Future.wait(<Future<void>>[
+          context.read<TaskProvider>().loadTasks(),
+          context.read<PlanProvider>().loadPlans(),
+          context.read<DailyProvider>().loadTasks(),
+          context.read<WeeklyProvider>().loadGoals(),
+        ]);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success ? '恢复成功，请切换到任务页面查看' : '恢复失败: ${provider.syncError}',
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                success ? '恢复成功，数据已全部刷新' : '恢复失败: ${provider.syncError}',
+              ),
+              backgroundColor: success ? AppColors.success : AppColors.error,
             ),
-            backgroundColor: success ? AppColors.success : AppColors.error,
-          ),
-        );
+          );
+        }
       }
     }
   }
@@ -449,16 +460,23 @@ class SettingsScreen extends StatelessWidget {
         await repo.importAllData(data);
 
         if (context.mounted) {
-          // 重新加载数据
-          context.read<TaskProvider>().loadTasks();
-          context.read<PlanProvider>().loadPlans();
+          // 与恢复同路径：停表 + 四个 provider 全部重载
+          await context.read<TaskProvider>().stopAllTimersForDataReset();
+          await Future.wait(<Future<void>>[
+            context.read<TaskProvider>().loadTasks(),
+            context.read<PlanProvider>().loadPlans(),
+            context.read<DailyProvider>().loadTasks(),
+            context.read<WeeklyProvider>().loadGoals(),
+          ]);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('导入成功，请切换到任务页面查看'),
-              backgroundColor: AppColors.success,
-            ),
-          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('导入成功，数据已全部刷新'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -519,9 +537,9 @@ class _SyncConfigSheetState extends State<_SyncConfigSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             '配置坚果云同步',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: 8),
           const Text(

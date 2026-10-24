@@ -579,27 +579,7 @@ class _TaskScreenState extends State<TaskScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              context.read<TaskProvider>().stopTimer(task.id);
-
-              // 重新加载每日时长
-              _loadDailyDurations();
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(
-                        Icons.check_circle,
-                        color: AppColors.textOnPrimary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(isCountUp ? '时间已记录' : '任务已完成'),
-                    ],
-                  ),
-                  backgroundColor: AppColors.success,
-                ),
-              );
+              _stopTaskAndRefresh(task, isCountUp);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: const Text('结束计时'),
@@ -607,5 +587,34 @@ class _TaskScreenState extends State<TaskScreen> {
         ],
       ),
     );
+  }
+
+  /// 结束计时 → **等 stopTimer 写完记录** → 再查当日时长。
+  ///
+  /// 原先 stopTimer 未 await 就 _loadDailyDurations：记录更新还挂在
+  /// 微任务链上，时长查询先读了旧数据，本次会话不进「今日 X分钟」。
+  Future<void> _stopTaskAndRefresh(Task task, bool isCountUp) async {
+    await context.read<TaskProvider>().stopTimer(task.id);
+
+    await _loadDailyDurations();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.textOnPrimary,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(isCountUp ? '时间已记录' : '任务已完成'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
   }
 }

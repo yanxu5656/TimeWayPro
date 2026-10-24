@@ -731,46 +731,30 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   DateTimeRange _getDateRange() {
+    // 区间全部用**半开区间**语义：判定端（getRecordsByDateRange）是
+    // `start <= t < end`，闭区间 23:59:59 会漏掉最后一秒内开始的记录
+    // （DateTime.now() 有亚秒精度）。
     switch (_selectedPeriod) {
       case 0: // 日
         return DateTimeRange(
-          start: DateTime(
-            _selectedDate.year,
-            _selectedDate.month,
-            _selectedDate.day,
-          ),
-          end: DateTime(
-            _selectedDate.year,
-            _selectedDate.month,
-            _selectedDate.day,
-            23,
-            59,
-            59,
-          ),
+          start: startOfDay(_selectedDate),
+          end: nextDayStart(_selectedDate),
         );
       case 1: // 周
         return DateTimeRange(
           start: startOfWeek(_selectedDate),
-          end: endOfWeek(_selectedDate),
+          end: nextDayStart(startOfWeek(_selectedDate).add(
+            const Duration(days: 6),
+          )),
         );
       case 2: // 月
         return DateTimeRange(
           start: DateTime(_selectedDate.year, _selectedDate.month, 1),
-          end: DateTime(
-            _selectedDate.year,
-            _selectedDate.month + 1,
-            0,
-            23,
-            59,
-            59,
-          ),
+          end: DateTime(_selectedDate.year, _selectedDate.month + 1, 1),
         );
       default:
         final now = DateTime.now();
-        return DateTimeRange(
-          start: DateTime(now.year, now.month, now.day),
-          end: DateTime(now.year, now.month, now.day, 23, 59, 59),
-        );
+        return DateTimeRange(start: startOfDay(now), end: nextDayStart(now));
     }
   }
 }

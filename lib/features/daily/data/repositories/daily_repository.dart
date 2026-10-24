@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import '../../../../core/utils/row_parse.dart';
 import '../../../../shared/database/database_helper.dart';
 import '../models/daily_task.dart';
 
@@ -13,7 +14,7 @@ class DailyRepository {
         'daily_tasks',
         (map) => map['date_key'] == dateKey,
       );
-      final tasks = maps.map((map) => DailyTask.fromMap(map)).toList();
+      final tasks = parseRows(maps, DailyTask.fromMap);
       // 按时间段和排序顺序分组
       tasks.sort((a, b) {
         if (a.timePeriod.index != b.timePeriod.index) {

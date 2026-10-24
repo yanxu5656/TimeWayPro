@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/week.dart';
 import '../data/models/daily_task.dart';
 import '../data/repositories/daily_repository.dart';
 
 class DailyProvider extends ChangeNotifier {
   final DailyRepository _repository = DailyRepository();
 
-  DateTime _selectedDate = DateTime.now();
+  // 归一到当天 00:00：`DateTime.now()` 带时分，在 00:00-00:59 之间
+  // 用 ±24h 跨夏令时会掉到前前一天（中国无 DST，但逻辑上应正确）
+  DateTime _selectedDate = startOfDay(DateTime.now());
   List<DailyTask> _tasks = [];
   bool _isLoading = false;
 
@@ -36,27 +39,20 @@ class DailyProvider extends ChangeNotifier {
 
   // 切换日期
   void setDate(DateTime date) {
-    _selectedDate = date;
+    _selectedDate = startOfDay(date);
     loadTasks();
   }
 
-  // 前一天
-  void previousDay() {
-    _selectedDate = _selectedDate.subtract(const Duration(days: 1));
-    loadTasks();
-  }
+  // 前一天 / 后一天：构造函数日运算（±Duration 是绝对时间运算，
+  // DST 切换日会差一小时），DateTime(y, m, d±n) 自动处理跨月跨年
+  void previousDay() =>
+      setDate(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day - 1));
 
-  // 后一天
-  void nextDay() {
-    _selectedDate = _selectedDate.add(const Duration(days: 1));
-    loadTasks();
-  }
+  void nextDay() =>
+      setDate(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1));
 
   // 回到今天
-  void goToToday() {
-    _selectedDate = DateTime.now();
-    loadTasks();
-  }
+  void goToToday() => setDate(DateTime.now());
 
   // 加载任务
   Future<void> loadTasks() async {

@@ -54,9 +54,16 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
   }
 
   /// 期号：2020-01-06 是周一，作为第 1 期的锚点。
-  /// 编辑刊物的 VOL 编号，是个趣味性的栏目细节
-  int _volNumber(String weekKey) =>
-      DateTime.parse(weekKey).difference(DateTime(2020, 1, 6)).inDays ~/ 7 + 1;
+  /// 编辑刊物的 VOL 编号，是个趣味性的栏目细节。
+  /// utc 运算避免 DST 时区差一小时导致期号偏 1；下限钳到 1，
+  /// 锚点之前的周（日期选择器已限到锚点，防御左箭头连点）不出 VOL.0
+  int _volNumber(String weekKey) {
+    final DateTime monday = DateTime.parse(weekKey);
+    final int weeks = DateTime.utc(monday.year, monday.month, monday.day)
+        .difference(DateTime.utc(2020, 1, 6))
+        .inDays ~/ 7;
+    return weeks < 0 ? 1 : weeks + 1;
+  }
 
   Widget _buildHeader(WeeklyProvider provider) {
     return Padding(
@@ -372,7 +379,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: provider.selectedWeekStart,
-      firstDate: DateTime(2020),
+      firstDate: DateTime(2020, 1, 6), // 期号锚点周一，往前的周没有 VOL 号
       lastDate: DateTime(2030),
       builder: (BuildContext context, Widget? child) {
         return Theme(

@@ -43,6 +43,18 @@ class DatabaseHelper {
   bool _initialized = false;
   Future<void>? _initFuture;
 
+  /// 写队列：把所有落盘操作串行化。
+  ///
+  /// `_saveData` 内部有多个 await（path_provider 通道、写临时文件、
+  /// 两次 rename），两条写链一旦交错：共享同一个固定 `.tmp` 路径会撞
+  /// Windows 的文件占用（errno 32）；更坏的序列是 A 把 tmp rename 走后
+  /// B 的 rename 找不到 tmp 抛异常——被吞掉后正式文件处于缺失状态。
+  /// 所有写入口都经由 [_enqueueSave] 排队，一条链跑完才轮到下一条。
+  Future<void> _writeQueue = Future<void>.value();
+
+  /// 自增序号，让每次写入用独立的 tmp 文件，彻底消除共享路径
+  int _writeSeq = 0;
+
   Future<void> _ensureInitialized() async {
     if (!_initialized) {
       _initFuture ??= _loadData();
@@ -115,37 +127,64 @@ class DatabaseHelper {
     }
   }
 
-  Future<void> _saveData() async {
-    try {
-      final File file = await _localFile;
-      final File backupFile = await _backupFile;
-      final File tmpFile = File('${file.path}.tmp');
+  /// 把一次落盘排进写队列。
+  ///
+  /// 异常**向上传播**而不是在这里吞掉：恢复/导入的落盘失败必须让调用方
+  /// 知道（原先 catch{print} 会让「恢复成功」的提示与磁盘实际状态不符）。
+  /// 队列本身吞掉前一链的异常，保证后续写不被卡死。
+  Future<void> _enqueueSave() {
+    // 队列视角：前一条链失败不堵死后续（catchError 吞掉历史错误），
+    // 但本次调用方拿到的是自己的 task——成败如实传播
+    final Future<void> task = _writeQueue
+        .catchError((Object _) {})
+        .then((_) => _doSave());
+    _writeQueue = task.then(
+      (_) {},
+      onError: (Object _) {}, // 队列视角：成败都算"跑完了"
+    );
+    return task;
+  }
 
-      // 1. 先写临时文件。flush: true 让它真正落盘，而不是停在 OS 缓存里。
-      await tmpFile.writeAsString(jsonEncode(_data), flush: true);
+  Future<void> _doSave() async {
+    final File file = await _localFile;
+    final File backupFile = await _backupFile;
+    // 每次写入用独立的 tmp 路径：并发场景（理论上已被写队列排除）
+    // 与上次失败残留的 tmp 都不会再互相干扰
+    final File tmpFile = File('${file.path}.${_writeSeq++}.tmp');
 
-      // 2. 把当前这份留作备份。
-      //
-      //    用 rename 而不是 copy：同一目录内的 rename 只改元数据、不复制
-      //    数据体，于是「每次写入都全量复制一份备份」这个 O(文件大小) 的
-      //    开销没有了，而备份频率与原先完全一致（每次写都更新）。
-      //
-      //    必须先删旧备份——Windows 上 rename 到已存在的路径会失败。
-      if (await file.exists()) {
+    // 1. 先写临时文件。flush: true 让它真正落盘，而不是停在 OS 缓存里。
+    await tmpFile.writeAsString(jsonEncode(_data), flush: true);
+
+    // 2. 把当前这份留作备份。
+    //
+    //    用 rename 而不是 copy：同一目录内的 rename 只改元数据、不复制
+    //    数据体。"每次写入都全量复制一份备份"的 O(文件大小) 开销没有。
+    //
+    //    必须先删旧备份——Windows 上 rename 到已存在的路径会失败。
+    //    删失败（比如杀毒软件短暂占用）不致命：跳过本次备份更新。
+    if (await file.exists()) {
+      try {
         if (await backupFile.exists()) {
           await backupFile.delete();
         }
         await file.rename(backupFile.path);
+      } catch (e) {
+        print('Warning: skip backup rotation: $e');
       }
+    }
 
-      // 3. 原子替换正式文件。
-      //
-      //    走到这里，正式文件要么是旧内容、要么不存在；这一步之后要么是
-      //    旧内容、要么是新内容，**永远不会是半截 JSON**。
-      //    原先的 writeAsString 是直接覆盖，写到一半被杀进程就废了。
+    // 3. 原子替换正式文件。
+    //
+    //    走到这里，正式文件要么是旧内容、要么不存在；这一步之后要么是
+    //    旧内容、要么是新内容，**永远不会是半截 JSON**。
+    try {
       await tmpFile.rename(file.path);
     } catch (e) {
-      print('Error saving data: $e');
+      // rename 失败（极少见）时清理 tmp，避免残留占位
+      try {
+        await tmpFile.delete();
+      } catch (_) {}
+      rethrow;
     }
   }
 
@@ -171,7 +210,7 @@ class DatabaseHelper {
       _data[table] = [];
     }
     (_data[table] as List).add(record);
-    await _saveData();
+    await _enqueueSave();
   }
 
   Future<void> update(
@@ -184,7 +223,7 @@ class DatabaseHelper {
     final index = list.indexWhere((r) => r[idField] == record[idField]);
     if (index != -1) {
       list[index] = record;
-      await _saveData();
+      await _enqueueSave();
     } else {
       print(
         'Warning: Record not found for update in $table with $idField=${record[idField]}',
@@ -196,21 +235,34 @@ class DatabaseHelper {
     await _ensureInitialized();
     final list = _data[table] as List? ?? [];
     list.removeWhere((r) => r[idField] == id);
-    await _saveData();
+    await _enqueueSave();
   }
 
   Future<void> deleteWhere(String table, bool Function(dynamic) test) async {
     await _ensureInitialized();
     final list = _data[table] as List? ?? [];
     list.removeWhere(test);
-    await _saveData();
+    await _enqueueSave();
   }
 
   // ==================== 导入导出 ====================
 
   Future<Map<String, dynamic>> exportAll() async {
     await _ensureInitialized();
-    return Map<String, dynamic>.from(_data);
+    final out = Map<String, dynamic>.from(_data);
+    // 凭据不随数据导出：备份会上传云端、导出文件可能被分享，
+    // 密码（应用密码）只留在本地库里。恢复旧备份后需要重新输入。
+    final syncTable = out['sync_config'];
+    if (syncTable is List && syncTable.isNotEmpty) {
+      out['sync_config'] = <dynamic>[
+        for (final row in syncTable)
+          if (row is Map<String, dynamic>)
+            <String, dynamic>{...row}..remove('password')
+          else
+            row,
+      ];
+    }
+    return out;
   }
 
   Future<void> importAll(Map<String, dynamic> data) async {
@@ -227,13 +279,19 @@ class DatabaseHelper {
       throw Exception('Invalid data format: fields must be lists');
     }
 
+    // 先等在途的磁盘读取落地再覆盖：冷启动后立刻导入时，_loadData
+    // 完成后会把 _data 整体写回旧磁盘数据，导入被静默回滚。
+    await _ensureInitialized();
+
     _data = data;
     // 导入的是旧版本备份时，新加的表不在里面——补成空列表。
     // 原先这里直接赋值、不跑兜底，于是导入后新表的 key 是 null；
     // 访问器虽然都对 null 容错不会崩，但数据形状不一致。
     _ensureTables(_data);
     _initialized = true;
-    await _saveData();
+    // 落盘失败会抛出（_enqueueSave 不吞错）——恢复/导入方必须如实
+    // 知道磁盘没写上，而不是内存新、磁盘旧、下次冷启动打回原形。
+    await _enqueueSave();
   }
 
   Future<void> close() async {

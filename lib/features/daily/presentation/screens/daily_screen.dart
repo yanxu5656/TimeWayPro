@@ -496,9 +496,9 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
+        Text(
           '添加待办',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
         ),
         const SizedBox(height: 24),
 
@@ -633,9 +633,9 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
+        Text(
           '编辑待办',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
         ),
         const SizedBox(height: 24),
 

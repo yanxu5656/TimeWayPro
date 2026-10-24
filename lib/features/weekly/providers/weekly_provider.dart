@@ -33,10 +33,16 @@ class WeeklyProvider extends ChangeNotifier {
 
   // ── 周导航 ──
 
-  void previousWeek() =>
-      selectWeek(_weekAnchor.subtract(const Duration(days: 7)));
+  // 用构造函数日运算而不是 ±Duration(7 days)：Duration 是绝对时间
+  // 运算，DST 切换周会差 1 小时，锚点又是本地 00:00，落点会掉到
+  // 前一天 23:00——翻周直接跳过一周或原地不动。
+  void previousWeek() => selectWeek(
+        DateTime(_weekAnchor.year, _weekAnchor.month, _weekAnchor.day - 7),
+      );
 
-  void nextWeek() => selectWeek(_weekAnchor.add(const Duration(days: 7)));
+  void nextWeek() => selectWeek(
+        DateTime(_weekAnchor.year, _weekAnchor.month, _weekAnchor.day + 7),
+      );
 
   /// 跳到 [date] 所在的周。传周内任意一天都会归一到周一。
   void selectWeek(DateTime date) {
@@ -71,7 +77,9 @@ class WeeklyProvider extends ChangeNotifier {
         id: '',
         title: title,
         weekKey: selectedWeekKey,
-        sortOrder: _goals.length,
+        // 队尾追加取 max+1：用 _goals.length 在删除过条目后会与现存
+        // sortOrder 重复，非稳定排序下条目顺序每次加载可能变化
+        sortOrder: _maxSortOrder + 1,
         createdAt: DateTime.now(),
       ),
     );
@@ -97,6 +105,11 @@ class WeeklyProvider extends ChangeNotifier {
     await _repository.toggleComplete(id);
     await loadGoals();
   }
+
+  int get _maxSortOrder => _goals.fold<int>(
+        -1,
+        (int max, WeeklyGoal g) => g.sortOrder > max ? g.sortOrder : max,
+      );
 
   /// 把 [goal] 挪到 [targetWeekKey] 对应的周，排到目标周队尾
   /// （不动目标周现有条目的顺序）。目标周就是所在周时视作无操作。

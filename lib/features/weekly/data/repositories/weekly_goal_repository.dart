@@ -1,5 +1,7 @@
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/utils/row_parse.dart';
+
 import '../../../../shared/database/database_helper.dart';
 import '../models/weekly_goal.dart';
 
@@ -20,7 +22,7 @@ class WeeklyGoalRepository {
         _table,
         (map) => map['week_key'] == weekKey,
       );
-      final goals = maps.map(WeeklyGoal.fromMap).toList();
+      final goals = parseRows(maps, WeeklyGoal.fromMap);
       goals.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       return goals;
     } catch (e) {

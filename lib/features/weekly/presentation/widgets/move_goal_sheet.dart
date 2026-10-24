@@ -38,7 +38,7 @@ class _MoveGoalSheet extends StatelessWidget {
       children: <Widget>[
         Text(
           '挪到其他周',
-          style: AppText.h3.copyWith(color: AppColors.textPrimary),
+          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
@@ -155,7 +155,7 @@ class _MoveGoalSheet extends StatelessWidget {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.parse(goal.weekKey),
-      firstDate: DateTime(2020),
+      firstDate: DateTime(2020, 1, 6), // 期号锚点周一，往前的周没有 VOL 号
       lastDate: DateTime(2030),
       builder: (BuildContext context, Widget? child) {
         return Theme(

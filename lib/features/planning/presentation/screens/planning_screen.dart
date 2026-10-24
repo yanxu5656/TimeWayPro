@@ -108,7 +108,6 @@ class _PlanningScreenState extends State<PlanningScreen> {
     return RepaintBoundary(
       child: PaperCard(
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-        radius: AppRadius.lg,
         padding: const EdgeInsets.all(AppSpacing.md),
         onTap: () => _showPlanDetail(plan, provider),
         onLongPress: () => _showOptions(plan, provider),
@@ -241,7 +240,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: Text(
               plan.title,
-              style: AppText.title.copyWith(color: AppColors.textPrimary),
+              style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
             ),
           ),
           ListTile(
@@ -354,9 +353,9 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
+        Text(
           '目标详情',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
         ),
         const SizedBox(height: 20),
 

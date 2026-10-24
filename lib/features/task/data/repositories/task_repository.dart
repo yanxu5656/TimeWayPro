@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import '../../../../core/utils/row_parse.dart';
 import '../../../../shared/database/database_helper.dart';
 import '../models/task.dart';
 import '../models/task_record.dart';
@@ -11,7 +12,7 @@ class TaskRepository {
 
   Future<List<Task>> getAllTasks() async {
     final maps = await _dbHelper.query('tasks');
-    return maps.map((map) => Task.fromMap(map)).toList();
+    return parseRows(maps, Task.fromMap);
   }
 
   Future<List<Task>> getActiveTasks() async {
@@ -19,7 +20,7 @@ class TaskRepository {
       'tasks',
       (map) => map['is_completed'] == 0,
     );
-    return maps.map((map) => Task.fromMap(map)).toList();
+    return parseRows(maps, Task.fromMap);
   }
 
   Future<Task?> getTaskById(String id) async {
@@ -78,7 +79,7 @@ class TaskRepository {
       'task_records',
       (map) => map['task_id'] == taskId,
     );
-    return maps.map((map) => TaskRecord.fromMap(map)).toList();
+    return parseRows(maps, TaskRecord.fromMap);
   }
 
   Future<List<TaskRecord>> getRecordsByDateRange(
@@ -86,16 +87,22 @@ class TaskRepository {
     DateTime end,
   ) async {
     final maps = await _dbHelper.queryWhere('task_records', (map) {
-      final startTime = DateTime.parse(map['start_time']);
+      // 行级容错：缺 start_time 的坏行直接排除，不让整表查询失败
+      final DateTime startTime;
+      try {
+        startTime = DateTime.parse(map['start_time']);
+      } catch (_) {
+        return false;
+      }
       // 使用 !isBefore 来包含 start 时刻
       return !startTime.isBefore(start) && startTime.isBefore(end);
     });
-    return maps.map((map) => TaskRecord.fromMap(map)).toList();
+    return parseRows(maps, TaskRecord.fromMap);
   }
 
   Future<List<TaskRecord>> getAllRecords() async {
     final maps = await _dbHelper.query('task_records');
-    return maps.map((map) => TaskRecord.fromMap(map)).toList();
+    return parseRows(maps, TaskRecord.fromMap);
   }
 
   Future<String> insertRecord(TaskRecord record) async {

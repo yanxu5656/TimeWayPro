@@ -46,6 +46,9 @@ class SegmentedControl<T> extends StatelessWidget {
                     child: AnimatedDefaultTextStyle(
                       duration: duration,
                       curve: Curves.easeOutCubic,
+                      // 未选中用 textSecondary 而不是 textHint：
+                      // 这是 13px 且可点的语义文字，textHint（2.7:1）
+                      // 按对比度规则不得用于此（v1.5.0 迁移时误降过）
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: segment.value == value
@@ -53,7 +56,7 @@ class SegmentedControl<T> extends StatelessWidget {
                             : FontWeight.w500,
                         color: segment.value == value
                             ? AppColors.textPrimary
-                            : AppColors.textHint,
+                            : AppColors.textSecondary,
                       ),
                       child: Text(
                         segment.label,

@@ -361,7 +361,7 @@ class TaskCard extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: Text(
               task.title,
-              style: AppText.h3.copyWith(color: AppColors.textPrimary),
+              style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
             ),
           ),
           ListTile(
