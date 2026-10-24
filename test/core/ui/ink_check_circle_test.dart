@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/ui/paper.dart';
 
 Widget _host(Widget child) => MaterialApp(
   home: Scaffold(body: Center(child: child)),
@@ -12,7 +12,7 @@ void main() {
 
   testWidgets('未选中时不渲染对勾', (tester) async {
     await tester.pumpWidget(
-      _host(GlassCheckCircle(isChecked: false, onTap: () {})),
+      _host(InkCheckCircle(isChecked: false, onTap: () {})),
     );
 
     expect(find.byIcon(Icons.check), findsNothing);
@@ -20,7 +20,7 @@ void main() {
 
   testWidgets('选中时渲染对勾', (tester) async {
     await tester.pumpWidget(
-      _host(GlassCheckCircle(isChecked: true, onTap: () {})),
+      _host(InkCheckCircle(isChecked: true, onTap: () {})),
     );
 
     expect(find.byIcon(Icons.check), findsOneWidget);
@@ -29,17 +29,17 @@ void main() {
   testWidgets('点击触发回调', (tester) async {
     var taps = 0;
     await tester.pumpWidget(
-      _host(GlassCheckCircle(isChecked: false, onTap: () => taps++)),
+      _host(InkCheckCircle(isChecked: false, onTap: () => taps++)),
     );
 
-    await tester.tap(find.byType(GlassCheckCircle));
+    await tester.tap(find.byType(InkCheckCircle));
     await tester.pump();
     expect(taps, 1);
   });
 
   testWidgets('默认尺寸 28（两页统一后的值）', (tester) async {
     await tester.pumpWidget(
-      _host(GlassCheckCircle(isChecked: false, onTap: () {})),
+      _host(InkCheckCircle(isChecked: false, onTap: () {})),
     );
 
     expect(tester.getSize(find.byType(AnimatedContainer)), const Size(28, 28));
@@ -47,7 +47,7 @@ void main() {
 
   testWidgets('尺寸可覆盖，对勾大小跟着缩放', (tester) async {
     await tester.pumpWidget(
-      _host(GlassCheckCircle(isChecked: true, onTap: () {}, size: 40)),
+      _host(InkCheckCircle(isChecked: true, onTap: () {}, size: 40)),
     );
 
     expect(tester.getSize(find.byType(AnimatedContainer)), const Size(40, 40));
@@ -59,7 +59,7 @@ void main() {
   testWidgets('选中色可覆盖', (tester) async {
     await tester.pumpWidget(
       _host(
-        GlassCheckCircle(
+        InkCheckCircle(
           isChecked: true,
           onTap: () {},
           color: AppColors.primary,
@@ -74,16 +74,16 @@ void main() {
     expect(deco.color, AppColors.primary);
   });
 
-  testWidgets('默认选中色是 success 绿（与「已完成」的语义一致）', (tester) async {
+  testWidgets('默认选中色是朱砂（完成是最值得用强调色的一刻）', (tester) async {
     await tester.pumpWidget(
-      _host(GlassCheckCircle(isChecked: true, onTap: () {})),
+      _host(InkCheckCircle(isChecked: true, onTap: () {})),
     );
 
     final AnimatedContainer box = tester.widget<AnimatedContainer>(
       find.byType(AnimatedContainer),
     );
     final BoxDecoration deco = box.decoration! as BoxDecoration;
-    expect(deco.color, AppColors.success);
+    expect(deco.color, AppColors.primary);
   });
 
   testWidgets('语义上是一个 checked 状态', (tester) async {
@@ -92,14 +92,14 @@ void main() {
     // 合并后的节点树，非常脆。
     await tester.pumpWidget(
       _host(
-        GlassCheckCircle(isChecked: true, onTap: () {}, semanticLabel: '写周报'),
+        InkCheckCircle(isChecked: true, onTap: () {}, semanticLabel: '写周报'),
       ),
     );
 
     final Semantics sem = tester.widget<Semantics>(
       find
           .descendant(
-            of: find.byType(GlassCheckCircle),
+            of: find.byType(InkCheckCircle),
             matching: find.byType(Semantics),
           )
           .first,
@@ -110,13 +110,13 @@ void main() {
 
   testWidgets('未选中时语义上是 unchecked', (tester) async {
     await tester.pumpWidget(
-      _host(GlassCheckCircle(isChecked: false, onTap: () {})),
+      _host(InkCheckCircle(isChecked: false, onTap: () {})),
     );
 
     final Semantics sem = tester.widget<Semantics>(
       find
           .descendant(
-            of: find.byType(GlassCheckCircle),
+            of: find.byType(InkCheckCircle),
             matching: find.byType(Semantics),
           )
           .first,

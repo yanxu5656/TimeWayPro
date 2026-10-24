@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/ui/paper.dart';
 import 'package:time_way_pro/features/daily/providers/daily_provider.dart';
 
 import '../../support/app_harness.dart';
@@ -10,7 +10,7 @@ import '../../support/app_harness.dart';
 ///
 /// ## 为什么要单独测这个弹窗
 ///
-/// v1.3.1 上有一个只会在 **release 构建**里显形的 bug：`GlassChip` 把
+/// v1.3.1 上有一个只会在 **release 构建**里显形的 bug：`PaperChip` 把
 /// `Expanded` 包在了 `GestureDetector` 里面，而 `Expanded` 是
 /// `ParentDataWidget`、**必须是 Flex 的直接子节点**。这个误用在 debug 下
 /// 只抛异常，在 release 下则会把整个子树换成 `ErrorWidget`——也就是一块
@@ -22,7 +22,7 @@ import '../../support/app_harness.dart';
 void main() {
   Future<void> openAddSheet(WidgetTester tester) async {
     await pumpSeededApp(tester);
-    await tester.tap(find.byType(GlassFab));
+    await tester.tap(find.byType(PaperFab));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
   }
@@ -30,7 +30,7 @@ void main() {
   testWidgets('打开时不抛异常（ParentDataWidget 误用会在这里暴露）', (tester) async {
     await openAddSheet(tester);
 
-    expect(find.byType(GlassSheet), findsOneWidget);
+    expect(find.byType(PaperSheet), findsOneWidget);
     expect(
       tester.takeException(),
       isNull,
@@ -44,7 +44,7 @@ void main() {
     await openAddSheet(tester);
 
     final List<Rect> rects = find
-        .byType(GlassChip)
+        .byType(PaperChip)
         .evaluate()
         .map((Element e) => tester.getRect(find.byWidget(e.widget)))
         .toList();
@@ -88,7 +88,7 @@ void main() {
     await openAddSheet(tester);
 
     final DailyProvider provider = tester
-        .element(find.byType(GlassFab))
+        .element(find.byType(PaperFab))
         .read<DailyProvider>();
     final int before = provider.tasks.length;
 
@@ -99,7 +99,7 @@ void main() {
     // provider 的 loadTasks 不执行，表现为"点了没反应"
     await tapAndFlush(tester, find.widgetWithText(ElevatedButton, '添加'));
 
-    expect(find.byType(GlassSheet), findsNothing, reason: '创建后弹窗应关闭');
+    expect(find.byType(PaperSheet), findsNothing, reason: '创建后弹窗应关闭');
     expect(provider.tasks.length, before + 1, reason: '待办数量没有增加，说明创建没走通');
     expect(provider.tasks.any((t) => t.title == '测试新增待办'), isTrue);
   });
@@ -108,27 +108,27 @@ void main() {
     await openAddSheet(tester);
 
     final DailyProvider provider = tester
-        .element(find.byType(GlassFab))
+        .element(find.byType(PaperFab))
         .read<DailyProvider>();
     final int before = provider.tasks.length;
 
     await tapAndFlush(tester, find.widgetWithText(ElevatedButton, '添加'));
 
     expect(provider.tasks.length, before);
-    expect(find.byType(GlassSheet), findsOneWidget, reason: '不该关闭');
+    expect(find.byType(PaperSheet), findsOneWidget, reason: '不该关闭');
   });
 
   testWidgets('选中的时段会带进新建的待办', (tester) async {
     await openAddSheet(tester);
 
     final DailyProvider provider = tester
-        .element(find.byType(GlassFab))
+        .element(find.byType(PaperFab))
         .read<DailyProvider>();
 
     // 点「晚上」。必须限定在弹窗内：待办列表里也有个「晚上」分段标题，
     // 直接 find.text('晚上') 会匹配到两个而报歧义。
     await tester.tap(
-      find.descendant(of: find.byType(GlassSheet), matching: find.text('晚上')),
+      find.descendant(of: find.byType(PaperSheet), matching: find.text('晚上')),
     );
     await tester.pump();
     await tester.enterText(find.byType(TextField).first, '晚上的事');

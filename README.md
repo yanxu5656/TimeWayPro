@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.4.0-00BFA5)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.5.0-00BFA5)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-00BFA5?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -34,7 +34,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 与常见的待办清单不同，时途不满足于「打勾」，而是记录**每件事真实消耗了多少时间** —— 这些记录会沉淀为热力图、饼图和任务明细，让「我很忙」变成「我忙在了这件事上，一共 3 小时 20 分」。
 
-界面在 1.3.0 重做为**浅色极光玻璃**：缓慢漂移的青绿光晕托着一层磨砂卡片。设计取舍写在下面的[设计系统](#设计系统)一节。
+界面在 1.5.0 重做为**静白志**（纸白编辑排版风）：纸白底、墨色文字、朱砂一笔，细线分层、衬线数字当主角。设计取舍写在下面的[设计系统](#设计系统)一节。
 
 ---
 
@@ -108,6 +108,34 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.5.0 — 静白志（全面 UI 迭代）
+*2026-10-24*
+
+**动机**：极光玻璃用了几个版本后觉得「不够大气」。对比了四个方向（曜石金 / 静白志 / 极光 2.0 / 云墨）后选定**静白志**——纸白编辑排版风，高级感来自排版与克制，不靠特效。
+
+**视觉语言**
+
+- **三种材料**：纸（`#FAF7F1` 底）、墨（`#1D1A14` 文字与操作色）、朱砂（`#C5402C`，全应用唯一强调色）
+- **衬线字体打包**：Playfair（数字主角：1/3、时长、统计大数字）+ 思源宋子集（刊头、账本行），`tool/subset_fonts.py` 生成，合计约 3.3MB
+- **刊头制**：每页顶部是眉题（DAILY LIST / WEEKLY LEDGER…）+ 衬线大标题 + 铅线，标题属于内容而非 chrome
+- **账本行**：列表一律细线分隔的行（row 档只有下缘发丝线，强调态左缘 2.5px 着重线），卡片退位
+- **大分数**：完成度用 40px+ 衬线数字呈现，数字是页面的主角
+- **性能红利**：`BackdropFilter`、渐变描边、极光层全部移除——「按帧耗降档」防的两项重负载不复存在，中低端机直接受益
+
+**工程**
+
+- 组件层整体改名：`Glass*` → `Paper*`（`glass.dart` → `paper.dart` barrel），表面档位 flat / row / ruled / raised
+- 令牌层换血但**骨架不动**：全部令牌名保持，页面零改名成本；统计页图表只换了三个色板常量
+- 对比度护栏更新为纸面体系（墨 16.1:1 AAA / 次级 5.3:1 AA / 提示仅装饰 / 朱砂 4.8:1），`tokens_test` 直接算 WCAG 对比度断言
+- golden 探针重写为 `paper_gallery`（衬线混排 / 细线 / 色板）；截图管线把等线注册为 Roboto 家族，修掉了自 1.3.0 起 README 截图里底部导航文字一直是方块的旧问题
+- 字体管线：可变字体下载 → 按字重实例化 → GB2312 一级 + 应用文案子集化，一条脚本可重跑
+
+**边界**
+
+- 布局结构、交互、数据层零改动——纯表现层替换（沿用 1.3.0 的纪律）
+- 仅浅色主题，不做深色模式
+- `UiEffects` 降档体系保留，现在只管错峰入场与数字滚动
 
 ### v1.4.0 — 每周目标独立成「每周」Tab
 *2026-10-24*
@@ -249,46 +277,49 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 ## 设计系统
 
-1.3.0 把原先手写的、散落各处的样式收敛成了一套令牌 + 组件。这部分不只是"好看"，有几条约束是硬性的。
+1.3.0 把散落的样式收敛成令牌 + 组件，1.5.0 在同一套骨架上把视觉语言整体换血为「静白志」——纸、墨、朱砂三种材料，层次靠**发丝线与排版**表达，不再有模糊与渐变。
 
 ### 令牌
 
 | 类别 | 位置 | 说明 |
 | --- | --- | --- |
-| 颜色 | `lib/core/theme/app_colors.dart` | 含玻璃与极光专用色 |
-| 圆角 | `lib/core/theme/app_radius.dart` | `xs 4` / `sm 8` / `md 12` / `lg 16` / `xl 20` / `sheet 28` |
+| 颜色 | `lib/core/theme/app_colors.dart` | 纸 `#FAF7F1` / 墨 `#1D1A14` / 朱砂 `#C5402C` + 墨色系图表色板 |
+| 圆角 | `lib/core/theme/app_radius.dart` | `xs 2` / `sm 4` / `md 8` / `lg 12` / `xl 14` / `sheet 16`（整体收紧，长在纸面上的内容是直角的） |
 | 间距 | `lib/core/theme/app_spacing.dart` | 4pt 网格 + 语义常量（`screenH` / `cardPad` / `navInset`） |
-| 阴影 | `lib/core/theme/app_shadows.dart` | `e1`（静置卡片，blur 12 封顶）/ `e2`（浮起表面）/ `tint(c)` |
-| 文字 | `lib/core/theme/app_text.dart` | 15 档 M3 槽位 + 7 档补充样式 |
+| 阴影 | `lib/core/theme/app_shadows.dart` | 只有 `e1`（浮起块）/ `e2`（弹窗、FAB）两档微影 |
+| 文字 | `lib/core/theme/app_text.dart` | 15 档 M3 槽位 + 衬线组（`masthead` / `titleSerif` / `bodySerif` / `serifNum` / `kicker`）+ 补充组 |
 
 令牌全部是编译期常量，页面不通过 `Theme.of(context)` 取样式——这样绝大多数样式能保持 `const`。
 
-### 玻璃的对比度约束
+### 衬线字体（打包资产）
 
-这是浅色玻璃方案能不能成立的前提。卡片填充是 78% 白，叠在极光之上合成底色亮度约 0.96，于是：
+编辑风的灵魂是大数字与宋体标题，而 Android 没有可依赖的系统衬线。两套字体由 `tool/subset_fonts.py` 从可变字体实例化 + 子集化后打包（合计约 3.3MB）：
+
+| 家族 | 用途 | 子集范围 |
+| --- | --- | --- |
+| Playfair（500/700） | 数字主角：1/3、时长、统计大数字 | 拉丁 + 数字（每个仅 50KB） |
+| NotoSerifSC 思源宋（400/600） | 刊头、区块标题、账本行正文 | GB2312 一级常用字 + 应用文案 + 标点（每字重约 1.6MB） |
+
+界面出现「口」方块说明用到了子集外的字：把字加进脚本的 `EXTRA_CHARS` 重跑即可。
+
+### 纸面的对比度约束
+
+底色恒为纸白（亮度约 0.94），对比度比玻璃时代宽裕得多，但仍有一条硬规则由测试守护（`test/core/theme/tokens_test.dart`）：
 
 | 前景色 | 对比度 | 结论 |
 | --- | --- | --- |
-| `textPrimary` | ≈ 16.8:1 | AAA |
-| `textSecondary` | ≈ 4.7:1 | AA，**余量很窄** |
-| `textHint` | ≈ 3.1:1 | 仅限 ≥18px 或纯装饰 |
+| 墨 `textPrimary` | ≈ 16.1:1 | AAA |
+| `textSecondary` | ≈ 5.3:1 | AA |
+| `textHint` | ≈ 2.7:1 | 仅限 ≥18px 或纯装饰，**不得用于承载语义的小字** |
+| 朱砂 `primary` | ≈ 4.8:1 | AA，可作文字色；其上文字用纸色 |
 
-由此定了两条硬性规则，写在代码注释里并有测试守护：
+### 分层语言：细线，不是底色
 
-- **`textHint` 不得用于承载语义的小字**
-- **极光光斑的 alpha 上限 0.45**，超过后正文跌破 AA
+组件只有三种表面：**flat**（透明裸容器）、**ruled**（上下发丝线的分区）、**raised**（纯白 + 微影，仅弹窗块与状态卡）。滚动列表里一律是「账本行」（row 档：仅下缘发丝线，强调态在左缘加 2.5px 着重线）——相邻行不会出现双线。
 
-如果真机强光下仍偏灰，单点旋钮是 `glassFill` 的 alpha（0.78 → 0.86），不需要动任何组件。
+### 性能
 
-### 真模糊用在哪
-
-`BackdropFilter` 是一次 GPU 高斯模糊，代价真实。所以只在四个固定表面用（顶栏 16 / 底部导航 18 / 底部弹窗 24 / FAB 16，sigma 上限 24），**滚动列表里的卡片一律用仿玻璃**——十几张卡同时模糊会让中低端机掉帧，而视觉上几乎分辨不出。
-
-每个模糊表面都包 `RepaintBoundary`（Flutter 文档明确要求，否则兄弟节点每帧都会触发重模糊）。
-
-### 玻璃的视觉配方
-
-高光描边用的是 `LinearGradient`（左上 95% 白 → 右下 30% 白），不是 `Border.all(white)`。均匀白环在白底区域完全不可见、在青绿区域才可见，看起来像"缺了一块"；渐变描边模拟"光从左上打来"，这才是玻璃质感的来源。
+`BackdropFilter` 与渐变描边已全部移除：1.3.0 时代「按帧耗自适应降档」的两项重负载（真模糊、极光）不再存在，中低端机直接受益。`UiEffects` 降档体系保留，现在只管错峰入场与数字滚动。
 
 ---
 
@@ -305,7 +336,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 | 文件选择 | `file_picker` |
 | 其他 | `intl`、`uuid` |
 
-**零 UI 动画库** —— 极光、错峰入场、按下回弹、数字滚动全部用 Flutter 原生能力实现。
+**零 UI 动画库** —— 错峰入场、按下回弹、数字滚动全部用 Flutter 原生能力实现；衬线字体为打包资产（`tool/subset_fonts.py` 生成）。
 
 ## 项目结构
 
@@ -314,19 +345,20 @@ lib/
 ├── main.dart                          应用入口：初始化通知与视觉效果档位
 ├── app/
 │   ├── app.dart                       全局 Provider 注册与主题装配
-│   └── main_screen.dart               主界面：极光层 + 六 Tab + 底部导航
+│   └── main_screen.dart               主界面：六 Tab + 纸面底部导航
 ├── core/
 │   ├── theme/                         设计令牌：颜色 / 圆角 / 间距 / 阴影 / 文字
 │   │   └── app_theme.dart             装配层，重新导出全部令牌
-│   └── ui/                            玻璃设计系统
-│       ├── aurora_background.dart     极光背景层
-│       ├── glass_surface.dart         玻璃配方（8 个组件共用）
-│       ├── glass_card / app_bar / sheet / nav_bar / chip / fab / icon_button
-│       ├── segmented_control.dart     带滑动指示块的分段控件
+│   └── ui/                            纸面设计系统（静白志）
+│       ├── paper.dart                 统一入口 barrel
+│       ├── paper_card / app_bar / sheet / nav_bar / chip / fab / icon_button
+│       ├── ink_check_circle.dart      墨圈·朱砂勾选圆钮
+│       ├── masthead.dart              刊头（眉题 + 衬线大标题 + 铅线）
+│       ├── segmented_control.dart     下划线分段页签
 │       ├── pressable_scale.dart       按下回弹
 │       ├── staggered_entrance.dart    列表错峰入场
-│       ├── count_up_text.dart         数字滚动
-│       └── ui_effects.dart            按真实帧耗时自适应降级
+│       ├── count_up_text.dart         数字滚动（衬线）
+│       └── ui_effects.dart            帧耗自适应降级（错峰入场/数字滚动）
 ├── shared/
 │   ├── database/database_helper.dart  数据层：内存 + JSON 文件持久化
 │   └── services/notification_service.dart
@@ -365,7 +397,7 @@ flutter run
 flutter build apk --release
 # 产物：build/app/outputs/flutter-apk/app-release.apk
 # 发布到 Releases 时复制一份带版本号的，方便区分：
-#   cp .../app-release.apk .../app-release-1.4.0.apk
+#   cp .../app-release.apk .../app-release-1.5.0.apk
 ```
 
 ### 测试
@@ -379,7 +411,7 @@ flutter test             # 164 个测试
 
 ```bash
 # 玻璃设计系统的视觉探针 + 各 Tab 截图（后者用于生成本文档的配图）
-flutter test test/golden/glass_gallery.golden.dart --update-goldens
+flutter test test/golden/paper_gallery.golden.dart --update-goldens
 flutter test test/golden/app_with_data.golden.dart --update-goldens
 flutter test test/golden/screenshots.golden.dart --update-goldens
 python tool/make_readme_shots.py     # 把截图缩成 README 用的 WebP

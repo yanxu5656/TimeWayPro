@@ -1,10 +1,18 @@
+import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_way_pro/core/theme/app_theme.dart';
+
+/// WCAG 对比度
+double _contrast(Color a, Color b) {
+  final double l1 = a.computeLuminance();
+  final double l2 = b.computeLuminance();
+  return l1 > l2 ? (l1 + 0.05) / (l2 + 0.05) : (l2 + 0.05) / (l1 + 0.05);
+}
 
 /// 令牌层的防回归护栏。
 ///
 /// 这里的断言不是形式化的"检查常量等于常量"，而是守住几条**有实际后果的
-/// 设计约束**——尤其是玻璃层的 alpha：它决定了浅色玻璃方案还能不能读。
+/// 设计约束**——尤其是纸面上的文字对比度：它决定这套体系还能不能读。
 void main() {
   group('AppRadius', () {
     test('圆角档位单调递增', () {
@@ -16,54 +24,84 @@ void main() {
     });
 
     test('sheet 是最大的实体圆角，full 只作胶囊哨兵', () {
-      expect(AppRadius.sheet, 28);
+      expect(AppRadius.sheet, 16);
       expect(AppRadius.full, greaterThan(AppRadius.sheet));
     });
   });
 
-  group('AppColors 玻璃层对比度护栏', () {
-    // 卡片填充叠在极光背景上，alpha 越低文字越糊。
-    // 这几个下限对应 AppColors 文档里算过的对比度：
-    //   glassFill 0.78 → textSecondary ≈ 4.7:1（AA，余量很窄）
-    //   一旦有人把它调到 0.70 以下，正文会跌破 AA。
-    test('glassFill 不低于 70%', () {
-      expect(AppColors.glassFill.a, greaterThanOrEqualTo(0.70));
-    });
-
-    test('glassFillStrong 不低于 88%（文字密集卡 / 对话框 / sheet）', () {
-      expect(AppColors.glassFillStrong.a, greaterThanOrEqualTo(0.88));
-    });
-
-    test('glassFillWeak 不低于 55%（小表面 / chip / 顶栏 / 导航）', () {
-      expect(AppColors.glassFillWeak.a, greaterThanOrEqualTo(0.55));
-    });
-
-    test('三档填充的不透明度依次递增', () {
-      expect(AppColors.glassFillWeak.a, lessThan(AppColors.glassFill.a));
-      expect(AppColors.glassFill.a, lessThan(AppColors.glassFillStrong.a));
-    });
-
-    test('内高光描边的起点比终点亮（光从左上打来）', () {
+  group('纸面对比度护栏', () {
+    // 底色恒为 background（纸白）。这里守住 AppColors 文档里写明的档位：
+    //   textPrimary   ≈ 16.1:1  AAA
+    //   textSecondary ≈  5.3:1  AA
+    //   textHint      ≈  2.7:1  仅装饰（不得用于 <18px 的语义文字）
+    //   primary(朱砂) ≈  4.8:1  可作文字色
+    test('textPrimary 达到 AAA', () {
       expect(
-        AppColors.glassEdgeTop.a,
-        greaterThan(AppColors.glassEdgeBottom.a),
+        _contrast(AppColors.textPrimary, AppColors.background),
+        greaterThanOrEqualTo(12),
       );
     });
 
-    test('热力图空格子比玻璃填充深，否则在玻璃卡上完全看不见', () {
+    test('textSecondary 不跌破 AA', () {
+      expect(
+        _contrast(AppColors.textSecondary, AppColors.background),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
+
+    test('textHint 低于 AA——这条护栏保证没人会"顺手"拿它当正文色', () {
+      expect(
+        _contrast(AppColors.textHint, AppColors.background),
+        lessThan(4.5),
+      );
+    });
+
+    test('朱砂（primary）作文字色时不低于 AA', () {
+      expect(
+        _contrast(AppColors.primary, AppColors.background),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
+
+    test('朱砂底上的纸色文字（textOnPrimary）不低于 AA', () {
+      expect(
+        _contrast(AppColors.textOnPrimary, AppColors.primary),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
+
+    test('墨底上的纸色文字（textOnInk）达到 AAA', () {
+      expect(
+        _contrast(AppColors.textOnInk, AppColors.textPrimary),
+        greaterThanOrEqualTo(12),
+      );
+    });
+
+    test('热力图空格子比纸面深，否则看不见', () {
       expect(
         AppColors.heatEmpty.computeLuminance(),
-        lessThan(AppColors.glassFill.computeLuminance()),
+        lessThan(AppColors.background.computeLuminance()),
+      );
+    });
+
+    test('发丝线（divider）在纸面上可见但轻于文字', () {
+      expect(
+        _contrast(AppColors.divider, AppColors.background),
+        greaterThan(1.05),
+      );
+      expect(
+        AppColors.divider.computeLuminance(),
+        greaterThan(AppColors.textSecondary.computeLuminance()),
       );
     });
   });
 
-  group('AppShadows 性能护栏', () {
-    // BoxShadow.blur 是每张卡片一次独立的模糊 pass，
-    // 列表卡片一律走 e1，blur 必须封顶在 12。
-    test('e1 的模糊半径不超过 12', () {
-      expect(AppShadows.e1, hasLength(1));
-      expect(AppShadows.e1.single.blurRadius, lessThanOrEqualTo(12));
+  group('AppShadows 护栏', () {
+    // 阴影在这个体系里是稀缺品，模糊半径必须克制
+    test('e1 的每层模糊半径不超过 12', () {
+      for (final s in AppShadows.e1) {
+        expect(s.blurRadius, lessThanOrEqualTo(12));
+      }
     });
 
     test('e2 的模糊半径不超过 24', () {
@@ -71,10 +109,10 @@ void main() {
       expect(AppShadows.e2.single.blurRadius, lessThanOrEqualTo(24));
     });
 
-    test('阴影用 slate 着色而非纯黑', () {
-      expect(AppColors.glassShadow.r, greaterThan(0));
-      expect(AppColors.glassShadow.g, greaterThan(0));
-      expect(AppColors.glassShadow.b, greaterThan(0));
+    test('阴影用暖墨着色而非纯黑（纯黑在纸面上显脏）', () {
+      expect(AppColors.shadow.r, greaterThan(0));
+      expect(AppColors.shadow.g, greaterThan(0));
+      expect(AppColors.shadow.b, greaterThan(0));
     });
   });
 
@@ -100,7 +138,20 @@ void main() {
     });
   });
 
-  group('AppText', () {
+  group('AppText 衬线槽位', () {
+    test('衬线槽位挂上了打包字体', () {
+      expect(AppText.masthead.fontFamily, 'NotoSerifSC');
+      expect(AppText.titleSerif.fontFamily, 'NotoSerifSC');
+      expect(AppText.bodySerif.fontFamily, 'NotoSerifSC');
+      expect(AppText.serifNum.fontFamily, 'Playfair');
+      expect(AppText.numXl.fontFamily, 'Playfair');
+      expect(AppText.numLg.fontFamily, 'Playfair');
+    });
+
+    test('kicker 的字距拉到了眉题档位（约 0.3em）', () {
+      expect(AppText.kicker.letterSpacing, greaterThanOrEqualTo(2.5));
+    });
+
     test('asTextTheme 覆盖 M3 的 15 个槽位', () {
       final t = AppText.asTextTheme();
       expect(t.displayLarge, isNotNull);
@@ -140,8 +191,8 @@ void main() {
       expect(AppSpacing.xxl, lessThan(AppSpacing.huge));
     });
 
-    test('navInset 足够容纳玻璃底部导航', () {
-      // 导航实测高度约 63 + SafeArea，留出余量
+    test('navInset 足够容纳纸面底部导航', () {
+      // 导航实测高度约 70 + SafeArea，留出余量
       expect(AppSpacing.navInset, greaterThanOrEqualTo(100));
     });
   });

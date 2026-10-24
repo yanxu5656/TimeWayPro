@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/ui/paper.dart';
 
 Widget _host(Widget child) => MaterialApp(
   home: Scaffold(body: Center(child: child)),
@@ -191,7 +191,7 @@ void main() {
       _host(
         PressableScale(
           child: GestureDetector(
-            // opaque 是真实用法（GlassIconButton 也是这么写的）：
+            // opaque 是真实用法（PaperIconButton 也是这么写的）：
             // deferToChild 下无实心内容的盒子收不到命中
             behavior: HitTestBehavior.opaque,
             onTap: () => taps++,

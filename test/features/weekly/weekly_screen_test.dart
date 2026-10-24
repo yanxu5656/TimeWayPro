@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/ui/paper.dart';
 import 'package:time_way_pro/core/utils/week.dart';
 import 'package:time_way_pro/features/weekly/providers/weekly_provider.dart';
 
@@ -71,7 +71,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.chevron_right_rounded));
     await settle(tester);
 
-    await tester.tap(find.byType(GlassFab));
+    await tester.tap(find.byType(PaperFab));
     // 先泵一帧让路由的入场动画开始计时，再给足时长——只泵一帧 600ms
     // 会让动画停在 0%（ticker 首帧 elapsed=0），弹窗仍在屏幕外
     await tester.pump();
@@ -129,7 +129,7 @@ void main() {
     // 勾选第 3 条（w2 未完成 → 完成）
     await tapAndFlush(
       tester,
-      find.byType(GlassCheckCircle).at(2),
+      find.byType(InkCheckCircle).at(2),
     );
     expect(providerOf(tester).completed, 2, reason: 'w0 + w2 已完成');
 

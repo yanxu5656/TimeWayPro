@@ -30,7 +30,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:time_way_pro/app/main_screen.dart';
 import 'package:time_way_pro/core/theme/app_theme.dart';
-import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/ui/paper.dart';
 import 'package:time_way_pro/features/daily/providers/daily_provider.dart';
 import 'package:time_way_pro/features/planning/providers/plan_provider.dart';
 import 'package:time_way_pro/features/settings/providers/settings_provider.dart';
@@ -39,8 +39,6 @@ import 'package:time_way_pro/features/weekly/providers/weekly_provider.dart';
 import 'package:time_way_pro/shared/database/database_helper.dart';
 
 import '../support/app_harness.dart';
-
-const String _fontFamily = 'CJK';
 
 /// 加载一个字体文件到指定 family
 Future<void> _loadFont(String family, File file) async {
@@ -56,11 +54,14 @@ Future<void> _loadFont(String family, File file) async {
 /// 测试环境既没有正文字体也没有图标字体，两者都得手动加载，
 /// 否则截图里文字是方块、图标也是方块。
 ///
-/// - 正文用系统等线。`.ttc` 是字体集合，FontLoader 不认，必须用纯 TTF。
+/// - **把等线注册成 'Roboto'**：无衬线文本（含组件内部嵌套的
+///   AnimatedDefaultTextStyle，fallback 链传不进去的那些）全部经由
+///   默认字体名拿到中文，而衬线槽（NotoSerifSC / Playfair）有自己的
+///   家族名不受影响。
 /// - 图标字体从 Flutter SDK 缓存里取，路径由 FLUTTER_ROOT 推出来
 ///   （`flutter test` 会设置这个环境变量）。
 Future<void> _loadFonts() async {
-  await _loadFont(_fontFamily, File(r'C:\Windows\Fonts\Deng.ttf'));
+  await _loadFont('Roboto', File(r'C:\Windows\Fonts\Deng.ttf'));
 
   final String? flutterRoot = Platform.environment['FLUTTER_ROOT'];
   if (flutterRoot == null) {
@@ -75,9 +76,8 @@ Future<void> _loadFonts() async {
   );
 }
 
-/// 与 `TimeWayProApp` 结构一致，只是主题套了 CJK 字体
+/// 与 `TimeWayProApp` 结构一致（字体由上面的 Roboto 注册解决）
 Widget _appWithRealFont() {
-  final ThemeData theme = AppTheme.lightTheme;
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<DailyProvider>(create: (_) => DailyProvider()),
@@ -97,16 +97,7 @@ Widget _appWithRealFont() {
     child: MaterialApp(
       title: 'TimeWayPro',
       debugShowCheckedModeBanner: false,
-      theme: theme.copyWith(
-        textTheme: theme.textTheme.apply(fontFamily: _fontFamily),
-      ),
-      builder: (BuildContext context, Widget? child) {
-        // 兜底：把 DefaultTextStyle 也钉上，覆盖没有 Material 祖先的位置
-        return DefaultTextStyle(
-          style: TextStyle(fontFamily: _fontFamily),
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
+      theme: AppTheme.lightTheme,
       home: const MainScreen(),
     ),
   );
@@ -119,8 +110,7 @@ void main() {
   });
 
   testWidgets('README 截图', (WidgetTester tester) async {
-    // 真模糊要留着（截图得体现磨砂），但极光动画要停，
-    // 否则同一份代码每次出图都不一样
+    // 错峰入场要停掉（tier=reduced），否则同一份代码每次出图都不一样
     UiEffects.resetForTesting();
     UiEffects.tier.value = UiEffectTier.reduced;
 
@@ -177,7 +167,7 @@ void main() {
     }
 
     // 每日待办页的 FAB 打开「添加待办」
-    await tester.tap(find.byType(GlassFab));
+    await tester.tap(find.byType(PaperFab));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
 

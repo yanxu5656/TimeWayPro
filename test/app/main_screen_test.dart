@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/ui/paper.dart';
 
 import '../support/app_harness.dart';
 
@@ -13,8 +13,8 @@ void main() {
     // `屏幕高 - 16 - FAB高`，实测压进导航栏 43.5px。
     await pumpSeededApp(tester);
 
-    final Rect nav = tester.getRect(find.byType(GlassNavBar));
-    final Rect fab = tester.getRect(find.byType(GlassFab));
+    final Rect nav = tester.getRect(find.byType(PaperNavBar));
+    final Rect fab = tester.getRect(find.byType(PaperFab));
 
     expect(
       fab.bottom,
@@ -26,7 +26,7 @@ void main() {
   testWidgets('导航栏高度被实测并广播给页面', (WidgetTester tester) async {
     await pumpSeededApp(tester);
 
-    final BuildContext fabContext = tester.element(find.byType(GlassFab));
+    final BuildContext fabContext = tester.element(find.byType(PaperFab));
     expect(
       NavBarInset.of(fabContext),
       greaterThan(0),
@@ -35,7 +35,7 @@ void main() {
     expect(
       NavBarInset.of(fabContext),
       moreOrLessEquals(
-        tester.getRect(find.byType(GlassNavBar)).height,
+        tester.getRect(find.byType(PaperNavBar)).height,
         epsilon: 0.5,
       ),
     );
@@ -87,32 +87,38 @@ void main() {
     }
   });
 
-  testWidgets('6 个 Tab 的顶栏都有图标徽标', (WidgetTester tester) async {
-    // 守 v1.3.1 的一致性修复：原先后三个 Tab 没传 titleIcon，而
-    // GlassAppBar 在 titleIcon 为空时连占位都不渲染，导致那三页的标题
-    // 比前两页整体靠左约 40px——不只是少了图标，是标题位置都对不齐。
+  testWidgets('6 个 Tab 的刊头标题存在且起始边对齐', (WidgetTester tester) async {
+    // 静白志的页面标题在正文刊头里（不是顶栏）。一致性要求随之变成：
+    // 每页都有刊头大标题，且六页标题的左缘在同一 x 上——
+    // v1.3.1 修的就是「有的页标题靠左 40px」那种错位。
     await pumpSeededApp(tester);
 
-    const List<(String tab, IconData icon)> expected = <(String, IconData)>[
-      ('待办', Icons.today_rounded),
-      ('每周', Icons.flag_rounded),
-      ('任务', Icons.access_time_rounded),
-      ('统计', Icons.bar_chart_rounded),
-      ('规划', Icons.account_tree_rounded),
-      ('设置', Icons.settings_rounded),
+    const List<(String tab, String title)> expected = <(String, String)>[
+      ('待办', '每日待办'),
+      ('每周', '每周目标'),
+      ('任务', '时途'),
+      ('统计', '统计'),
+      ('规划', '人生规划'),
+      ('设置', '设置'),
     ];
 
-    for (final (String tab, IconData icon) in expected) {
+    double? sharedLeft;
+    for (final (String tab, String title) in expected) {
       if (tab != '待办') await switchToTab(tester, tab);
 
-      expect(
-        find.descendant(
-          of: find.byType(GlassAppBar),
-          matching: find.byIcon(icon),
-        ),
-        findsOneWidget,
-        reason: '「$tab」的顶栏应有 $icon 徽标',
-      );
+      final Finder titleFinder = find.text(title).first;
+      expect(titleFinder, findsOneWidget, reason: '「$tab」页应有刊头标题');
+
+      final double left = tester.getTopLeft(titleFinder).dx;
+      if (sharedLeft == null) {
+        sharedLeft = left;
+      } else {
+        expect(
+          left,
+          moreOrLessEquals(sharedLeft, epsilon: 1),
+          reason: '「$tab」的刊头左缘 $left 与其它页 $sharedLeft 不齐',
+        );
+      }
     }
   });
 
@@ -125,9 +131,9 @@ void main() {
     for (final String label in const <String>['待办', '每周', '任务', '统计', '规划', '设置']) {
       if (label != '待办') await switchToTab(tester, label);
 
-      for (final Element element in find.byType(GlassCard).evaluate()) {
+      for (final Element element in find.byType(PaperCard).evaluate()) {
         expect(
-          (element.widget as GlassCard).radius,
+          (element.widget as PaperCard).radius,
           isNot(AppRadius.xl),
           reason: '「$label」有卡片用了 xl 圆角，页面内卡片应统一 lg',
         );

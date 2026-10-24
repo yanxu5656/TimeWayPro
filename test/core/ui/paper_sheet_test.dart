@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/ui/paper.dart';
 
 void main() {
   setUp(UiEffects.resetForTesting);
 
-  Widget hostWithButton({
-    required VoidCallback onPressed,
-    bool useBlur = true,
-    bool showHandle = true,
-  }) {
+  Widget hostWithButton({required VoidCallback onPressed, bool showHandle = true}) {
     return MaterialApp(
       home: Scaffold(
         body: Builder(
           builder: (BuildContext context) => Center(
             child: ElevatedButton(
-              onPressed: () => showGlassSheet<int>(
+              onPressed: () => showPaperSheet<int>(
                 context,
-                useBlur: useBlur,
                 showHandle: showHandle,
                 builder: (_) => const Text('弹窗内容'),
               ),
@@ -36,7 +31,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('弹窗内容'), findsOneWidget);
-    expect(find.byType(GlassSheet), findsOneWidget);
+    expect(find.byType(PaperSheet), findsOneWidget);
   });
 
   testWidgets('默认带拖拽把手', (tester) async {
@@ -46,8 +41,8 @@ void main() {
 
     expect(
       find.descendant(
-        of: find.byType(GlassSheet),
-        matching: find.byType(GlassSheetHandle),
+        of: find.byType(PaperSheet),
+        matching: find.byType(PaperSheetHandle),
       ),
       findsOneWidget,
     );
@@ -60,52 +55,29 @@ void main() {
     await tester.tap(find.text('打开'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(GlassSheetHandle), findsNothing);
+    expect(find.byType(PaperSheetHandle), findsNothing);
   });
 
-  testWidgets('顶角统一为 AppRadius.sheet（28）', (tester) async {
-    await tester.pumpWidget(hostWithButton(onPressed: () {}));
-    await tester.tap(find.text('打开'));
-    await tester.pumpAndSettle();
-
-    final surface = tester.widget<GlassSurface>(
-      find
-          .descendant(
-            of: find.byType(GlassSheet),
-            matching: find.byType(GlassSurface),
-          )
-          .first,
-    );
-    expect(surface.topRadius, AppRadius.sheet);
-    expect(surface.tone, GlassTone.strong);
-    expect(surface.edge, GlassEdge.top);
-  });
-
-  testWidgets('useBlur:true 时插入 BackdropFilter', (tester) async {
+  testWidgets('底板是纯白浮起面，不用模糊（纸面体系的硬约束）', (tester) async {
     await tester.pumpWidget(hostWithButton(onPressed: () {}));
     await tester.tap(find.text('打开'));
     await tester.pumpAndSettle();
 
     expect(
       find.descendant(
-        of: find.byType(GlassSheet),
-        matching: find.byType(BackdropFilter),
-      ),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('useBlur:false 时不插入 BackdropFilter', (tester) async {
-    await tester.pumpWidget(hostWithButton(onPressed: () {}, useBlur: false));
-    await tester.tap(find.text('打开'));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.descendant(
-        of: find.byType(GlassSheet),
+        of: find.byType(PaperSheet),
         matching: find.byType(BackdropFilter),
       ),
       findsNothing,
+    );
+    final sheet = find.byType(PaperSheet);
+    expect(
+      tester
+          .widget<DecoratedBox>(
+            find.descendant(of: sheet, matching: find.byType(DecoratedBox)).first,
+          )
+          .decoration is BoxDecoration,
+      isTrue,
     );
   });
 
@@ -119,7 +91,7 @@ void main() {
             builder: (BuildContext context) => Center(
               child: ElevatedButton(
                 onPressed: () async {
-                  result = await showGlassSheet<int>(
+                  result = await showPaperSheet<int>(
                     context,
                     builder: (BuildContext ctx) => ElevatedButton(
                       onPressed: () => Navigator.pop(ctx, 42),
@@ -143,7 +115,7 @@ void main() {
     expect(result, 42);
   });
 
-  testWidgets('遮罩用 tinted scrim 而非纯黑', (tester) async {
+  testWidgets('遮罩是墨色 scrim 而非纯黑', (tester) async {
     await tester.pumpWidget(hostWithButton(onPressed: () {}));
     await tester.tap(find.text('打开'));
     await tester.pumpAndSettle();
@@ -151,6 +123,6 @@ void main() {
     final modalBarrier = tester.widget<ModalBarrier>(
       find.byType(ModalBarrier).last,
     );
-    expect(modalBarrier.color, AppColors.glassScrim);
+    expect(modalBarrier.color, AppColors.scrim);
   });
 }

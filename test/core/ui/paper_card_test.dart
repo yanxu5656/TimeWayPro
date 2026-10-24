@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/ui/paper.dart';
 
 Widget _host(Widget child) => MaterialApp(
   home: Scaffold(body: Center(child: child)),
@@ -8,16 +8,16 @@ Widget _host(Widget child) => MaterialApp(
 );
 
 void main() {
-  group('GlassCard', () {
+  group('PaperCard', () {
     testWidgets('渲染 child', (tester) async {
-      await tester.pumpWidget(_host(const GlassCard(child: Text('内容'))));
+      await tester.pumpWidget(_host(const PaperCard(child: Text('内容'))));
       expect(find.text('内容'), findsOneWidget);
     });
 
     testWidgets('onTap 触发', (tester) async {
       var taps = 0;
       await tester.pumpWidget(
-        _host(GlassCard(onTap: () => taps++, child: const Text('可点'))),
+        _host(PaperCard(onTap: () => taps++, child: const Text('可点'))),
       );
 
       await tester.tap(find.text('可点'));
@@ -28,7 +28,9 @@ void main() {
     testWidgets('onLongPress 触发', (tester) async {
       var longs = 0;
       await tester.pumpWidget(
-        _host(GlassCard(onLongPress: () => longs++, child: const Text('长按'))),
+        _host(
+          PaperCard(onLongPress: () => longs++, child: const Text('长按')),
+        ),
       );
 
       await tester.longPress(find.text('长按'));
@@ -37,10 +39,10 @@ void main() {
     });
 
     testWidgets('无回调时不包 InkWell（避免无谓的层级）', (tester) async {
-      await tester.pumpWidget(_host(const GlassCard(child: Text('静态'))));
+      await tester.pumpWidget(_host(const PaperCard(child: Text('静态'))));
       expect(
         find.descendant(
-          of: find.byType(GlassCard),
+          of: find.byType(PaperCard),
           matching: find.byType(InkWell),
         ),
         findsNothing,
@@ -51,7 +53,7 @@ void main() {
       var taps = 0;
       await tester.pumpWidget(
         _host(
-          GlassCard(
+          PaperCard(
             padding: const EdgeInsets.all(40),
             onTap: () => taps++,
             child: const Text('内'),
@@ -60,7 +62,7 @@ void main() {
       );
 
       // 点在 padding 区域（卡片左上角内側）也应触发
-      final cardRect = tester.getRect(find.byType(GlassCard));
+      final cardRect = tester.getRect(find.byType(PaperCard));
       await tester.tapAt(cardRect.topLeft + const Offset(5, 5));
       await tester.pump();
       expect(taps, 1);
@@ -68,67 +70,46 @@ void main() {
 
     testWidgets('tint 非空时不抛异常', (tester) async {
       await tester.pumpWidget(
-        _host(const GlassCard(tint: AppColors.success, child: Text('进行中'))),
+        _host(
+          const PaperCard(tint: AppColors.success, child: Text('进行中')),
+        ),
       );
       expect(tester.takeException(), isNull);
       expect(find.text('进行中'), findsOneWidget);
     });
 
-    testWidgets('三档 tone 都能渲染', (tester) async {
-      for (final tone in GlassTone.values) {
+    testWidgets('四档 tone 都能渲染', (tester) async {
+      for (final tone in PaperTone.values) {
         await tester.pumpWidget(
-          _host(GlassCard(tone: tone, child: Text('$tone'))),
+          _host(PaperCard(tone: tone, child: Text('$tone'))),
         );
         expect(tester.takeException(), isNull);
       }
     });
 
-    testWidgets('blur:true 时插入 BackdropFilter（UiEffects 允许时）', (tester) async {
-      UiEffects.resetForTesting();
-      await tester.pumpWidget(
-        _host(const GlassCard(blur: true, child: Text('模糊'))),
-      );
-      expect(
-        find.descendant(
-          of: find.byType(GlassCard),
-          matching: find.byType(BackdropFilter),
-        ),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('blur:false 时不插入 BackdropFilter（列表卡片的默认姿势）', (tester) async {
-      await tester.pumpWidget(_host(const GlassCard(child: Text('不模糊'))));
-      expect(
-        find.descendant(
-          of: find.byType(GlassCard),
-          matching: find.byType(BackdropFilter),
-        ),
-        findsNothing,
-      );
-    });
-
-    testWidgets('UiEffects 降到 minimal 时即使 blur:true 也不模糊', (tester) async {
-      UiEffects.resetForTesting();
-      UiEffects.tier.value = UiEffectTier.minimal;
-
-      await tester.pumpWidget(
-        _host(const GlassCard(blur: true, child: Text('降级'))),
-      );
-      expect(
-        find.descendant(
-          of: find.byType(GlassCard),
-          matching: find.byType(BackdropFilter),
-        ),
-        findsNothing,
-      );
-      addTearDown(UiEffects.resetForTesting);
+    testWidgets('任何档位都不用 BackdropFilter（纸面体系的硬约束）', (tester) async {
+      for (final tone in PaperTone.values) {
+        await tester.pumpWidget(
+          _host(
+            PaperCard(
+              tone: tone,
+              tint: tone == PaperTone.raised ? AppColors.success : null,
+              child: Text('$tone'),
+            ),
+          ),
+        );
+        expect(
+          find.byType(BackdropFilter),
+          findsNothing,
+          reason: '$tone 档引入了模糊——静白志体系不允许',
+        );
+      }
     });
 
     testWidgets('animate:true 时用 AnimatedContainer 支持隐式过渡', (tester) async {
       await tester.pumpWidget(
         _host(
-          const GlassCard(
+          const PaperCard(
             animate: true,
             tint: AppColors.success,
             child: Text('动'),
@@ -137,7 +118,7 @@ void main() {
       );
       expect(
         find.descendant(
-          of: find.byType(GlassCard),
+          of: find.byType(PaperCard),
           matching: find.byType(AnimatedContainer),
         ),
         findsOneWidget,
@@ -146,31 +127,69 @@ void main() {
 
     testWidgets('margin 生效且不叠加 padding', (tester) async {
       await tester.pumpWidget(
-        _host(const GlassCard(margin: EdgeInsets.all(20), child: Text('边距'))),
+        _host(
+          const PaperCard(margin: EdgeInsets.all(20), child: Text('边距')),
+        ),
       );
       expect(tester.takeException(), isNull);
     });
   });
 
-  group('GlassCard 半径与描边', () {
-    testWidgets('edgeWidth 变化不导致圆角不同心（内层半径 = 外层 - 描边）', (tester) async {
+  group('PaperCard 表面档位语义', () {
+    testWidgets('row 档只画下缘发丝线（相邻行不会出现双线）', (tester) async {
+      await tester.pumpWidget(
+        _host(const PaperCard(tone: PaperTone.row, child: Text('行'))),
+      );
+      final container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(PaperCard),
+          matching: find.byType(Container),
+        ).first,
+      );
+      final decoration = container.decoration! as BoxDecoration;
+      final border = decoration.border as Border;
+
+      expect(border.bottom.color, AppColors.divider);
+      expect(border.bottom.width, 1);
+      expect(border.top, BorderSide.none);
+    });
+
+    testWidgets('row 档带 tint 时左缘有着重线', (tester) async {
       await tester.pumpWidget(
         _host(
-          const GlassCard(
-            radius: AppRadius.xl,
-            edgeWidth: 2.0,
-            child: Text('加粗描边'),
+          const PaperCard(
+            tone: PaperTone.row,
+            tint: AppColors.success,
+            child: Text('进行中'),
           ),
         ),
       );
-      expect(tester.takeException(), isNull);
+      final container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(PaperCard),
+          matching: find.byType(Container),
+        ).first,
+      );
+      final border = (container.decoration! as BoxDecoration).border as Border;
+      expect(border.left.color, AppColors.success);
+      expect(border.left.width, 2.5);
     });
 
-    testWidgets('edgeWidth 大于半径时不产生负半径', (tester) async {
+    testWidgets('raised 档是白底 + 圆角（真正浮起的表面）', (tester) async {
       await tester.pumpWidget(
-        _host(const GlassCard(radius: 1, edgeWidth: 3, child: Text('极端值'))),
+        _host(
+          const PaperCard(tone: PaperTone.raised, child: Text('浮起')),
+        ),
       );
-      expect(tester.takeException(), isNull);
+      final container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(PaperCard),
+          matching: find.byType(Container),
+        ).first,
+      );
+      final decoration = container.decoration! as BoxDecoration;
+      expect(decoration.color, AppColors.surface);
+      expect(decoration.borderRadius, AppRadius.brLg);
     });
   });
 }
