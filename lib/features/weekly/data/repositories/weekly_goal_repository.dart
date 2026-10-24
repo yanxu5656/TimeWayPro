@@ -3,9 +3,10 @@ import 'package:uuid/uuid.dart';
 import '../../../../shared/database/database_helper.dart';
 import '../models/weekly_goal.dart';
 
-/// 本周目标的存取。
+/// 每周目标的存取。
 ///
 /// 表结构、id 生成方式、CRUD 写法都照 `daily_repository.dart` 的样板。
+/// [getByWeek] 接受任意 weekKey，周导航、回看旧周都走它。
 class WeeklyGoalRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final _uuid = const Uuid();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/ui/glass.dart';
 import '../features/daily/presentation/screens/daily_screen.dart';
+import '../features/weekly/presentation/screens/weekly_screen.dart';
 import '../features/task/presentation/screens/task_screen.dart';
 import '../features/statistics/presentation/screens/statistics_screen.dart';
 import '../features/planning/presentation/screens/planning_screen.dart';
@@ -25,10 +26,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   final List<Widget> _screens = const [
     DailyScreen(), // 0 待办
-    TaskScreen(), // 1 任务
-    StatisticsScreen(), // 2 统计
-    PlanningScreen(), // 3 规划
-    SettingsScreen(), // 4 设置
+    WeeklyScreen(), // 1 每周
+    TaskScreen(), // 2 任务
+    StatisticsScreen(), // 3 统计
+    PlanningScreen(), // 4 规划
+    SettingsScreen(), // 5 设置
   ];
 
   @override
@@ -63,7 +65,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     // TabVisibility 必须包在 IndexedStack 之外：入场动画要能知道
-    // "我这一页现在是不是可见"。IndexedStack 会保活全部 5 页，
+    // "我这一页现在是不是可见"。IndexedStack 会保活全部页面，
     // 只看"有没有被 build"的话，非首屏的入场动画会在启动瞬间播完，
     // 用户切过去时什么也看不到。
     return TabVisibility(
@@ -82,8 +84,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           extendBody: true,
           body: Stack(
             children: [
-              // 全应用唯一一份极光。不能每屏自带：IndexedStack 保活 5 屏，
-              // 5 个相位不同的控制器会让背景在切 Tab 时跳变。
+              // 全应用唯一一份极光。不能每屏自带：IndexedStack 保活全部屏幕，
+              // 各屏相位不同的控制器会让背景在切 Tab 时跳变。
               const Positioned.fill(child: AuroraBackground()),
               Positioned.fill(
                 // 双向隔离：列表滚动不触发极光层重栅格化，极光漂移也不重绘列表

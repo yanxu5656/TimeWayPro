@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_way_pro/core/utils/week.dart';
-import 'package:time_way_pro/features/daily/data/models/weekly_goal.dart';
-import 'package:time_way_pro/features/daily/data/repositories/weekly_goal_repository.dart';
+import 'package:time_way_pro/features/weekly/data/models/weekly_goal.dart';
+import 'package:time_way_pro/features/weekly/data/repositories/weekly_goal_repository.dart';
 import 'package:time_way_pro/shared/database/database_helper.dart';
 
 import '../../support/app_harness.dart';

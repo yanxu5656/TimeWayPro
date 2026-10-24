@@ -347,8 +347,8 @@ class _TaskScreenState extends State<TaskScreen> {
         StaggeredEntrance(index: slot++, child: child);
 
     return StaggerScope(
-      // 任务页是 MainScreen 里的第 1 个 Tab
-      slotIndex: 1,
+      // 任务页是 MainScreen 里的第 2 个 Tab（待办、每周之后）
+      slotIndex: 2,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.screenH,

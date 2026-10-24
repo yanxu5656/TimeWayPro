@@ -41,12 +41,13 @@ void main() {
     );
   });
 
-  testWidgets('5 个 Tab 都能切换并渲染各自的标题', (WidgetTester tester) async {
+  testWidgets('6 个 Tab 都能切换并渲染各自的标题', (WidgetTester tester) async {
     await pumpSeededApp(tester);
 
     expect(find.text('每日待办'), findsOneWidget);
 
     for (final (String label, String title) in const <(String, String)>[
+      ('每周', '每周目标'),
       ('任务', '时途'),
       ('统计', '统计'),
       ('规划', '人生规划'),
@@ -63,7 +64,7 @@ void main() {
     // 统计页就漏过一次（仍是 EdgeInsets.all(20)）。
     await pumpSeededApp(tester);
 
-    for (final String label in const <String>['待办', '任务', '统计', '规划', '设置']) {
+    for (final String label in const <String>['待办', '每周', '任务', '统计', '规划', '设置']) {
       if (label != '待办') {
         await switchToTab(tester, label);
       }
@@ -86,7 +87,7 @@ void main() {
     }
   });
 
-  testWidgets('5 个 Tab 的顶栏都有图标徽标', (WidgetTester tester) async {
+  testWidgets('6 个 Tab 的顶栏都有图标徽标', (WidgetTester tester) async {
     // 守 v1.3.1 的一致性修复：原先后三个 Tab 没传 titleIcon，而
     // GlassAppBar 在 titleIcon 为空时连占位都不渲染，导致那三页的标题
     // 比前两页整体靠左约 40px——不只是少了图标，是标题位置都对不齐。
@@ -94,6 +95,7 @@ void main() {
 
     const List<(String tab, IconData icon)> expected = <(String, IconData)>[
       ('待办', Icons.today_rounded),
+      ('每周', Icons.flag_rounded),
       ('任务', Icons.access_time_rounded),
       ('统计', Icons.bar_chart_rounded),
       ('规划', Icons.account_tree_rounded),
@@ -120,7 +122,7 @@ void main() {
     // 观感上就是「有的卡圆一点有的方一点」。
     await pumpSeededApp(tester);
 
-    for (final String label in const <String>['待办', '任务', '统计', '规划', '设置']) {
+    for (final String label in const <String>['待办', '每周', '任务', '统计', '规划', '设置']) {
       if (label != '待办') await switchToTab(tester, label);
 
       for (final Element element in find.byType(GlassCard).evaluate()) {
@@ -133,11 +135,12 @@ void main() {
     }
   });
 
-  testWidgets('窄屏（320dp）下导航栏 5 项不溢出', (WidgetTester tester) async {
+  testWidgets('窄屏（320dp）下导航栏 6 项不溢出', (WidgetTester tester) async {
     await pumpSeededApp(tester, size: const Size(320, 640));
 
     expect(tester.takeException(), isNull);
-    for (final String label in const <String>['待办', '任务', '统计', '规划', '设置']) {
+    for (final String label
+        in const <String>['待办', '每周', '任务', '统计', '规划', '设置']) {
       expect(find.text(label), findsOneWidget);
     }
   });

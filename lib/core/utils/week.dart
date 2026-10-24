@@ -36,6 +36,17 @@ String weekKeyOf(DateTime date) {
   return '$y-$m-$d';
 }
 
+/// 周区间的显示文本 `MM/dd - MM/dd`（周一到周日）
+///
+/// 与 [weekKeyOf] 一样手工拼接，不引入 intl。
+String weekRangeLabel(DateTime date) {
+  final DateTime monday = startOfWeek(date);
+  final DateTime sunday = DateTime(monday.year, monday.month, monday.day + 6);
+  String md(DateTime d) =>
+      '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
+  return '${md(monday)} - ${md(sunday)}';
+}
+
 /// 某天 00:00
 DateTime startOfDay(DateTime date) =>
     DateTime(date.year, date.month, date.day);

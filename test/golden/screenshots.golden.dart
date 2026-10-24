@@ -11,7 +11,7 @@
 /// ## 跑法与产物
 ///
 /// 这里输出的是**原始 PNG**（3x，约 1MB/张），写在 `build/` 下（已 gitignore）。
-/// README 用的是缩放后的 WebP，体积小一个数量级（4 张合计 ~62KB）。
+/// README 用的是缩放后的 WebP，体积小一个数量级（5 张合计 ~79KB）。
 /// 更新 README 配图要跑两步：
 ///
 ///     flutter test test/golden/screenshots.golden.dart --update-goldens
@@ -35,6 +35,7 @@ import 'package:time_way_pro/features/daily/providers/daily_provider.dart';
 import 'package:time_way_pro/features/planning/providers/plan_provider.dart';
 import 'package:time_way_pro/features/settings/providers/settings_provider.dart';
 import 'package:time_way_pro/features/task/providers/task_provider.dart';
+import 'package:time_way_pro/features/weekly/providers/weekly_provider.dart';
 import 'package:time_way_pro/shared/database/database_helper.dart';
 
 import '../support/app_harness.dart';
@@ -80,6 +81,9 @@ Widget _appWithRealFont() {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<DailyProvider>(create: (_) => DailyProvider()),
+      ChangeNotifierProvider<WeeklyProvider>(
+        create: (_) => WeeklyProvider()..loadGoals(),
+      ),
       ChangeNotifierProvider<TaskProvider>(
         create: (_) => TaskProvider()..loadTasks(),
       ),
@@ -133,6 +137,7 @@ void main() {
 
     const List<(String tab, String file)> shots = <(String, String)>[
       ('待办', 'daily'),
+      ('每周', 'weekly'),
       ('任务', 'task'),
       ('统计', 'stats'),
       ('规划', 'planning'),
@@ -181,6 +186,37 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('../../build/readme_screenshots/sheet_add.png'),
+    );
+  });
+
+  testWidgets('挪周弹窗截图', (WidgetTester tester) async {
+    UiEffects.resetForTesting();
+    UiEffects.tier.value = UiEffectTier.reduced;
+
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.runAsync(() => DatabaseHelper().importAll(seedData()));
+
+    await tester.pumpWidget(_appWithRealFont());
+    for (int i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    // 每周页第一条目标的挪周按钮
+    await tester.tap(find.text('每周'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.tap(find.byIcon(Icons.event_repeat_outlined).first);
+    // 先泵一帧让路由动画开始计时，再给足时长（见 weekly_screen_test 的教训）
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(tester.takeException(), isNull);
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/readme_screenshots/sheet_move.png'),
     );
   });
 }

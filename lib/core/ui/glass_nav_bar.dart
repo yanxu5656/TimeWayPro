@@ -60,6 +60,7 @@ class GlassNavBar extends StatelessWidget {
 
   static const List<_NavItemData> _items = <_NavItemData>[
     _NavItemData(Icons.today_outlined, Icons.today_rounded, '待办'),
+    _NavItemData(Icons.flag_outlined, Icons.flag_rounded, '每周'),
     _NavItemData(
       Icons.check_circle_outline_rounded,
       Icons.check_circle_rounded,
@@ -70,8 +71,11 @@ class GlassNavBar extends StatelessWidget {
     _NavItemData(Icons.settings_outlined, Icons.settings_rounded, '设置'),
   ];
 
-  /// 指示块尺寸。高度与 [_NavItem] 里图标区一致，滑动时不会上下跳。
-  static const double pillWidth = 56;
+  /// 指示块尺寸上限。高度与 [_NavItem] 里图标区一致，滑动时不会上下跳。
+  ///
+  /// 宽度按单项宽度自适应（留 8px 间隙）：6 个 Tab 在 320dp 屏上单项只有
+  /// 约 53dp，固定 56dp 会让指示块越出到相邻项里。
+  static const double _pillMaxWidth = 56;
   static const double pillHeight = 34;
 
   @override
@@ -97,6 +101,8 @@ class GlassNavBar extends StatelessWidget {
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
                     final double itemW = constraints.maxWidth / _items.length;
+                    final double pillW =
+                        _pillMaxWidth < itemW ? _pillMaxWidth : itemW - 8;
 
                     return Stack(
                       children: <Widget>[
@@ -104,9 +110,9 @@ class GlassNavBar extends StatelessWidget {
                         AnimatedPositioned(
                           duration: const Duration(milliseconds: 260),
                           curve: Curves.easeOutCubic,
-                          left: index * itemW + (itemW - pillWidth) / 2,
+                          left: index * itemW + (itemW - pillW) / 2,
                           top: 0,
-                          width: pillWidth,
+                          width: pillW,
                           height: pillHeight,
                           child: DecoratedBox(
                             decoration: BoxDecoration(

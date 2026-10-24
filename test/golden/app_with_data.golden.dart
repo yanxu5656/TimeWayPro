@@ -23,6 +23,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:time_way_pro/app/app.dart';
 import 'package:time_way_pro/core/ui/glass.dart';
+import 'package:time_way_pro/core/utils/week.dart';
 import 'package:time_way_pro/shared/database/database_helper.dart';
 
 String get _todayKey => DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -165,6 +166,32 @@ Map<String, dynamic> _seed() {
         'created_at': nowIso,
       },
     ],
+    'weekly_goals': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'w1',
+        'title': '读完《纳瓦尔宝典》前三章',
+        'is_completed': 1,
+        'week_key': weekKeyOf(now),
+        'sort_order': 0,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'w2',
+        'title': '跑步两次，每次 5 公里',
+        'is_completed': 0,
+        'week_key': weekKeyOf(now),
+        'sort_order': 1,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'w3',
+        'title': '整理季度复盘的提纲',
+        'is_completed': 0,
+        'week_key': weekKeyOf(now),
+        'sort_order': 2,
+        'created_at': nowIso,
+      },
+    ],
     'sync_config': <Map<String, dynamic>>[],
   };
 }
@@ -190,7 +217,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
     }
 
-    const List<String> labels = <String>['待办', '任务', '统计', '规划', '设置'];
+    const List<String> labels = <String>['待办', '每周', '任务', '统计', '规划', '设置'];
     for (int i = 0; i < labels.length; i++) {
       if (i > 0) {
         await tester.tap(find.text(labels[i]));

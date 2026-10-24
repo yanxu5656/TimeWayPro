@@ -178,10 +178,10 @@ Map<String, dynamic> seedData() {
           'sort_order': i,
           'created_at': nowIso,
         },
-      // 上一周的目标：用来验证「只显示本周」
+      // 上一周的目标：每周页翻到上周时要能看到它（不再是"只显示本周"）
       <String, dynamic>{
         'id': 'w-old',
-        'title': '上周的目标（不该显示）',
+        'title': '上周的目标（翻周后可见）',
         'is_completed': 0,
         'week_key': weekKeyOf(now.subtract(const Duration(days: 7))),
         'sort_order': 0,
