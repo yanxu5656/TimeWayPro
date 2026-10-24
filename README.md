@@ -11,11 +11,12 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.3.3-00BFA5)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.4.0-00BFA5)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-00BFA5?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
   <img src="docs/screenshots/daily.webp" width="180" alt="每日待办">
+  <img src="docs/screenshots/weekly.webp" width="180" alt="每周目标">
   <img src="docs/screenshots/task.webp" width="180" alt="任务计时">
   <img src="docs/screenshots/stats.webp" width="180" alt="统计">
   <img src="docs/screenshots/planning.webp" width="180" alt="人生规划">
@@ -29,7 +30,7 @@
 
 TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管理应用。
 
-它的核心逻辑很简单：**给任务计时 → 把每一段实际用时记录下来 → 用统计图表告诉你时间究竟花在了哪里**。在此之上，再挂载「人生规划」的目标树与「每日待办」的轻量清单，兼顾长期方向与当天节奏。
+它的核心逻辑很简单：**给任务计时 → 把每一段实际用时记录下来 → 用统计图表告诉你时间究竟花在了哪里**。在此之上，再挂载「人生规划」的目标树、「每周目标」与「每日待办」的轻量清单，兼顾长期方向、每周节奏与当天执行。
 
 与常见的待办清单不同，时途不满足于「打勾」，而是记录**每件事真实消耗了多少时间** —— 这些记录会沉淀为热力图、饼图和任务明细，让「我很忙」变成「我忙在了这件事上，一共 3 小时 20 分」。
 
@@ -39,7 +40,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 ## 安装
 
-到 [**Releases**](https://github.com/yanxu5656/TimeWayPro/releases) 下载最新版本的 APK（文件名带版本号，形如 `app-release-1.3.3.apk`），直接装到手机上即可。
+到 [**Releases**](https://github.com/yanxu5656/TimeWayPro/releases) 下载最新版本的 APK（文件名带版本号，形如 `app-release-1.4.0.apk`），直接装到手机上即可。
 
 **环境要求**：Android 7.0（API 24）及以上。
 
@@ -81,10 +82,17 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ### 📝 每日待办
 
 - **独立于任务模块的轻量清单** —— 按日期存储，适合当天临时事项
-- **本周目标** —— 页首一张卡记录「这周大概要完成什么」，逐条勾选，勾选进度即完成度。只显示本周，旧周数据保留
 - **时间段分类** —— 上午 / 下午 / 晚上三段分组，添加时自动定位当前时段
 - **完成进度** —— 点击圆圈勾选，顶部进度条实时显示今日完成度
 - **滑动删除**（带二次确认）与**长按编辑**
+
+### 🏁 每周目标
+
+- **独立的「每周」Tab** —— 与每日待办平行的周视角，待办页回归纯「当天」
+- **任意周访问** —— 左右箭头翻周、直接选日期跳周，翻走后一键「回到本周」；旧周数据完整可回看
+- **提前规划下周** —— 翻到任意周后添加，目标就落在那一周
+- **快捷挪周** —— 每条目标行尾的挪动按钮打开快捷面板：上周 / 本周 / 下周 / 下下周（各带日期区间）一键挪，更远的周走日期选择器；挪动排在目标周队尾，不动它原有的顺序
+- **勾选进度** —— 逐条勾选，概览进度条实时显示完成度，满额变绿
 
 ### ☁️ 数据同步与备份
 
@@ -100,6 +108,31 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.4.0 — 每周目标独立成「每周」Tab
+*2026-10-24*
+
+**动机**：实际使用中的两个痛点——周目标卡**挤占待办页顶部的固定头部**；**只能看本周**，既回看不到以往周的计划，也没法提前列下周的。
+
+**新增**
+
+- **「每周」Tab**（待办右侧）：周导航（左右翻周 / 选日期跳周 / 回到本周）+ 概览进度 + 目标列表，结构与待办页的日期导航一致
+- **任意周访问**：翻到哪周就看哪周，旧周数据（v1.2 时代存在 JSON 里的）直接可回看，零迁移
+- **提前规划**：翻到下周再点添加，目标就建在下周；添加弹窗会标注「将添加到：下周（日期区间）」
+- **快捷挪周**：目标行尾按钮 → 面板列出 上周 / 本周 / 下周 / 下下周（各带日期区间，所在周标「当前」不可点）+「选其他周…」走日期选择器。挪动 = 改 `weekKey` 并排到目标周队尾
+
+**改动**
+
+- 待办页摘除周目标卡，回归纯「当天」视角
+- 底部导航 5 → 6 个 Tab；滑动指示块宽度从固定 56 改为按单项宽度自适应（320dp 屏 6 项时单项约 53dp，固定宽会溢出到相邻项）
+- `WeeklyGoal` 模型与仓储从 `features/daily/` 移入新模块 `features/weekly/`，新增带周导航状态的 `WeeklyProvider`；**数据格式零变更**
+- `week.dart` 新增 `weekRangeLabel()`（周区间的显示文本，与 `weekKeyOf` 同样手工拼接不依赖 intl）
+
+**实现说明**
+
+- 「本周」标签与 `isCurrentWeek` 都对 `DateTime.now()` 现算——应用开着跨过周日午夜，浏览中的周会自动变成「上周」，不会显示错
+- 删除目标改为**乐观更新**（先同步移出本地状态再持久化）：滑动删除的动画播完才触发 `onDismissed`，时序上晚于用户手势，等持久化返回再刷新会看到「删了又闪回来」的一瞬
+- 挪周的快捷档固定相对「真实本周」（上周/本周/下周/下下周）而不是相对浏览中的周——相对浏览周会让「本周」这个词在不同页面位置含义漂移，绝对标签 + 日期区间不会歧义
 
 ### v1.3.3 — 写入可靠性与任务页日期
 *2026-09-18*
@@ -281,7 +314,7 @@ lib/
 ├── main.dart                          应用入口：初始化通知与视觉效果档位
 ├── app/
 │   ├── app.dart                       全局 Provider 注册与主题装配
-│   └── main_screen.dart               主界面：极光层 + 五 Tab + 底部导航
+│   └── main_screen.dart               主界面：极光层 + 六 Tab + 底部导航
 ├── core/
 │   ├── theme/                         设计令牌：颜色 / 圆角 / 间距 / 阴影 / 文字
 │   │   └── app_theme.dart             装配层，重新导出全部令牌
@@ -299,6 +332,7 @@ lib/
 │   └── services/notification_service.dart
 └── features/                          按功能模块划分
     ├── daily/         每日待办
+    ├── weekly/        每周目标（周导航、快捷挪周）
     ├── task/          任务与计时
     ├── statistics/    统计
     ├── planning/      人生规划
@@ -331,14 +365,14 @@ flutter run
 flutter build apk --release
 # 产物：build/app/outputs/flutter-apk/app-release.apk
 # 发布到 Releases 时复制一份带版本号的，方便区分：
-#   cp .../app-release.apk .../app-release-1.3.3.apk
+#   cp .../app-release.apk .../app-release-1.4.0.apk
 ```
 
 ### 测试
 
 ```bash
 flutter analyze          # 当前基线：0 error / 0 warning
-flutter test             # 158 个测试
+flutter test             # 164 个测试
 ```
 
 另有三类不在默认 test run 里的 golden（文件名不以 `_test.dart` 结尾，避免像素跨平台漂移影响别人的机器）：

@@ -6,7 +6,7 @@
     python tool/make_readme_shots.py
 
 为什么要多这一步：golden 输出的是 3x 原始 PNG（约 1MB/张），
-直接把 4MB 的图提交进仓库不值得。缩放后的 WebP 4 张合计约 62KB，
+直接把 5MB 的图提交进仓库不值得。缩放后的 WebP 5 张合计约 79KB，
 在 GitHub 的 README 里渲染正常。
 
 依赖 Pillow。
@@ -20,12 +20,12 @@ from PIL import Image
 SRC_DIR = os.path.join('build', 'readme_screenshots')
 DST_DIR = os.path.join('docs', 'screenshots')
 
-# README 里 4 张图并排展示，每张显示宽度约 200px，
+# README 里 5 张图并排展示，每张显示宽度约 180px，
 # 420px 的源图相当于 2x，够清晰也不至于太重
 WIDTH = 420
 QUALITY = 88
 
-NAMES = ['daily', 'task', 'stats', 'planning']
+NAMES = ['daily', 'weekly', 'task', 'stats', 'planning']
 
 
 def main():
