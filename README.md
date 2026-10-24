@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.5.0-00BFA5)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.5.1-00BFA5)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-00BFA5?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -109,6 +109,29 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 ## 版本迭代
 
+### v1.5.1 — 收尾：图标、健壮性与安全修复
+*2026-10-24*
+
+**应用图标**——重做为静白志风：纸白平涂底 + 墨色不闭合圆环 + 缺口端点的朱砂圆点（当下），与 app 内的墨圈朱砂勾选是同一套语言。`tool/make_app_icon.py` 改参数重跑即得全套平台资源。
+
+**健壮性**（全面代码核查的产出，按严重度）：
+
+- **写盘串行化**：`DatabaseHelper` 加写队列——原先两条写链交错时会争用同一个 `.tmp` 文件（测试日志里的 errno 32 就是它），坏的序列甚至让正式文件处于缺失状态。同时落盘失败不再被吞掉，「恢复成功」的提示不会再与磁盘实际状态不符
+- **多计时器通知错乱**：停掉并行计时之一后，通知栏会被已停止任务的旧更新器刷回去且永不恢复——现在停止/恢复计时都会重绑通知的周期更新器
+- **停止计时的记录污染**：找不到本次会话的记录时（如计时中做了数据恢复），原先会回退改写该任务**最旧**的一条历史记录——现在放弃更新而不是污染
+- **恢复/导入的完整刷新**：原先只重载任务/规划两个 provider，待办与每周页在 IndexedStack 保活下继续显示旧数据、幽灵操作静默失败——现在先停掉所有计时器再四个 provider 全量重载
+- **导入竞态**：冷启动后立即导入可能被在途的磁盘读取整体覆盖回去——`importAll` 先等初始化落地
+- **双击开始计时**：异步空窗会插入两条记录并泄漏一个每秒 tick 的孤儿 Timer——加同步占位防抖
+- **日期运算 DST 修正**：周/日导航改构造函数日运算，夏令时区不再跳周/跳日
+- **统计区间改半开**：闭区间 `23:59:59` 会漏掉最后一秒内开始的记录
+- **行级容错**：单条脏数据（旧备份缺字段）不再让整页列表静默消失
+
+**安全**：`exportAll` 不再随数据导出坚果云**应用密码**（原先备份文件与导出文件里是明文）。恢复旧备份后需要在设置里重新输入密码。
+
+**一致性**：九个底部弹窗标题统一为衬线（原先 16/18/20px 三种并存）；同步状态卡改浮起白卡（raised 档）；分段控件未选中色从 textHint 修正为 textSecondary（对比度硬规则）；每周页期号对锚点前的周做了防御。
+
+**已知留白**（低风险，暂不处理）：多计时器时每秒多次 `notifyListeners` 的整页重建开销；计时中编辑倒计时时长已即时生效，但通知总时长取值路径仍有缓存；明文凭据仍存本地 JSON（仅不再外流）。
+
 ### v1.5.0 — 静白志（全面 UI 迭代）
 *2026-10-24*
 
@@ -170,7 +193,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 - **保存不再是「先覆盖再说」**。原先每写一次都是「把正式文件整个复制成 `.bak`，再直接覆盖正式文件」——写到一半被杀进程，正式文件就是**半截 JSON**，下次启动只能回滚到上一次，刚做的改动丢掉。现在改为：写临时文件（`flush` 落盘）→ 旧的正式文件改名成 `.bak` → 临时文件改名顶替。两次 `rename` 都只改元数据，调用方要么看到旧的、要么看到新的，**不存在中间态**。顺带不再有每次写入都整文件复制的开销。
 - **正式文件缺失时不再静默当作「没有数据」**。原先只在**读取抛异常**时回退到 `.bak`；文件**不存在**时会以空表启动——对全部价值就是这份数据的应用来说，这是个静默的数据丢失路径。现在文件缺失也会先试备份。
 - **任务页的日期选择器接上了真实数据**。原先它只改标题：卡片上那个「今日 X分钟」的数据源把「今天」写死在方法体里，翻到上周三，标题变了、数字还是今天的。现在翻到哪天就聚合哪天的记录，今天显示「今日」、其它日期显示「当日」。
-- 卡上那个时长文字从 `textHint` 换到 `textSecondary`：12px 且承载真实数据，前者在玻璃底上只有约 3.1:1 对比度，低于 [对比度规则](#玻璃的对比度约束)要求的门槛。
+- 卡上那个时长文字从 `textHint` 换到 `textSecondary`：12px 且承载真实数据，前者在玻璃底上只有约 3.1:1 对比度，低于 [对比度规则](#纸面的对比度约束)要求的门槛。
 
 **边界**
 
@@ -397,7 +420,7 @@ flutter run
 flutter build apk --release
 # 产物：build/app/outputs/flutter-apk/app-release.apk
 # 发布到 Releases 时复制一份带版本号的，方便区分：
-#   cp .../app-release.apk .../app-release-1.5.0.apk
+#   cp .../app-release.apk .../app-release-1.5.1.apk
 ```
 
 ### 测试
@@ -410,7 +433,7 @@ flutter test             # 164 个测试
 另有三类不在默认 test run 里的 golden（文件名不以 `_test.dart` 结尾，避免像素跨平台漂移影响别人的机器）：
 
 ```bash
-# 玻璃设计系统的视觉探针 + 各 Tab 截图（后者用于生成本文档的配图）
+# 纸面设计系统（静白志）的视觉探针 + 各 Tab 截图（后者用于生成本文档的配图）
 flutter test test/golden/paper_gallery.golden.dart --update-goldens
 flutter test test/golden/app_with_data.golden.dart --update-goldens
 flutter test test/golden/screenshots.golden.dart --update-goldens
