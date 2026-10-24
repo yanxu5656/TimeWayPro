@@ -4,8 +4,10 @@
 
     python tool/make_app_icon.py
 
-设计：青绿径向渐变底（光源在左上）+ 不闭合的白色粗圆环，缺口端点是实心圆点——
-环表示已走过的进度，圆点表示「当下」。纯几何、无文字，48px 下不糊。
+设计（v1.5.1 起，静白志）：**纸白平涂底 + 墨色粗圆环 + 朱砂圆点**。
+不闭合的环表示已走过的进度，缺口端点的朱砂点是「当下」——与 app 内
+勾选圆钮（墨圈、完成翻朱砂）是同一套语言。纯几何、无文字、无渐变
+（静白志体系里没有渐变），48px 下不糊。
 
 为什么要程序化生成而不是手工导图：改一个参数（环粗、缺口角度）就能整体
 重出，且**零新依赖**（不引 flutter_launcher_icons）。母版是 1024×1024，
@@ -29,12 +31,10 @@ from PIL import Image, ImageDraw
 SIZE = 1024  # 母版边长
 SS = 4  # 超采样倍数，避免圆环边缘锯齿
 
-# 径向渐变，光从左上打来——与 app 里玻璃卡的「光从左上打来」是同一套语言。
-# 直接对比过：线性左上→右下几乎看不出渐变，整体读起来是一块平色。
-GRAD_LIGHT = (0x14, 0xD0, 0xB2)  # 光源中心
-GRAD_DARK = (0x00, 0x69, 0x5C)  # 边缘
-GRAD_CENTER = (0.28, 0.22)  # 光源位置（画布归一化坐标）
-GRAD_RADIUS = 1.15  # 渐变半径 / 画布边长
+# 静白志三材料：纸 / 墨 / 朱砂（与 lib/core/theme/app_colors.dart 一致）
+PAPER = (0xFA, 0xF7, 0xF1)
+INK = (0x1D, 0x1A, 0x14)
+VERMILION = (0xC5, 0x40, 0x2C)
 
 RING_RADIUS_FRAC = 0.28  # 环中心线半径 / 画布边长
 RING_WIDTH_FRAC = 0.24  # 环粗 / 环半径
@@ -50,17 +50,9 @@ ADAPTIVE_VIEWPORT = 108
 ADAPTIVE_RING_RADIUS = 22  # 比 0.28*66=18.5 略大，为了更醒目，仍在安全区内
 
 
-def _gradient(size: int) -> Image.Image:
-    """径向渐变：光源在左上，向边缘压暗"""
-    yy, xx = np.mgrid[0:size, 0:size] / (size - 1.0)
-    dist = np.sqrt((xx - GRAD_CENTER[0]) ** 2 + (yy - GRAD_CENTER[1]) ** 2)
-    t = np.clip(dist / GRAD_RADIUS, 0.0, 1.0)
-    out = np.zeros((size, size, 3), dtype=np.uint8)
-    for i in range(3):
-        out[:, :, i] = (
-            GRAD_LIGHT[i] + (GRAD_DARK[i] - GRAD_LIGHT[i]) * t
-        ).astype(np.uint8)
-    return Image.fromarray(out, 'RGB')
+def _background(size: int) -> Image.Image:
+    """纸白平涂底。静白志没有渐变——底就是一张纸。"""
+    return Image.new('RGB', (size, size), PAPER)
 
 
 def _ring_angles() -> tuple[float, float]:
@@ -73,9 +65,8 @@ def _ring_angles() -> tuple[float, float]:
 
 
 def _draw_mark(draw: ImageDraw.ImageDraw, size: int, radius: float,
-               width: float, color: tuple[int, int, int, int],
-               dot_at_start: bool) -> None:
-    """画圆环 + 缺口端点的实心圆点。
+               width: float, dot_at_start: bool = False) -> None:
+    """画墨环 + 缺口端点的朱砂圆点。
 
     坐标以 size 为画布边长、中心为圆心。
     """
@@ -83,7 +74,7 @@ def _draw_mark(draw: ImageDraw.ImageDraw, size: int, radius: float,
     start, end = _ring_angles()
 
     box = [c - radius, c - radius, c + radius, c + radius]
-    draw.arc(box, start=start, end=end, fill=color, width=round(width))
+    draw.arc(box, start=start, end=end, fill=INK + (255,), width=round(width))
 
     # 圆点落在缺口的一个端点上。放在 arc 的末端 = 进度"走到这里"。
     angle = end if not dot_at_start else start
@@ -92,7 +83,7 @@ def _draw_mark(draw: ImageDraw.ImageDraw, size: int, radius: float,
     dot_r = width * DOT_SCALE / 2.0
     draw.ellipse(
         [dot_c[0] - dot_r, dot_c[1] - dot_r, dot_c[0] + dot_r, dot_c[1] + dot_r],
-        fill=color,
+        fill=VERMILION + (255,),
     )
 
 
@@ -104,7 +95,7 @@ def make_icon(size: int, *, rounded: bool, ring_radius_frac: float,
     Windows 用）；为假时是满幅方形（iOS / macOS 由系统自己套遮罩）。
     """
     big = size * SS
-    img = _gradient(big).convert('RGBA')
+    img = _background(big).convert('RGBA')
 
     overlay = Image.new('RGBA', (big, big), (0, 0, 0, 0))
     _draw_mark(
@@ -112,7 +103,6 @@ def make_icon(size: int, *, rounded: bool, ring_radius_frac: float,
         big,
         radius=ring_radius_frac * big,
         width=ring_radius_frac * big * RING_WIDTH_FRAC,
-        color=(255, 255, 255, 255),
         dot_at_start=dot_at_start,
     )
     img = Image.alpha_composite(img, overlay)
@@ -131,7 +121,6 @@ def make_named(path: str, size: int, **kw) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     make_icon(size, **kw).save(path)
     print('  %-58s %dx%d' % (path, size, size))
-
 
 # ── 自适应图标的 vector drawable ────────────────────────────
 
@@ -165,17 +154,17 @@ def _foreground_xml() -> str:
     android:viewportWidth="{ADAPTIVE_VIEWPORT}"
     android:viewportHeight="{ADAPTIVE_VIEWPORT}">
 
-    <!-- 不闭合的圆环：缺口 {GAP_DEG}° 居中于右上 -->
+    <!-- 墨色不闭合圆环：缺口 {GAP_DEG}° 居中于右上 -->
     <path
         android:pathData="M{_vec(x1)},{_vec(y1)} A{_vec(r)},{_vec(r)} 0 {large} 1 {_vec(x2)},{_vec(y2)}"
-        android:strokeColor="#FFFFFFFF"
+        android:strokeColor="#FF1D1A14"
         android:strokeWidth="{_vec(w)}"
         android:strokeLineCap="butt" />
 
-    <!-- 缺口端点的实心圆点：当下 -->
+    <!-- 缺口端点的朱砂圆点：当下 -->
     <path
         android:pathData="M{_vec(dot_cx)},{_vec(dot_cy)} m{_vec(-dot_r)},0 a{_vec(dot_r)},{_vec(dot_r)} 0 1,0 {_vec(dot_r * 2)},0 a{_vec(dot_r)},{_vec(dot_r)} 0 1,0 {_vec(-dot_r * 2)},0"
-        android:fillColor="#FFFFFFFF" />
+        android:fillColor="#FFC5402C" />
 </vector>
 '''
 
@@ -184,25 +173,15 @@ def _background_xml() -> str:
     return f'''<?xml version="1.0" encoding="utf-8"?>
 <!-- 由 tool/make_app_icon.py 生成，勿手改 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="{ADAPTIVE_VIEWPORT}dp"
     android:height="{ADAPTIVE_VIEWPORT}dp"
     android:viewportWidth="{ADAPTIVE_VIEWPORT}"
     android:viewportHeight="{ADAPTIVE_VIEWPORT}">
 
-    <path android:pathData="M0,0h{ADAPTIVE_VIEWPORT}v{ADAPTIVE_VIEWPORT}h-{ADAPTIVE_VIEWPORT}z">
-        <aapt:attr name="android:fillColor">
-            <!-- 径向渐变，光源在左上，与位图母版一致 -->
-            <gradient
-                android:type="radial"
-                android:centerX="{_vec(GRAD_CENTER[0] * ADAPTIVE_VIEWPORT)}"
-                android:centerY="{_vec(GRAD_CENTER[1] * ADAPTIVE_VIEWPORT)}"
-                android:gradientRadius="{_vec(GRAD_RADIUS * ADAPTIVE_VIEWPORT)}">
-                <item android:offset="0" android:color="#FF14D0B2" />
-                <item android:offset="1" android:color="#FF00695C" />
-            </gradient>
-        </aapt:attr>
-    </path>
+    <!-- 纸白平涂：静白志的底就是一张纸 -->
+    <path
+        android:pathData="M0,0h{ADAPTIVE_VIEWPORT}v{ADAPTIVE_VIEWPORT}h-{ADAPTIVE_VIEWPORT}z"
+        android:fillColor="#FFFAF7F1" />
 </vector>
 '''
 
@@ -210,8 +189,8 @@ def _background_xml() -> str:
 def _monochrome_xml() -> str:
     """Android 13+ 主题图标：只保留形状，颜色由系统填。"""
     body = _foreground_xml()
-    body = body.replace('android:strokeColor="#FFFFFFFF"', 'android:strokeColor="#FF000000"')
-    body = body.replace('android:fillColor="#FFFFFFFF"', 'android:fillColor="#FF000000"')
+    body = body.replace('android:strokeColor="#FF1D1A14"', 'android:strokeColor="#FF000000"')
+    body = body.replace('android:fillColor="#FFC5402C"', 'android:fillColor="#FF000000"')
     body = body.replace(
         '<!-- 由 tool/make_app_icon.py 生成，勿手改 -->',
         '<!-- 由 tool/make_app_icon.py 生成，勿手改 -->\n<!-- Android 13+ 主题图标：只保留形状 -->',
@@ -235,7 +214,6 @@ def write_text(path: str, content: str) -> None:
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(content)
     print('  %-58s (vector/xml)' % path)
-
 
 # ── 自检图 ────────────────────────────────────────────────
 
@@ -280,7 +258,6 @@ def make_selfcheck(out_path: str) -> None:
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     sheet.save(out_path)
     print('  %-58s 自检图' % out_path)
-
 
 # ── 主流程 ────────────────────────────────────────────────
 
