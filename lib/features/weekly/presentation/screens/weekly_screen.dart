@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/ui/glass.dart';
+import '../../../../core/ui/paper.dart';
 import '../../../../core/utils/week.dart';
 import '../../data/models/weekly_goal.dart';
 import '../../providers/weekly_provider.dart';
 import '../week_labels.dart';
 import '../widgets/move_goal_sheet.dart';
 
-/// 每周目标页（MainScreen 的第 1 个 Tab）。
+/// 每周目标页（MainScreen 的第 1 个 Tab）——「周账本」。
 ///
-/// 与待办页平行的「周」视角：头部翻周 + 概览，列表是当前浏览周的目标。
+/// 与待办页平行的「周」视角：刊头 + 衬线周行 + 大分数 + 编号账本行。
 /// 所有增删改都落在**浏览中的周**上——翻到下周添加就是提前规划，
 /// 翻回旧周就是回看历史。
 class WeeklyScreen extends StatefulWidget {
@@ -30,9 +30,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassScaffold(
-      title: '每周目标',
-      titleIcon: Icons.flag_rounded,
+    return PaperScaffold(
       body: Consumer<WeeklyProvider>(
         builder: (context, provider, child) {
           return Column(
@@ -47,13 +45,18 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
           );
         },
       ),
-      floatingActionButton: GlassFab(
+      floatingActionButton: PaperFab(
         heroTag: 'weekly_fab',
         label: '添加目标',
         onPressed: () => _showEditSheet(context, null),
       ),
     );
   }
+
+  /// 期号：2020-01-06 是周一，作为第 1 期的锚点。
+  /// 编辑刊物的 VOL 编号，是个趣味性的栏目细节
+  int _volNumber(String weekKey) =>
+      DateTime.parse(weekKey).difference(DateTime(2020, 1, 6)).inDays ~/ 7 + 1;
 
   Widget _buildHeader(WeeklyProvider provider) {
     return Padding(
@@ -64,135 +67,125 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         AppSpacing.md,
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // 周导航：结构照待办页的日期选择器，翻的单位换成周
-          GlassCard(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xxs,
-              vertical: AppSpacing.xxs,
-            ),
-            child: Column(
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    GlassIconButton(
-                      icon: Icons.chevron_left_rounded,
-                      onTap: provider.previousWeek,
-                      color: AppColors.textSecondary,
-                      size: GlassIconButton.sizeChrome,
-                      iconSize: 22,
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _selectWeek(context, provider),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: provider.isCurrentWeek
-                                ? AppColors.primarySubtle
-                                : Colors.transparent,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.md),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Icon(
-                                provider.isCurrentWeek
-                                    ? Icons.today_rounded
-                                    : Icons.calendar_month_rounded,
-                                size: 18,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                              Text(
-                                provider.isCurrentWeek
-                                    ? '本周'
-                                    : weekRangeLabel(provider.selectedWeekStart),
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    GlassIconButton(
-                      icon: Icons.chevron_right_rounded,
-                      onTap: provider.nextWeek,
-                      color: AppColors.textSecondary,
-                      size: GlassIconButton.sizeChrome,
-                      iconSize: 22,
-                    ),
-                  ],
-                ),
-                // 翻走之后给一条显式的归位路径，省得连点箭头回去
-                if (!provider.isCurrentWeek)
-                  GestureDetector(
-                    onTap: provider.goToCurrentWeek,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: AppSpacing.xxs,
-                      ),
-                      child: Text(
-                        '回到本周',
-                        style: AppText.caption.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+          Masthead(
+            kicker: 'WEEKLY LEDGER',
+            title: '每周目标',
+            trailing: Text('VOL.${_volNumber(provider.selectedWeekKey)}'),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.xs),
 
-          // 概览：进度条 + 数字滚动，视觉沿用原「本周目标」卡
-          GlassCard(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      _overviewTitle(provider),
-                      style: AppText.body.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
+          // 周行：衬线的「本周」+ 日期区间，两侧箭头
+          Row(
+            children: <Widget>[
+              PaperIconButton(
+                icon: Icons.chevron_left_rounded,
+                onTap: provider.previousWeek,
+                color: AppColors.textSecondary,
+                size: PaperIconButton.sizeChrome,
+                iconSize: 22,
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _selectWeek(context, provider),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Column(
+                      children: <Widget>[
+                        Text(
+                          provider.isCurrentWeek
+                              ? '本周'
+                              : (weekShortLabel(provider.selectedWeekStart) ??
+                                  ''),
+                          style: AppText.titleSerif.copyWith(
+                            color: provider.isCurrentWeek
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          weekRangeLabel(provider.selectedWeekStart),
+                          style: AppText.caption.copyWith(
+                            color: AppColors.textSecondary,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
                     ),
-                    // 数字滚动：分母是字符串拼接，只让分子动
-                    CountUpText(
-                      value: provider.completed,
-                      format: (int v) => '$v/${provider.total}',
-                      duration: const Duration(milliseconds: 450),
-                      style: AppText.title.copyWith(color: AppColors.primary),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  child: LinearProgressIndicator(
-                    value: provider.progress,
-                    backgroundColor: AppColors.surfaceVariant,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      provider.progress >= 1.0
-                          ? AppColors.success
-                          : AppColors.primary,
-                    ),
-                    minHeight: 8,
                   ),
                 ),
-              ],
+              ),
+              PaperIconButton(
+                icon: Icons.chevron_right_rounded,
+                onTap: provider.nextWeek,
+                color: AppColors.textSecondary,
+                size: PaperIconButton.sizeChrome,
+                iconSize: 22,
+              ),
+            ],
+          ),
+
+          // 翻走之后给一条显式的归位路径，省得连点箭头回去
+          if (!provider.isCurrentWeek)
+            GestureDetector(
+              onTap: provider.goToCurrentWeek,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xxs),
+                child: Text(
+                  '回到本周',
+                  style: AppText.caption.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ),
+
+          // 大分数：衬线数字是这一页的主角
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              Text(
+                '${_overviewTitle(provider)} · 已完成',
+                style: AppText.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const Spacer(),
+              CountUpText(
+                value: provider.completed,
+                format: (int v) => '$v',
+                duration: const Duration(milliseconds: 450),
+                style: AppText.serifNum.copyWith(
+                  fontSize: 44,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Text(
+                  '/${provider.total}',
+                  style: AppText.serifNum.copyWith(
+                    fontSize: 20,
+                    color: AppColors.textHint,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          LinearProgressIndicator(
+            value: provider.progress,
+            backgroundColor: AppColors.surfaceVariant,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              provider.progress >= 1.0
+                  ? AppColors.success
+                  : AppColors.primary,
+            ),
+            minHeight: 3,
           ),
         ],
       ),
@@ -227,8 +220,8 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
           AppSpacing.navInset,
         ),
         children: <Widget>[
-          for (final WeeklyGoal goal in provider.goals)
-            staged(_buildGoalCard(context, goal, provider)),
+          for (final (int i, WeeklyGoal goal) in provider.goals.indexed)
+            staged(_buildGoalRow(context, i, goal, provider)),
         ],
       ),
     );
@@ -239,45 +232,34 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: const BoxDecoration(
-              color: AppColors.primarySubtle,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.flag_outlined,
-              size: 48,
-              color: AppColors.primary,
-            ),
+          const Icon(
+            Icons.flag_outlined,
+            size: 44,
+            color: AppColors.textHint,
           ),
-          const SizedBox(height: AppSpacing.lg),
-          const Text(
-            '暂无目标',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-              letterSpacing: 0.3,
-            ),
-          ),
+          const SizedBox(height: AppSpacing.md),
+          const Text('暂无目标', style: AppText.titleSerif),
           const SizedBox(height: AppSpacing.xs),
           Text(
             provider.isCurrentWeek
                 ? '点击下方按钮，记下这周想完成什么'
                 : '这一周还没有目标，翻到其它周看看',
-            style: AppText.caption.copyWith(color: AppColors.textHint),
+            style: AppText.caption.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGoalCard(
+  /// 账本行：两位序号（衬线）+ 勾选圆 + 标题（衬线）+ 挪周
+  Widget _buildGoalRow(
     BuildContext context,
+    int index,
     WeeklyGoal goal,
     WeeklyProvider provider,
   ) {
+    final String no = (index + 1).toString().padLeft(2, '0');
+
     return Dismissible(
       key: Key(goal.id),
       direction: DismissDirection.endToStart,
@@ -286,29 +268,43 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         padding: const EdgeInsets.only(right: AppSpacing.md),
         decoration: BoxDecoration(
           color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
       ),
       confirmDismiss: (_) => _confirmDelete(context, goal),
       onDismissed: (_) => provider.deleteGoal(goal.id),
-      child: GlassCard(
-        margin: const EdgeInsets.only(bottom: 10),
+      child: PaperCard(
+        tone: PaperTone.row,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        tint: goal.isCompleted ? AppColors.success : null,
         // 点击整行进编辑；勾选与挪周是行内的独立按钮
         onTap: () => _showEditSheet(context, goal),
         child: Row(
           children: <Widget>[
-            GlassCheckCircle(
+            SizedBox(
+              width: 26,
+              child: Text(
+                no,
+                style: AppText.serifNum.copyWith(
+                  fontSize: 13,
+                  color: goal.isCompleted
+                      ? AppColors.primary
+                      : AppColors.textHint,
+                ),
+              ),
+            ),
+            InkCheckCircle(
               isChecked: goal.isCompleted,
               onTap: () => provider.toggleGoal(goal.id),
-              size: 22,
+              size: 21,
               semanticLabel: goal.title,
             ),
             const SizedBox(width: AppSpacing.sm + 2),
             Expanded(
               child: Text(
                 goal.title,
-                style: AppText.taskTitle.copyWith(
+                style: AppText.bodySerif.copyWith(
                   color: goal.isCompleted
                       ? AppColors.textHint
                       : AppColors.textPrimary,
@@ -353,9 +349,6 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       builder: (BuildContext ctx) => AlertDialog(
         title: const Text('删除目标'),
         content: Text('确定要删除「${goal.title}」吗？'),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -402,14 +395,13 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
 
   /// [goal] 为 null 时是新增
   void _showEditSheet(BuildContext context, WeeklyGoal? goal) {
-    showGlassSheet(
+    showPaperSheet(
       context,
       showHandle: false,
       builder: (BuildContext sheetContext) => _WeeklyGoalSheet(
         initial: goal,
         onSubmit: (String title) {
-          final WeeklyProvider provider =
-              sheetContext.read<WeeklyProvider>();
+          final WeeklyProvider provider = sheetContext.read<WeeklyProvider>();
           if (goal == null) {
             provider.addGoal(title);
           } else {
@@ -450,7 +442,8 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
     final bool isEditing = widget.initial != null;
     // 新增落在当前浏览的周；编辑显示目标所在周（挪周走行尾按钮）
     final String weekKey =
-        widget.initial?.weekKey ?? context.read<WeeklyProvider>().selectedWeekKey;
+        widget.initial?.weekKey ??
+        context.read<WeeklyProvider>().selectedWeekKey;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,7 +451,7 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
       children: <Widget>[
         Text(
           isEditing ? '编辑目标' : '添加目标',
-          style: AppText.h3.copyWith(color: AppColors.textPrimary),
+          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
         ),
         const SizedBox(height: AppSpacing.md),
         TextField(

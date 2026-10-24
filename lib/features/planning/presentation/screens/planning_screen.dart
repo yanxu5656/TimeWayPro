@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '../../../../core/ui/glass.dart';
+import '../../../../core/ui/paper.dart';
 import '../../data/models/plan.dart';
 import '../../providers/plan_provider.dart';
 
@@ -15,10 +15,7 @@ class PlanningScreen extends StatefulWidget {
 class _PlanningScreenState extends State<PlanningScreen> {
   @override
   Widget build(BuildContext context) {
-    return GlassScaffold(
-      title: '人生规划',
-      // 与底部导航「规划」项的图标一致
-      titleIcon: Icons.account_tree_rounded,
+    return PaperScaffold(
       body: Consumer<PlanProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -33,18 +30,21 @@ class _PlanningScreenState extends State<PlanningScreen> {
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
+              AppSpacing.screenH,
+              AppSpacing.xs,
+              AppSpacing.screenH,
               AppSpacing.navInset,
             ),
-            children: rootPlans
-                .map((plan) => _buildPlanTree(plan, provider, 0))
-                .toList(),
+            children: [
+              const Masthead(kicker: 'LIFE PLAN', title: '人生规划'),
+              const SizedBox(height: AppSpacing.md),
+              ...rootPlans
+                  .map((plan) => _buildPlanTree(plan, provider, 0)),
+            ],
           );
         },
       ),
-      floatingActionButton: GlassFab(
+      floatingActionButton: PaperFab(
         heroTag: 'plan_fab',
         onPressed: () => _addPlan(context, null),
       ),
@@ -106,7 +106,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
     // 递归树的每个节点都包一层 RepaintBoundary——规划页是 eager build
     // 的深层树，任一节点变化都会波及整棵子树
     return RepaintBoundary(
-      child: GlassCard(
+      child: PaperCard(
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
         radius: AppRadius.lg,
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -214,7 +214,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   void _showPlanDetail(Plan plan, PlanProvider provider) {
-    showGlassSheet(
+    showPaperSheet(
       context,
       builder: (context) => _PlanDetailSheet(
         plan: plan,
@@ -231,9 +231,9 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   void _showOptions(Plan plan, PlanProvider provider) {
-    showGlassSheet(
+    showPaperSheet(
       context,
-      // SafeArea 与拖拽把手由 GlassSheet 统一提供
+      // SafeArea 与拖拽把手由 PaperSheet 统一提供
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -274,7 +274,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   void _addPlan(BuildContext context, String? parentId) {
-    showGlassSheet(
+    showPaperSheet(
       context,
       builder: (context) => _AddPlanSheet(
         parentId: parentId,
@@ -349,7 +349,7 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // 外层键盘避让 / SafeArea / 滚动 / 拖拽把手由 GlassSheet 统一提供
+    // 外层键盘避让 / SafeArea / 滚动 / 拖拽把手由 PaperSheet 统一提供
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -490,7 +490,7 @@ class _AddPlanSheetState extends State<_AddPlanSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // 外层键盘避让 / SafeArea / 滚动 / 拖拽把手由 GlassSheet 统一提供
+    // 外层键盘避让 / SafeArea / 滚动 / 拖拽把手由 PaperSheet 统一提供
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,

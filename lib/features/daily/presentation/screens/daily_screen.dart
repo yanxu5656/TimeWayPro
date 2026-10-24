@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/ui/glass.dart';
+import '../../../../core/ui/paper.dart';
 import '../../data/models/daily_task.dart';
 import '../../providers/daily_provider.dart';
 
@@ -22,14 +22,12 @@ class _DailyScreenState extends State<DailyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassScaffold(
-      title: '每日待办',
-      titleIcon: Icons.today_rounded,
+    return PaperScaffold(
       body: Consumer<DailyProvider>(
         builder: (context, provider, child) {
           return Column(
             children: [
-              // 日期选择器和统计
+              // 刊头 + 日期行 + 进度
               _buildHeader(provider),
 
               // 任务列表
@@ -42,7 +40,7 @@ class _DailyScreenState extends State<DailyScreen> {
           );
         },
       ),
-      floatingActionButton: GlassFab(
+      floatingActionButton: PaperFab(
         heroTag: 'daily_fab',
         label: '添加待办',
         onPressed: () => _showAddTaskDialog(context),
@@ -65,117 +63,105 @@ class _DailyScreenState extends State<DailyScreen> {
         AppSpacing.md,
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 日期选择器（每周目标已独立成「每周」Tab，这里回归纯当天视角）
-          GlassCard(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xxs,
-              vertical: AppSpacing.xxs,
-            ),
-            child: Row(
-              children: [
-                _buildDateButton(
-                  icon: Icons.chevron_left_rounded,
-                  onTap: provider.previousDay,
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectDate(context, provider),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isToday
-                            ? AppColors.primarySubtle
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            isToday
-                                ? Icons.today_rounded
-                                : Icons.calendar_month_rounded,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isToday
-                                ? '今天'
-                                : DateFormat(
-                                    'MM月dd日',
-                                  ).format(provider.selectedDate),
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _getWeekday(provider.selectedDate),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.primary.withValues(alpha: 0.7),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                _buildDateButton(
-                  icon: Icons.chevron_right_rounded,
-                  onTap: provider.nextDay,
-                ),
-              ],
-            ),
+          Masthead(
+            kicker: 'DAILY LIST',
+            title: '每日待办',
+            trailing: Text(DateFormat('yyyy/MM/dd').format(now)),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xs),
 
-          // 进度条和统计
-          GlassCard(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '今日进度',
-                      style: AppText.body.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
+          // 日期行：衬线日期 + 两侧箭头，今天用朱砂标注
+          Row(
+            children: [
+              _buildDateButton(
+                icon: Icons.chevron_left_rounded,
+                onTap: provider.previousDay,
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _selectDate(context, provider),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isToday
+                              ? '今天'
+                              : DateFormat(
+                                  'MM月dd日',
+                                ).format(provider.selectedDate),
+                          style: AppText.titleSerif.copyWith(
+                            color: isToday
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          _getWeekday(provider.selectedDate),
+                          style: AppText.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                    // 数字滚动：分母是字符串拼接，只让分子动
-                    CountUpText(
-                      value: provider.completedTasks,
-                      format: (v) => '$v/${provider.totalTasks}',
-                      duration: const Duration(milliseconds: 450),
-                      style: AppText.title.copyWith(color: AppColors.primary),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  child: LinearProgressIndicator(
-                    value: provider.progress,
-                    backgroundColor: AppColors.surfaceVariant,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      provider.progress >= 1.0
-                          ? AppColors.success
-                          : AppColors.primary,
-                    ),
-                    minHeight: 8,
                   ),
                 ),
-              ],
+              ),
+              _buildDateButton(
+                icon: Icons.chevron_right_rounded,
+                onTap: provider.nextDay,
+              ),
+            ],
+          ),
+
+          // 进度：衬线大分数 + 细墨条
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '今日进度',
+                style: AppText.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const Spacer(),
+              // 数字滚动：分母是字符串拼接，只让分子动
+              CountUpText(
+                value: provider.completedTasks,
+                format: (v) => '$v',
+                duration: const Duration(milliseconds: 450),
+                style: AppText.serifNum.copyWith(
+                  fontSize: 40,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  '/${provider.totalTasks}',
+                  style: AppText.serifNum.copyWith(
+                    fontSize: 20,
+                    color: AppColors.textHint,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          LinearProgressIndicator(
+            value: provider.progress,
+            backgroundColor: AppColors.surfaceVariant,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              provider.progress >= 1.0
+                  ? AppColors.success
+                  : AppColors.primary,
             ),
+            minHeight: 3,
           ),
         ],
       ),
@@ -186,11 +172,11 @@ class _DailyScreenState extends State<DailyScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return GlassIconButton(
+    return PaperIconButton(
       icon: icon,
       onTap: onTap,
       color: AppColors.textSecondary,
-      size: GlassIconButton.sizeChrome,
+      size: PaperIconButton.sizeChrome,
       iconSize: 22,
     );
   }
@@ -305,28 +291,24 @@ class _DailyScreenState extends State<DailyScreen> {
   }
 
   Widget _buildSectionTitle(String title, IconData icon, Color color) {
+    // 编辑风的分组小标：字距拉开的墨色小字 + 细线，不再用彩色底块
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.xs),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Icon(icon, size: 16, color: color),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: AppText.label.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: color,
-              letterSpacing: 0.3,
-            ),
-          ),
+          const SizedBox(height: AppSpacing.xxs),
         ],
       ),
     );
@@ -341,7 +323,7 @@ class _DailyScreenState extends State<DailyScreen> {
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
           color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
       ),
@@ -351,9 +333,6 @@ class _DailyScreenState extends State<DailyScreen> {
           builder: (context) => AlertDialog(
             title: const Text('删除待办'),
             content: Text('确定要删除「${task.title}」吗？'),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -371,18 +350,18 @@ class _DailyScreenState extends State<DailyScreen> {
       onDismissed: (direction) {
         provider.deleteTask(task.id);
       },
-      child: GlassCard(
-        // 含标题 + 备注两行文字，走 strong 档保对比度
-        tone: GlassTone.strong,
-        margin: const EdgeInsets.only(bottom: 10),
+      // 账本行：透明底 + 下缘发丝线，完成的行左缘加朱砂着重线
+      child: PaperCard(
+        tone: PaperTone.row,
+        padding: const EdgeInsets.symmetric(vertical: 14),
         tint: task.isCompleted ? AppColors.success : null,
         onTap: () => provider.toggleComplete(task.id),
         onLongPress: () => _showEditDialog(context, task, provider),
         child: Row(
           children: [
-            // 完成按钮。与任务页共用 GlassCheckCircle
+            // 完成按钮。与任务页共用 InkCheckCircle
             // （原先这里是 26px，任务页是 28px）
-            GlassCheckCircle(
+            InkCheckCircle(
               isChecked: task.isCompleted,
               onTap: () => provider.toggleComplete(task.id),
               semanticLabel: task.title,
@@ -396,9 +375,7 @@ class _DailyScreenState extends State<DailyScreen> {
                 children: [
                   Text(
                     task.title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                    style: AppText.bodySerif.copyWith(
                       color: task.isCompleted
                           ? AppColors.textHint
                           : AppColors.textPrimary,
@@ -412,8 +389,7 @@ class _DailyScreenState extends State<DailyScreen> {
                     const SizedBox(height: 4),
                     Text(
                       task.description!,
-                      style: TextStyle(
-                        fontSize: 13,
+                      style: AppText.caption.copyWith(
                         color: AppColors.textHint,
                         decoration: task.isCompleted
                             ? TextDecoration.lineThrough
@@ -429,19 +405,11 @@ class _DailyScreenState extends State<DailyScreen> {
 
             // 已完成标记
             if (task.isCompleted)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: const Text(
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.xs),
+                child: Text(
                   '已完成',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.success,
-                  ),
+                  style: AppText.labelSm.copyWith(color: AppColors.success),
                 ),
               ),
           ],
@@ -480,7 +448,7 @@ class _DailyScreenState extends State<DailyScreen> {
   }
 
   void _showAddTaskDialog(BuildContext context) {
-    showGlassSheet(context, builder: (context) => const _AddDailyTaskSheet());
+    showPaperSheet(context, builder: (context) => const _AddDailyTaskSheet());
   }
 
   void _showEditDialog(
@@ -488,7 +456,7 @@ class _DailyScreenState extends State<DailyScreen> {
     DailyTask task,
     DailyProvider provider,
   ) {
-    showGlassSheet(
+    showPaperSheet(
       context,
       builder: (context) => _EditDailyTaskSheet(task: task),
     );
@@ -523,7 +491,7 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // 键盘避让 / SafeArea / 滚动 / 拖拽把手 / 玻璃底板均由 GlassSheet 提供
+    // 键盘避让 / SafeArea / 滚动 / 拖拽把手 / 玻璃底板均由 PaperSheet 提供
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -581,7 +549,7 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
         Row(
           children: [
             for (final period in TimePeriod.values) ...[
-              GlassChip(
+              PaperChip(
                 label: switch (period) {
                   TimePeriod.morning => '上午',
                   TimePeriod.afternoon => '下午',
@@ -591,11 +559,6 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
                   TimePeriod.morning => Icons.wb_sunny_outlined,
                   TimePeriod.afternoon => Icons.wb_cloudy_outlined,
                   TimePeriod.evening => Icons.nights_stay_outlined,
-                },
-                tint: switch (period) {
-                  TimePeriod.morning => AppColors.warning,
-                  TimePeriod.afternoon => AppColors.info,
-                  TimePeriod.evening => AppColors.primary,
                 },
                 selected: _selectedPeriod == period,
                 onTap: () => setState(() => _selectedPeriod = period),
@@ -665,7 +628,7 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // 键盘避让 / SafeArea / 滚动 / 拖拽把手 / 玻璃底板均由 GlassSheet 提供
+    // 键盘避让 / SafeArea / 滚动 / 拖拽把手 / 玻璃底板均由 PaperSheet 提供
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -722,7 +685,7 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
         Row(
           children: [
             for (final period in TimePeriod.values) ...[
-              GlassChip(
+              PaperChip(
                 label: switch (period) {
                   TimePeriod.morning => '上午',
                   TimePeriod.afternoon => '下午',
@@ -732,11 +695,6 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
                   TimePeriod.morning => Icons.wb_sunny_outlined,
                   TimePeriod.afternoon => Icons.wb_cloudy_outlined,
                   TimePeriod.evening => Icons.nights_stay_outlined,
-                },
-                tint: switch (period) {
-                  TimePeriod.morning => AppColors.warning,
-                  TimePeriod.afternoon => AppColors.info,
-                  TimePeriod.evening => AppColors.primary,
                 },
                 selected: _selectedPeriod == period,
                 onTap: () => setState(() => _selectedPeriod = period),

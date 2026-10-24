@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import '../../../../core/ui/glass.dart';
+import '../../../../core/ui/paper.dart';
 import '../../data/models/task.dart';
 import '../../providers/task_provider.dart';
 
@@ -58,12 +58,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassScaffold(
-      // 这是 Navigator.push 进来的全屏路由，不在 MainScreen 之下，
-      // 没有那一层极光可透——所以自己带一层。
-      standalone: true,
+    return PaperScaffold(
+      // 二级页：平顶栏 + 衬线标题（纸面体系里没有极光可透）
       title: isEditing ? '编辑任务' : '新建任务',
-      titleIcon: Icons.edit_note_rounded,
       actions: [
         if (isEditing)
           IconButton(
@@ -107,7 +104,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: GlassChip(
+                    child: PaperChip(
                       label: '正计时',
                       icon: Icons.timer_outlined,
                       selected: _timerType == TimerType.countUp,
@@ -118,7 +115,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: GlassChip(
+                    child: PaperChip(
                       label: '倒计时',
                       icon: Icons.hourglass_bottom,
                       selected: _timerType == TimerType.countDown,
@@ -211,8 +208,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               title: '截止日期（可选）',
               child: GestureDetector(
                 onTap: _selectDueDate,
-                child: GlassCard(
-                  tone: GlassTone.subtle,
+                child: PaperCard(
+                  tone: PaperTone.flat,
                   radius: AppRadius.md,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md,
@@ -328,8 +325,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     required int max,
     required ValueChanged<int> onChanged,
   }) {
-    return GlassCard(
-      tone: GlassTone.subtle,
+    return PaperCard(
+      tone: PaperTone.flat,
       radius: AppRadius.md,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,

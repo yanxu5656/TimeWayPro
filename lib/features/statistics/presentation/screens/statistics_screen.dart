@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../../core/ui/glass.dart';
+import '../../../../core/ui/paper.dart';
 import '../../../../core/utils/week.dart';
 import '../../../task/providers/task_provider.dart';
 
@@ -25,10 +25,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassScaffold(
-      title: '统计',
-      // 与底部导航「统计」项的图标一致
-      titleIcon: Icons.bar_chart_rounded,
+    return PaperScaffold(
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
           // 检查是否需要刷新
@@ -72,30 +69,34 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildContent(_StatsData stats) {
     return ListView(
-      // 底部要避让玻璃导航栏（MainScreen 开了 extendBody），
-      // 否则滚到底时最后一张卡会被压在导航栏下面
+      // 底部要避让纸面导航栏（MainScreen 开了 extendBody），
+      // 否则滚到底时最后一个区块会被压在导航栏下面
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
+        AppSpacing.screenH,
+        AppSpacing.xs,
+        AppSpacing.screenH,
         AppSpacing.navInset,
       ),
       children: [
+        // 刊头
+        const Masthead(kicker: 'STATISTICS', title: '统计'),
+        const SizedBox(height: AppSpacing.xs),
+
         // 时间段选择器
         _buildDateSelector(),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.md),
 
-        // 概览卡片
+        // 概览数字条
         _buildOverviewCards(stats),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.md),
 
         // 热力图
         _buildHeatMap(stats),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.md),
 
         // 饼图
         _buildPieChart(stats),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.md),
 
         // 任务明细
         _buildTaskDetail(stats),
@@ -104,77 +105,59 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildDateSelector() {
-    return GlassCard(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      child: Column(
-        children: [
-          // 时间段切换。换成带滑动指示块的分段控件——
-          // 原来的实现只有背景色在变，看不出"从哪滑到哪"
-          SegmentedControl<int>(
-            segments: const [
-              Segment<int>(0, '日'),
-              Segment<int>(1, '周'),
-              Segment<int>(2, '月'),
-            ],
-            value: _selectedPeriod,
-            onChanged: (index) {
-              if (_selectedPeriod != index) {
-                setState(() {
-                  _selectedPeriod = index;
-                  _cachedStats = null;
-                });
-              }
-            },
-          ),
-          const SizedBox(height: 12),
+    return Column(
+      children: [
+        // 日/周/月：下划线分段（编辑风的页签语言）
+        SegmentedControl<int>(
+          segments: const [
+            Segment<int>(0, '日'),
+            Segment<int>(1, '周'),
+            Segment<int>(2, '月'),
+          ],
+          value: _selectedPeriod,
+          onChanged: (index) {
+            if (_selectedPeriod != index) {
+              setState(() {
+                _selectedPeriod = index;
+                _cachedStats = null;
+              });
+            }
+          },
+        ),
 
-          // 日期导航
-          Row(
-            children: [
-              _buildNavButton(
-                icon: Icons.chevron_left_rounded,
-                onTap: _previousPeriod,
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: _selectDate,
-                  child: GlassCard(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    tone: GlassTone.subtle,
-                    radius: AppRadius.md,
-                    tint: AppColors.primary,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _isCurrentPeriod()
-                              ? Icons.today_rounded
-                              : Icons.calendar_month_rounded,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _getPeriodText(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
+        // 日期导航：衬线日期行
+        Row(
+          children: [
+            _buildNavButton(
+              icon: Icons.chevron_left_rounded,
+              onTap: _previousPeriod,
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: _selectDate,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Center(
+                    child: Text(
+                      _getPeriodText(),
+                      style: AppText.titleSerif.copyWith(
+                        color: _isCurrentPeriod()
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ),
               ),
-              _buildNavButton(
-                icon: Icons.chevron_right_rounded,
-                onTap: _nextPeriod,
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+            _buildNavButton(
+              icon: Icons.chevron_right_rounded,
+              onTap: _nextPeriod,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -182,11 +165,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return GlassIconButton(
+    return PaperIconButton(
       icon: icon,
       onTap: onTap,
       color: AppColors.textSecondary,
-      size: GlassIconButton.sizeChrome,
+      size: PaperIconButton.sizeChrome,
       iconSize: 22,
     );
   }
@@ -296,52 +279,39 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildOverviewCards(_StatsData stats) {
-    return Row(
-      children: [
-        _buildStatCard(
-          '总时长',
-          stats.totalDuration,
-          formatDurationShort,
-          Icons.timer_outlined,
-          AppColors.primary,
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        _buildStatCard(
-          '完成任务',
-          stats.completedCount,
-          (v) => '$v',
-          Icons.check_circle_outline,
-          AppColors.success,
-        ),
-      ],
+    // 排版数字条：两栏衬线大数字，竖发丝线分隔——数字是主角
+    return IntrinsicHeight(
+      child: Row(
+        children: [
+          _buildStatColumn(
+            '总时长',
+            stats.totalDuration,
+            formatDurationShort,
+            AppColors.textPrimary,
+          ),
+          const VerticalDivider(width: 1, thickness: 1),
+          _buildStatColumn(
+            '完成任务',
+            stats.completedCount,
+            (v) => '$v',
+            AppColors.textPrimary,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStatCard(
+  Widget _buildStatColumn(
     String label,
     int value,
     String Function(int) format,
-    IconData icon,
     Color color,
   ) {
     return Expanded(
-      child: GlassCard(
-        // 数字密集，走 strong 档保对比度
-        tone: GlassTone.strong,
-        // 用默认 lg(16)：统计页其余四张卡都是 16，原先只有概览卡是 20
-        padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: AppSpacing.md),
             CountUpText(
               value: value,
               format: format,
@@ -362,7 +332,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildHeatMap(_StatsData stats) {
-    return GlassCard(
+    return PaperCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,9 +340,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 '热力图',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: AppText.label.copyWith(color: AppColors.textSecondary),
               ),
               if (_selectedPeriod == 0)
                 Text(
@@ -544,7 +514,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildPieChart(_StatsData stats) {
     if (stats.taskDurations.isEmpty) {
-      return GlassCard(
+      return PaperCard(
         padding: const EdgeInsets.all(AppSpacing.huge),
         child: Column(
           children: [
@@ -563,14 +533,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       );
     }
 
-    return GlassCard(
+    return PaperCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '任务占比',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            style: AppText.label.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -659,14 +629,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildTaskDetail(_StatsData stats) {
     if (stats.taskDurations.isEmpty) return const SizedBox();
 
-    return GlassCard(
+    return PaperCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '任务明细',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            style: AppText.label.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
           ...stats.taskDurations.asMap().entries.map((entry) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/ui/glass.dart';
+import '../../../../core/ui/paper.dart';
 import '../../../../core/utils/week.dart';
 import '../../data/models/weekly_goal.dart';
 import '../../providers/weekly_provider.dart';
@@ -13,7 +13,7 @@ import '../week_labels.dart';
 /// 区间所以不会歧义；更远的周走底部的「选其他周」。目标当前所在周
 /// 高亮为「当前」且不可点——它已经在那了。
 Future<void> showMoveGoalSheet(BuildContext context, WeeklyGoal goal) {
-  return showGlassSheet(
+  return showPaperSheet(
     context,
     showHandle: false,
     builder: (BuildContext sheetContext) => _MoveGoalSheet(goal: goal),
@@ -65,8 +65,8 @@ class _MoveGoalSheet extends StatelessWidget {
     final bool isCurrent = key == goal.weekKey;
     final String? short = weekShortLabel(monday);
 
-    return GlassCard(
-      tone: GlassTone.subtle,
+    return PaperCard(
+      tone: PaperTone.flat,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
@@ -119,8 +119,8 @@ class _MoveGoalSheet extends StatelessWidget {
   }
 
   Widget _buildCustomOption(BuildContext context) {
-    return GlassCard(
-      tone: GlassTone.subtle,
+    return PaperCard(
+      tone: PaperTone.flat,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,

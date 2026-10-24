@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/ui/glass.dart';
+import '../../../../core/ui/paper.dart';
 import '../../data/models/task.dart';
 
 class TaskCard extends StatelessWidget {
@@ -38,13 +38,12 @@ class TaskCard extends StatelessWidget {
     // TaskProvider 每秒 tick 会重建整个列表，包一层 RepaintBoundary
     // 把重栅格化限制在真正变化的卡片上
     return RepaintBoundary(
-      child: GlassCard(
-        // 不指定 radius，用默认 lg(16)——与待办/规划页的列表项卡片一致。
-        // 原先这里是 xl(20)，同一类东西两个圆角。
-        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-        // 计时中：描边加粗 + success 强调色 + 开启隐式过渡
+      child: PaperCard(
+        // 账本行：透明底 + 下缘发丝线；计时中左缘加朱砂着重线并开隐式过渡
+        tone: PaperTone.row,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        margin: EdgeInsets.zero,
         animate: true,
-        edgeWidth: isRunning ? 2 : 1,
         tint: isRunning ? AppColors.success : null,
         onTap: onEdit,
         onLongPress: () => _showOptions(context),
@@ -65,7 +64,7 @@ class TaskCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           task.title,
-                          style: TextStyle(
+                          style: AppText.bodySerif.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: task.isCompleted
@@ -205,9 +204,9 @@ class TaskCard extends StatelessWidget {
   }
 
   Widget _buildCompleteButton() {
-    // 尺寸与配色统一走 GlassCheckCircle（28px + success 绿）。
+    // 尺寸与配色统一走 InkCheckCircle（28px + success 绿）。
     // 原先这里是 28/primary，待办页是 26/success，两页观感不一致。
-    return GlassCheckCircle(
+    return InkCheckCircle(
       isChecked: task.isCompleted,
       onTap: onComplete,
       semanticLabel: task.title,
@@ -281,7 +280,7 @@ class TaskCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        gradient: AppGradients.softFill(AppColors.primary),
+        color: AppColors.inkFaint,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
@@ -300,7 +299,7 @@ class TaskCard extends StatelessWidget {
   }
 
   Widget _buildStartButton() {
-    return GlassIconButton(
+    return PaperIconButton(
       icon: task.timerType == TimerType.countUp
           ? Icons.play_arrow_rounded
           : Icons.timer_outlined,
@@ -310,7 +309,7 @@ class TaskCard extends StatelessWidget {
   }
 
   Widget _buildStopButton() {
-    return GlassIconButton(
+    return PaperIconButton(
       icon: Icons.stop_rounded,
       onTap: onStop,
       color: AppColors.error,
@@ -318,11 +317,12 @@ class TaskCard extends StatelessWidget {
   }
 
   Widget _buildTag(IconData icon, String text) {
+    // 编辑风的标签：细线描边的空框，不用底色块
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -351,9 +351,9 @@ class TaskCard extends StatelessWidget {
   }
 
   void _showOptions(BuildContext context) {
-    showGlassSheet(
+    showPaperSheet(
       context,
-      // SafeArea 与拖拽把手由 GlassSheet 统一提供
+      // SafeArea 与拖拽把手由 PaperSheet 统一提供
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [

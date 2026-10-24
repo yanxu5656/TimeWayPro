@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
-import '../../../../core/ui/glass.dart';
+import '../../../../core/ui/paper.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../task/data/repositories/task_repository.dart';
 import '../../../task/providers/task_provider.dart';
@@ -17,20 +17,20 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassScaffold(
-      title: '设置',
-      // 与底部导航「设置」项的图标一致
-      titleIcon: Icons.settings_rounded,
+    return PaperScaffold(
       body: Consumer<SettingsProvider>(
         builder: (context, provider, child) {
           return ListView(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
+              AppSpacing.screenH,
+              AppSpacing.xs,
+              AppSpacing.screenH,
               AppSpacing.navInset,
             ),
             children: [
+              const Masthead(kicker: 'SETTINGS', title: '设置'),
+              const SizedBox(height: AppSpacing.md),
+
               // 同步设置
               _buildSection(
                 title: '云端同步',
@@ -122,7 +122,7 @@ class SettingsScreen extends StatelessWidget {
     required IconData icon,
     required List<Widget> children,
   }) {
-    return GlassCard(
+    return PaperCard(
       // 内部自己排版，标题与列表项各自带内边距
       padding: EdgeInsets.zero,
       child: Column(
@@ -155,11 +155,11 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSyncStatus(SettingsProvider provider) {
-    return GlassCard(
+    return PaperCard(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       radius: AppRadius.md,
       padding: const EdgeInsets.all(AppSpacing.sm),
-      // 这一块嵌套在外层 GlassCard 之内。玻璃叠玻璃会几乎同色——
+      // 这一块嵌套在外层 PaperCard 之内。玻璃叠玻璃会几乎同色——
       // 62% 白盖在 78% 白上，边界完全读不出来（出图确认过）。
       // 所以这里用不透明的下沉面表面色，让层次立住。
       fill: provider.isConfigured
@@ -271,7 +271,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showSyncConfig(BuildContext context, SettingsProvider provider) {
-    showGlassSheet(
+    showPaperSheet(
       context,
       builder: (context) => _SyncConfigSheet(
         currentConfig: provider.syncConfig,
@@ -512,7 +512,7 @@ class _SyncConfigSheetState extends State<_SyncConfigSheet> {
   @override
   Widget build(BuildContext context) {
     // 外层 Padding(viewInsets) / SafeArea / SingleChildScrollView / 拖拽把手
-    // 全部由 GlassSheet 提供，这里只负责表单本身。
+    // 全部由 PaperSheet 提供，这里只负责表单本身。
     return Form(
       key: _formKey,
       child: Column(

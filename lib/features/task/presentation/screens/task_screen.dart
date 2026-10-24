@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/ui/glass.dart';
+import '../../../../core/ui/paper.dart';
 import '../../data/models/task.dart';
 import '../../providers/task_provider.dart';
 import '../widgets/task_card.dart';
@@ -75,21 +75,7 @@ class _TaskScreenState extends State<TaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassScaffold(
-      title: '时途',
-      // 刻意不跟底部导航的图标（check_circle）对齐：这一页的顶栏标题是
-      // 应用名而不是「任务」，配时钟正好呼应「时途」
-      titleIcon: Icons.access_time_rounded,
-      actions: [
-        GlassIconButton(
-          icon: Icons.calendar_today_rounded,
-          onTap: _selectDate,
-          color: AppColors.textPrimary,
-          size: GlassIconButton.sizeChrome,
-          iconSize: 20,
-          tooltip: '选择日期',
-        ),
-      ],
+    return PaperScaffold(
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -115,7 +101,7 @@ class _TaskScreenState extends State<TaskScreen> {
           );
         },
       ),
-      floatingActionButton: GlassFab(
+      floatingActionButton: PaperFab(
         heroTag: 'task_fab',
         label: '新任务',
         onPressed: _addTask,
@@ -130,114 +116,89 @@ class _TaskScreenState extends State<TaskScreen> {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
+        AppSpacing.screenH,
         AppSpacing.xs,
-        AppSpacing.lg,
+        AppSpacing.screenH,
         AppSpacing.md,
       ),
       child: Column(
         children: [
-          // 日期选择器
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadow,
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+          // 刊头。标题用应用名「时途」：这一页是计时主场，
+          // 刊头正好点题（原顶栏就是这么做的）
+          Masthead(kicker: 'TIME WAY', title: '时途'),
+          const SizedBox(height: AppSpacing.xs),
+
+          // 日期行：衬线日期 + 两侧箭头，今天用朱砂标注
+          Row(
+            children: [
+              _buildDateButton(
+                icon: Icons.chevron_left_rounded,
+                onTap: () => _changeDate(
+                  _selectedDate.subtract(const Duration(days: 1)),
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                _buildDateButton(
-                  icon: Icons.chevron_left_rounded,
-                  onTap: () => _changeDate(
-                    _selectedDate.subtract(const Duration(days: 1)),
-                  ),
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _selectDate,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primarySubtle,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _isToday(_selectedDate)
-                                ? Icons.today_rounded
-                                : Icons.calendar_month_rounded,
-                            size: 18,
-                            color: AppColors.primary,
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _selectDate,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _isToday(_selectedDate)
+                              ? '今天'
+                              : DateFormat('MM月dd日').format(_selectedDate),
+                          style: AppText.titleSerif.copyWith(
+                            color: _isToday(_selectedDate)
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _isToday(_selectedDate)
-                                ? '今天'
-                                : DateFormat('MM月dd日').format(_selectedDate),
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                              letterSpacing: 0.3,
-                            ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          _getWeekday(_selectedDate),
+                          style: AppText.caption.copyWith(
+                            color: AppColors.textSecondary,
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _getWeekday(_selectedDate),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.primary.withValues(alpha: 0.7),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                _buildDateButton(
-                  icon: Icons.chevron_right_rounded,
-                  onTap: () =>
-                      _changeDate(_selectedDate.add(const Duration(days: 1))),
+              ),
+              _buildDateButton(
+                icon: Icons.chevron_right_rounded,
+                onTap: () =>
+                    _changeDate(_selectedDate.add(const Duration(days: 1))),
+              ),
+            ],
+          ),
+
+          // 统计数字条：三栏衬线数字，竖发丝线分隔
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                _buildStatColumn(
+                  '全部任务',
+                  totalTasks,
+                  AppColors.textPrimary,
+                ),
+                const VerticalDivider(width: 1, thickness: 1),
+                _buildStatColumn(
+                  '进行中',
+                  runningTasks,
+                  runningTasks > 0 ? AppColors.success : AppColors.textHint,
+                ),
+                const VerticalDivider(width: 1, thickness: 1),
+                _buildStatColumn(
+                  '常驻任务',
+                  repeatableTasks,
+                  AppColors.textPrimary,
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // 统计卡片
-          Row(
-            children: [
-              _buildStatCard(
-                '全部任务',
-                totalTasks,
-                Icons.list_alt_rounded,
-                AppColors.primary,
-              ),
-              const SizedBox(width: 12),
-              _buildStatCard(
-                '进行中',
-                runningTasks,
-                Icons.play_circle_outline_rounded,
-                runningTasks > 0 ? AppColors.success : AppColors.textHint,
-              ),
-              const SizedBox(width: 12),
-              _buildStatCard(
-                '常驻任务',
-                repeatableTasks,
-                Icons.repeat_rounded,
-                AppColors.info,
-              ),
-            ],
           ),
         ],
       ),
@@ -248,33 +209,21 @@ class _TaskScreenState extends State<TaskScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return GlassIconButton(
+    return PaperIconButton(
       icon: icon,
       onTap: onTap,
       color: AppColors.textSecondary,
-      size: GlassIconButton.sizeChrome,
+      size: PaperIconButton.sizeChrome,
       iconSize: 22,
     );
   }
 
-  Widget _buildStatCard(String label, int value, IconData icon, Color color) {
+  Widget _buildStatColumn(String label, int value, Color color) {
     return Expanded(
-      child: GlassCard(
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.md,
-          horizontal: AppSpacing.sm,
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.xs),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(height: 10),
             CountUpText(
               value: value,
               format: (v) => '$v',
