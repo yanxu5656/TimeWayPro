@@ -2,25 +2,25 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// 可选中的玻璃 chip。
+/// 可选中的纸面 chip。
 ///
-/// 取代改造前**三处**自绘实现，其中 daily_screen 里的两份
-/// `_buildPeriodChip` 是逐字重复的代码。
+/// 静止时是「细线描边的空框」，选中时整个翻成墨底纸字——编辑风里
+/// 的表单选择件（时段、计时类型）。
 ///
 /// - [vertical] true → 图标在上、文字在下（上午/下午/晚上时段选择）
 /// - [vertical] false → 图标在左、文字在右（正计时/倒计时选择）
 ///
 /// 注意：`expanded: true`（默认）时本组件直接返回 `Expanded`，
-/// 因此**必须**作为 `Row` / `Column` 的直接子项使用。这沿用了改造前
-/// `_buildChoiceChip` / `_buildPeriodChip` 的用法约定。
-class GlassChip extends StatelessWidget {
-  const GlassChip({
+/// 因此**必须**作为 `Row` / `Column` 的直接子项使用。
+/// （Expanded 是 ParentDataWidget、必须是 Flex 直接子节点——
+/// v1.3.2 那个 release 灰方块 bug 的教训，见 git 历史。）
+class PaperChip extends StatelessWidget {
+  const PaperChip({
     super.key,
     this.label,
     this.icon,
     required this.selected,
     required this.onTap,
-    this.tint = AppColors.primary,
     this.expanded = true,
     this.vertical = false,
     this.padding,
@@ -30,24 +30,22 @@ class GlassChip extends StatelessWidget {
   final IconData? icon;
   final bool selected;
   final VoidCallback onTap;
-  final Color tint;
   final bool expanded;
   final bool vertical;
   final EdgeInsetsGeometry? padding;
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = selected ? tint : AppColors.textSecondary;
-    final Color iconFg = selected ? tint : AppColors.textHint;
+    final Color fg = selected ? AppColors.textOnInk : AppColors.textSecondary;
 
     final List<Widget> children = vertical
         ? <Widget>[
-            Icon(icon, size: 22, color: iconFg),
+            Icon(icon, size: 22, color: fg),
             const SizedBox(height: 6),
             Text(label!, style: _labelStyle(fg)),
           ]
         : <Widget>[
-            Icon(icon, size: 18, color: iconFg),
+            Icon(icon, size: 18, color: fg),
             const SizedBox(width: 6),
             Text(label!, style: _labelStyle(fg)),
           ];
@@ -61,15 +59,14 @@ class GlassChip extends StatelessWidget {
               ? const EdgeInsets.symmetric(vertical: AppSpacing.md)
               : const EdgeInsets.symmetric(vertical: AppSpacing.sm)),
       decoration: BoxDecoration(
-        color: selected
-            ? tint.withValues(alpha: 0.15)
-            : AppColors.surfaceVariant,
-        // 两种朝向用同一个圆角档位。原先是竖排硬编码 14、横排 md(12)，
-        // 14 不在 token 集合里，是设计系统没落地干净的一处。
+        color: selected ? AppColors.textPrimary : Colors.transparent,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: selected ? tint : Colors.transparent,
-          width: selected ? 2 : 1,
+          color: selected
+              ? AppColors.textPrimary
+              // 描边用 30% 墨：比发丝线重一档，框出可点区域但不抢戏
+              : AppColors.textPrimary.withValues(alpha: 0.3),
+          width: 1.2,
         ),
       ),
       child: vertical
@@ -86,14 +83,6 @@ class GlassChip extends StatelessWidget {
       child: chip,
     );
 
-    // 顺序很重要：Expanded 是 ParentDataWidget，**必须是 Flex 的直接子节点**。
-    // 如果把 Expanded 包在 GestureDetector 里面（先前就是那样写的），它上方
-    // 就隔了一个 RenderObjectWidget，父数据会挂到错误的 RenderObject 上——
-    // 于是抛出 "Incorrect use of ParentDataWidget"，并且在 **release 构建**里
-    // 该子树会被替换成 ErrorWidget，也就是一块纯灰色方块（用户看到的
-    // 「整个时间段被很大的灰色方块挡住了」就是这个）。
-    // 所以 Expanded 必须在 build 的顶层返回，让 caller 的 Row/Column 直接看到它；
-    // 中间隔着 StatelessWidget 没问题，隔着 RenderObjectWidget 才有问题。
     return expanded ? Expanded(child: tappable) : tappable;
   }
 

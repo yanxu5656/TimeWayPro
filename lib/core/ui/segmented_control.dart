@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import 'glass_surface.dart';
 
 /// 一个分段选项。
 class Segment<T> {
@@ -11,99 +10,71 @@ class Segment<T> {
   final String label;
 }
 
-/// 带滑动指示块的分段控件。
+/// 下划线分段控件（编辑风的页签）。
 ///
-/// 取代改造前统计页 `_buildPeriodTab` 的「只改背景色的 AnimatedContainer」——
-/// 那种做法在切换时没有位置连续性，看不出"选中项从哪滑到哪"。
-///
-/// 这里用 `AnimatedPositioned` 让指示块真正滑动，是导航滑动指示器技术
-/// 的第一个复用点。
+/// 玻璃版是「底色块 + 滑动指示块」；纸面版换成**目录页语言**：
+/// 等宽文字 + 选中项下方的朱砂短线。选中的文字加粗变墨色，
+/// 未选中是灰的——字重和颜色一起表达层级，不靠底色。
 class SegmentedControl<T> extends StatelessWidget {
   const SegmentedControl({
     super.key,
     required this.segments,
     required this.value,
     required this.onChanged,
-    this.tint = AppColors.primary,
     this.duration = const Duration(milliseconds: 260),
   });
 
   final List<Segment<T>> segments;
   final T value;
   final ValueChanged<T> onChanged;
-  final Color tint;
   final Duration duration;
 
   @override
   Widget build(BuildContext context) {
-    final int found = segments.indexWhere((Segment<T> s) => s.value == value);
-    final int index = found < 0 ? 0 : found;
-
-    return GlassSurface(
-      radius: AppRadius.md,
-      tone: GlassTone.subtle,
-      padding: const EdgeInsets.all(AppSpacing.xxs),
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          final double segW = constraints.maxWidth / segments.length;
-
-          return Stack(
-            children: <Widget>[
-              // 指示块。用 top/bottom 拉伸而非固定高度，这样不需要知道
-              // 容器高度（在 ListView 里 maxHeight 是无穷大）。
-              AnimatedPositioned(
-                duration: duration,
-                curve: Curves.easeOutCubic,
-                left: index * segW,
-                top: 0,
-                bottom: 0,
-                width: segW,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: tint,
-                    // 与 GlassNavBar 的滑动指示块用同一档。两者是同一类
-                    // 东西（指示块），原先是 9(sm+1) vs 12，不该不一致。
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    boxShadow: AppShadows.e1,
-                  ),
-                ),
-              ),
-              // 等宽的可点区域
-              Row(
+    return Row(
+      children: <Widget>[
+        for (final Segment<T> segment in segments)
+          Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(segment.value),
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  for (final Segment<T> segment in segments)
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onChanged(segment.value),
-                        behavior: HitTestBehavior.opaque,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: AnimatedDefaultTextStyle(
-                            duration: duration,
-                            curve: Curves.easeOutCubic,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: segment.value == value
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: segment.value == value
-                                  ? AppColors.textOnPrimary
-                                  : AppColors.textSecondary,
-                            ),
-                            child: Text(
-                              segment.label,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: AnimatedDefaultTextStyle(
+                      duration: duration,
+                      curve: Curves.easeOutCubic,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: segment.value == value
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: segment.value == value
+                            ? AppColors.textPrimary
+                            : AppColors.textHint,
+                      ),
+                      child: Text(
+                        segment.label,
+                        textAlign: TextAlign.center,
                       ),
                     ),
+                  ),
+                  // 朱砂短线：高度恒定，避免切换时下方内容跳动
+                  AnimatedContainer(
+                    duration: duration,
+                    curve: Curves.easeOutCubic,
+                    height: 2,
+                    color: segment.value == value
+                        ? AppColors.primary
+                        : Colors.transparent,
+                  ),
                 ],
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ),
+      ],
     );
   }
 }

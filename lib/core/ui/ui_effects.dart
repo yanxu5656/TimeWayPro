@@ -6,17 +6,17 @@ import 'package:flutter/widgets.dart';
 
 /// 视觉效果的运行时能力分级。
 ///
-/// 玻璃拟态依赖两类有真实开销的能力：极光的持续重绘、`BackdropFilter` 的
-/// GPU 高斯模糊。低端机（本项目 minSdk 24）上两者都可能掉帧，所以按设备
-/// 实际表现逐级降级。
+/// 静白志体系没有极光与真模糊（v1.5.0 起移除），仍有真实开销的只剩
+/// 两类动效：列表错峰入场、数字滚动。低端机（本项目 minSdk 24）上
+/// 仍按真实帧数据逐级降级。
 enum UiEffectTier {
-  /// 全量：极光动画 + 真模糊 + 列表错峰入场 + 数字滚动
+  /// 全量：错峰入场 + 数字滚动
   full,
 
-  /// 降级：极光静止为静态帧，其余保留
+  /// 降级：无错峰入场，数字滚动保留
   reduced,
 
-  /// 最低：极光静止 + 不用真模糊 + 无错峰入场 + 无数字滚动
+  /// 最低：无错峰入场、无数字滚动
   minimal,
 }
 
@@ -32,12 +32,6 @@ class UiEffects {
   );
 
   // ── 组件读取的能力开关 ──
-
-  /// 极光背景是否播放漂移动画（否则画一帧静态极光）
-  static bool get auroraAnimated => tier.value == UiEffectTier.full;
-
-  /// 是否使用真 `BackdropFilter`（否则退化为高不透明度填充 + 高光描边）
-  static bool get trueBlur => tier.value != UiEffectTier.minimal;
 
   /// 列表是否错峰入场
   static bool get stagger => tier.value == UiEffectTier.full;

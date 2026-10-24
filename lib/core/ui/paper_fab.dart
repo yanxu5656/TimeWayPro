@@ -1,33 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import 'glass_surface.dart';
 import 'pressable_scale.dart';
 
-/// 玻璃悬浮按钮（胶囊形）。
+/// 墨色胶囊悬浮按钮。
 ///
-/// 取代改造前 3 处 `FloatingActionButton` / `FloatingActionButton.extended`。
-/// 放在 `Scaffold.floatingActionButton` 槽位即可——Scaffold 的定位与
-/// 入场动画对任意 Widget 都生效。
-class GlassFab extends StatelessWidget {
-  const GlassFab({
+/// 编辑风里唯一的「重」元素：整块墨色压在纸面上，天然是页面上
+/// 对比度最高的东西，正好配「当前页的主操作」。
+/// 放在 `Scaffold.floatingActionButton` 槽位即可。
+class PaperFab extends StatelessWidget {
+  const PaperFab({
     super.key,
     required this.onPressed,
     this.icon = Icons.add_rounded,
     this.label,
-    this.blurSigma = 16,
-    this.blur = true,
     this.heroTag,
   });
 
   final VoidCallback? onPressed;
   final IconData icon;
   final String? label;
-  final double blurSigma;
-
-  /// 低端机降级开关：Android 7–9 上 `BackdropFilter` 有已知渲染瑕疵时
-  /// 翻成 false，退化为着色玻璃。
-  final bool blur;
 
   final Object? heroTag;
 
@@ -35,12 +27,12 @@ class GlassFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool extended = label != null;
 
-    Widget fab = GlassSurface(
-      radius: AppRadius.full,
-      tone: GlassTone.subtle,
-      fill: AppColors.glassTintPrimary,
-      tint: AppColors.primary,
-      blurSigma: blur ? blurSigma : null,
+    Widget fab = Container(
+      decoration: const BoxDecoration(
+        color: AppColors.textPrimary,
+        borderRadius: AppRadius.brFull,
+        boxShadow: AppShadows.e2,
+      ),
       padding: EdgeInsets.symmetric(
         horizontal: extended ? AppSpacing.lg : AppSpacing.md,
         vertical: AppSpacing.md,
@@ -48,12 +40,12 @@ class GlassFab extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(icon, color: AppColors.primary, size: 22),
+          Icon(icon, color: AppColors.textOnInk, size: 21),
           if (extended) ...<Widget>[
             const SizedBox(width: AppSpacing.xs),
             Text(
               label!,
-              style: AppText.labelLg.copyWith(color: AppColors.primary),
+              style: AppText.labelLg.copyWith(color: AppColors.textOnInk),
             ),
           ],
         ],

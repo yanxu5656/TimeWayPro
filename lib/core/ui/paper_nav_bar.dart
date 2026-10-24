@@ -1,31 +1,21 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'pressable_scale.dart';
 
-class _NavItemData {
-  const _NavItemData(this.icon, this.activeIcon, this.label);
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-}
-
-/// 广播玻璃底部导航的**实测高度**。
+/// 广播纸面底部导航的**实测高度**。
 ///
-/// 为什么需要它：各页的 FAB 挂在页面自己的 `GlassScaffold` 上，而底部导航
+/// 为什么需要它：各页的 FAB 挂在页面自己的 `PaperScaffold` 上，而底部导航
 /// 挂在 `MainScreen` 的 Scaffold 上。`MainScreen` 开了 `extendBody: true`
-/// 让内容（和导航栏的模糊）延伸到屏幕底部，于是**内层 Scaffold 的底边就是
-/// 屏幕底边**——它的 FAB 会被摆到 `屏幕高 - 16 - FAB高`，也就是压在导航栏
-/// 底下。实测过：导航栏顶边 y=840.5，FAB 占 y=828..884，被盖住 43.5px。
+/// 让内容延伸到屏幕底部，于是**内层 Scaffold 的底边就是屏幕底边**——
+/// 它的 FAB 会被摆到 `屏幕高 - 16 - FAB高`，也就是压在导航栏底下。
 ///
 /// 内层拿不到这个高度（外层的 Scaffold 不会把它注入 MediaQuery），所以由
 /// [MainScreen] 实测后经这个 InheritedWidget 往下传。
 class NavBarInset extends InheritedWidget {
   const NavBarInset({super.key, required this.height, required super.child});
 
-  /// 玻璃导航栏的总高度（含设备底部安全区）；未测量到之前为 0
+  /// 纸面导航栏的总高度（含设备底部安全区）；未测量到之前为 0
   final double height;
 
   /// 读取高度。不在 [NavBarInset] 之下（独立路由）时返回 0。
@@ -37,26 +27,27 @@ class NavBarInset extends InheritedWidget {
       (oldWidget.height - height).abs() > 0.5;
 }
 
-/// 玻璃底部导航。
+class _NavItemData {
+  const _NavItemData(this.icon, this.activeIcon, this.label);
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+}
+
+/// 纸面底部导航。
 ///
-/// 取代改造前 `main_screen.dart` 里 68 行手写实现。原实现有三个问题：
-/// 1. 选中态只有背景色在变（没有位置连续性，看不出"从哪滑到哪"）
-/// 2. 图标是 `isSelected ? activeIcon : icon` 硬切换，无过渡
-/// 3. 每项固定 `SizedBox(width: 56)`，窄屏会挤
-///
-/// 这里分别用 `AnimatedPositioned` 滑动指示块、`AnimatedSwitcher`
-/// 交叉淡入、等分 `Expanded` 解决。
-class GlassNavBar extends StatelessWidget {
-  const GlassNavBar({
+/// 编辑风的导航是一张纸的最下沿：纸色底 + 一条发丝线，仅此而已。
+/// 选中态不靠底色块（那是玻璃体系的语言），靠**墨色图标文字 +
+/// 朱砂圆点**——像目录页上当前条目旁的点标记。
+class PaperNavBar extends StatelessWidget {
+  const PaperNavBar({
     super.key,
     required this.index,
     required this.onChanged,
-    this.blurSigma = 18,
   });
 
   final int index;
   final ValueChanged<int> onChanged;
-  final double blurSigma;
 
   static const List<_NavItemData> _items = <_NavItemData>[
     _NavItemData(Icons.today_outlined, Icons.today_rounded, '待办'),
@@ -71,74 +62,28 @@ class GlassNavBar extends StatelessWidget {
     _NavItemData(Icons.settings_outlined, Icons.settings_rounded, '设置'),
   ];
 
-  /// 指示块尺寸上限。高度与 [_NavItem] 里图标区一致，滑动时不会上下跳。
-  ///
-  /// 宽度按单项宽度自适应（留 8px 间隙）：6 个 Tab 在 320dp 屏上单项只有
-  /// 约 53dp，固定 56dp 会让指示块越出到相邻项里。
-  static const double _pillMaxWidth = 56;
-  static const double pillHeight = 34;
-
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadius.sheet),
-        ),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-          child: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.glassFillWeak,
-              border: Border(
-                top: BorderSide(color: AppColors.glassEdgeBottom, width: 0.5),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    final double itemW = constraints.maxWidth / _items.length;
-                    final double pillW =
-                        _pillMaxWidth < itemW ? _pillMaxWidth : itemW - 8;
-
-                    return Stack(
-                      children: <Widget>[
-                        // 滑动指示块
-                        AnimatedPositioned(
-                          duration: const Duration(milliseconds: 260),
-                          curve: Curves.easeOutCubic,
-                          left: index * itemW + (itemW - pillW) / 2,
-                          top: 0,
-                          width: pillW,
-                          height: pillHeight,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: AppColors.glassTintPrimary,
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: <Widget>[
-                            for (int i = 0; i < _items.length; i++)
-                              Expanded(
-                                child: _NavItem(
-                                  data: _items[i],
-                                  selected: i == index,
-                                  onTap: () => onChanged(i),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    );
-                  },
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            children: <Widget>[
+              for (int i = 0; i < _items.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    data: _items[i],
+                    selected: i == index,
+                    onTap: () => onChanged(i),
+                  ),
                 ),
-              ),
-            ),
+            ],
           ),
         ),
       ),
@@ -159,6 +104,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color fg = selected ? AppColors.textPrimary : AppColors.textHint;
+
     return PressableScale(
       child: GestureDetector(
         onTap: onTap,
@@ -166,45 +113,25 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            SizedBox(
-              height: GlassNavBar.pillHeight,
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 180),
-                  switchInCurve: Curves.easeOutCubic,
-                  transitionBuilder:
-                      (Widget child, Animation<double> animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: ScaleTransition(
-                            scale: Tween<double>(
-                              begin: 0.86,
-                              end: 1.0,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                  child: Icon(
-                    selected ? data.activeIcon : data.icon,
-                    // key 必须随选中态变化，否则 AnimatedSwitcher
-                    // 认不出是新 child，不会播过渡
-                    key: ValueKey<bool>(selected),
-                    size: 22,
-                    color: selected ? AppColors.primary : AppColors.textHint,
-                  ),
-                ),
-              ),
-            ),
+            Icon(selected ? data.activeIcon : data.icon, size: 22, color: fg),
             const SizedBox(height: 3),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeInOut,
               style: (selected ? AppText.navLabelActive : AppText.navLabel)
-                  .copyWith(
-                    color: selected ? AppColors.primary : AppColors.textHint,
-                  ),
+                  .copyWith(color: fg),
               child: Text(data.label),
+            ),
+            // 当前条目的「点标记」。高度恒定避免切换时导航栏跳动
+            const SizedBox(height: 3),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 4,
+              height: 4,
+              decoration: BoxDecoration(
+                color: selected ? AppColors.primary : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
             ),
           ],
         ),

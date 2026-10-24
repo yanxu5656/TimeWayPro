@@ -3,19 +3,17 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'pressable_scale.dart';
 
-/// 完成勾选圆钮。
+/// 完成勾选圆钮（墨圈 · 朱砂）。
 ///
-/// 抽出来之前在两个地方各写了一遍，结构完全相同，只是尺寸（28 vs 26）
-/// 和选中色（primary vs success）不同——是用户看到的一处明显不一致。
-/// 现在统一为 28px + `success` 绿：这个 app 里「完成」一直是绿的
-/// （待办卡边框、「已完成」徽标、任务页「完成任务」统计卡都是 success）。
-class GlassCheckCircle extends StatelessWidget {
-  const GlassCheckCircle({
+/// 静止是一个 1.4px 墨圈（账本行的「待办空位」），勾选后翻成
+/// 朱砂实心——完成是这个应用里最值得用强调色的一刻。
+class InkCheckCircle extends StatelessWidget {
+  const InkCheckCircle({
     super.key,
     required this.isChecked,
     required this.onTap,
     this.size = 28,
-    this.color = AppColors.success,
+    this.color = AppColors.primary,
     this.semanticLabel,
   });
 
@@ -47,13 +45,13 @@ class GlassCheckCircle extends StatelessWidget {
               border: Border.all(
                 color: isChecked
                     ? color
-                    : AppColors.textHint.withValues(alpha: 0.5),
-                width: 2,
+                    // 空圈用 45% 墨，比文字轻、但仍在纸面上可见
+                    : AppColors.textPrimary.withValues(alpha: 0.45),
+                width: 1.4,
               ),
               color: isChecked ? color : Colors.transparent,
             ),
             child: isChecked
-                // 保持与原来 28/16 的比例
                 ? Icon(
                     Icons.check,
                     size: size * 0.57,

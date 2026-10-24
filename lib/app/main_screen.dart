@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core/ui/glass.dart';
+import '../core/ui/paper.dart';
 import '../features/daily/presentation/screens/daily_screen.dart';
 import '../features/weekly/presentation/screens/weekly_screen.dart';
 import '../features/task/presentation/screens/task_screen.dart';
@@ -73,29 +73,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       child: NavBarInset(
         height: _navBarHeight,
         child: Scaffold(
-          // 极光的实底由 AuroraBackground 自己画；这里再兜一层纯色，
-          // 避免首帧极光尚未光栅化时闪一下白。
-          backgroundColor: AppColors.background,
-          // 内容延伸到玻璃底部导航之下——GlassNavBar 的 BackdropFilter
-          // 依赖这一条，否则它模糊的是 Scaffold 底色，视觉上毫无意义。
-          //
-          // 代价是各页自己的 Scaffold 底边也变成了屏幕底边，它们的 FAB
-          // 会压到导航栏下面，所以要用 NavBarInset 把高度传下去让页面避让。
+          // 内容延伸到纸面底部导航之下，FAB 靠 NavBarInset 避让
           extendBody: true,
-          body: Stack(
-            children: [
-              // 全应用唯一一份极光。不能每屏自带：IndexedStack 保活全部屏幕，
-              // 各屏相位不同的控制器会让背景在切 Tab 时跳变。
-              const Positioned.fill(child: AuroraBackground()),
-              Positioned.fill(
-                // 双向隔离：列表滚动不触发极光层重栅格化，极光漂移也不重绘列表
-                child: RepaintBoundary(
-                  child: IndexedStack(index: _currentIndex, children: _screens),
-                ),
-              ),
-            ],
+          body: RepaintBoundary(
+            child: IndexedStack(index: _currentIndex, children: _screens),
           ),
-          bottomNavigationBar: GlassNavBar(
+          bottomNavigationBar: PaperNavBar(
             key: _navBarKey,
             index: _currentIndex,
             onChanged: (index) => setState(() => _currentIndex = index),

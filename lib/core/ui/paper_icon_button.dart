@@ -3,19 +3,16 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'pressable_scale.dart';
 
-/// 圆形玻璃按钮。
+/// 圆形墨色图标按钮。
 ///
-/// 取代改造前散落在 task_card / daily_screen / 各页导航箭头上的手写
-/// `Container(shape: circle, gradient: LinearGradient(...)) + GestureDetector`。
-///
-/// 与 [GlassCard] 不同，这里不叠 `InkWell`（圆形按钮不需要水波），
-/// 因此可以安全地套 [PressableScale] 做按下回弹。
-class GlassIconButton extends StatelessWidget {
-  const GlassIconButton({
+/// 静止时无底（图标直接长在纸上），按压由 [PressableScale] 提供反馈。
+/// 需要可见的「可点区域」时由调用方传浅底（如日期箭头传 inkFaint）。
+class PaperIconButton extends StatelessWidget {
+  const PaperIconButton({
     super.key,
     required this.icon,
     required this.onTap,
-    this.color = AppColors.primary,
+    this.color = AppColors.textPrimary,
     this.size = sizeAction,
     this.iconSize = 24,
     this.tooltip,
@@ -40,13 +37,9 @@ class GlassIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color effective = enabled ? color : AppColors.textHint;
 
-    Widget button = Container(
+    Widget button = SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: AppGradients.softFill(effective),
-      ),
       child: Icon(icon, color: effective, size: iconSize),
     );
 
