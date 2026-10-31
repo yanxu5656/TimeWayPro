@@ -2,6 +2,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:time_way_pro/core/utils/week.dart';
 
 void main() {
+  group('isoWeekNumber —— ISO 周号（周四定年定周）', () {
+    test('2026-10-26（周一）是第 44 周', () {
+      expect(isoWeekNumber(DateTime(2026, 10, 26)), 44);
+    });
+
+    test('周内任意一天都归到同一周号', () {
+      expect(isoWeekNumber(DateTime(2026, 10, 31)), 44);
+      expect(isoWeekNumber(DateTime(2026, 10, 25)), 43,
+          reason: '10/25 是周日，属于上一周');
+    });
+
+    test('年初：2026-01-01（周四）是 2026 年第 1 周', () {
+      expect(isoWeekNumber(DateTime(2026, 1, 1)), 1);
+    });
+
+    test('跨年：2025-12-29（周一）的周四落在 2026，周号是 1', () {
+      expect(isoWeekNumber(DateTime(2025, 12, 29)), 1);
+    });
+
+    test('53 周的年份：2026-12-28（周一）是第 53 周', () {
+      // 2026-01-01 是周四 → 该年有 53 个 ISO 周
+      expect(isoWeekNumber(DateTime(2026, 12, 28)), 53);
+    });
+  });
+
+
   group('startOfWeek —— 周一为起点', () {
     test('周一返回当天 00:00', () {
       expect(startOfWeek(DateTime(2026, 9, 14, 15, 30)), DateTime(2026, 9, 14));

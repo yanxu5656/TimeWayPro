@@ -178,13 +178,33 @@ class DatabaseHelper {
     //    走到这里，正式文件要么是旧内容、要么不存在；这一步之后要么是
     //    旧内容、要么是新内容，**永远不会是半截 JSON**。
     try {
-      await tmpFile.rename(file.path);
+      await _renameWithRetry(tmpFile, file.path);
     } catch (e) {
-      // rename 失败（极少见）时清理 tmp，避免残留占位
+      // rename 彻底失败时清理 tmp，避免残留占位；异常向上传播
       try {
         await tmpFile.delete();
       } catch (_) {}
       rethrow;
+    }
+  }
+
+  /// 带退避重试的 rename。
+  ///
+  /// Windows 上杀毒软件 / 搜索索引服务会短暂持有新写入文件的句柄，
+  /// 让紧随其后的 rename 报「另一个程序正在使用此文件」（errno 32/5）。
+  /// 这类占用是瞬时的（通常 <100ms），退避重试几次就能过去——
+  /// 并行测试里多个 isolate 同时做大量小文件 IO 时尤其容易撞上。
+  Future<void> _renameWithRetry(File from, String to) async {
+    for (int attempt = 0;; attempt++) {
+      try {
+        await from.rename(to);
+        return;
+      } catch (e) {
+        if (attempt >= 2) rethrow;
+        await Future<void>.delayed(
+          Duration(milliseconds: 25 * (attempt + 1) * (attempt + 1)),
+        );
+      }
     }
   }
 

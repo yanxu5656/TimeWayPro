@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.5.1-00BFA5)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.6.0-00BFA5)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-00BFA5?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -108,6 +108,24 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.6.0 — 编排精修
+*2026-10-31*
+
+**动机**：静白志用下来方向对了，但「素」了些、部分排布不够优雅。对比四个升级方向（暖笺文武线 / 浮笺卡片 / 玄墨对页 / 编排精修）后选定**编排精修**——颜色几乎不动，专治排布：字号对比、元信息收拢、区块编号、间距节奏。
+
+**排版系统（全部六页统一）**
+
+- **刊头水印**：右上角当周 ISO 周号 / 当日日期的巨号描边空心数字（132px Playfair，墨色 13%），被铅线裁切——素纸面有了体量锚点
+- **元信息行**：原先散落的 期号 / 年月 / 周号 / 计数 收拢成标题下一行间隔号分节的 meta（`第 44 周 · 10/19 - 10/25 · VOL.359`），关键数字朱砂
+- **编号区块**：每个内容区块一个衬线朱砂序号 + 拉字距小标 + 右对齐计数（`01 · 本周记事 · 3 条`），下缘重规线与发丝行线形成粗细节奏
+- **大分数**：每周 64px、待办 48px、任务统计条 30px，右侧配「还剩 X 条 · 距周末 X 天 / 完成度 Z%」两行小注
+- **周行日期改英文大写**（`OCT 19 — OCT 25`），与眉题同一套编辑语言；`week.dart` 新增 `isoWeekNumber`（周四定年定周，跨年 53 周有测试）
+- **间距放宽**：账本行 14 → 17px，区块间距统一
+
+**各页落点**：每周（水印 44 + 全套）；待办（水印日期 + 上午/下午/晚上 编号化）；任务（水印 + meta 带计时中计数 + 统计数字放大 + 三区块编号）；统计（热力图/占比/明细 编号化，右侧带计数）；规划（meta 带总数与平均进度 + 目标树区块头）；设置（三组编号化，右侧带连接状态与版本号）；挪周弹窗改编号账本行。
+
+**边界**：纯排版层——不动组件 API、不动配色、不动交互与数据层。
 
 ### v1.5.1 — 收尾：图标、健壮性与安全修复
 *2026-10-24*
@@ -340,6 +358,16 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 组件只有三种表面：**flat**（透明裸容器）、**ruled**（上下发丝线的分区）、**raised**（纯白 + 微影，仅弹窗块与状态卡）。滚动列表里一律是「账本行」（row 档：仅下缘发丝线，强调态在左缘加 2.5px 着重线）——相邻行不会出现双线。
 
+### 编排精修（v1.6.0）
+
+1.6.0 在静白志骨架上做了一轮纯排版升级，解决「素」与「排布不优雅」：
+
+- **刊头水印**：右上角当周周号 / 当日日期的 132px 描边空心数字（墨色 13%），被铅线裁切——印刷品的裁切感
+- **元信息行**：期号 / 年月 / 周号 / 计数收拢成标题下一行间隔号分节的 meta，关键数字朱砂
+- **编号区块**：衬线序号（`01`）+ 拉字距小标 + 右对齐计数，下缘重规线与发丝行线形成粗细节奏
+- **大分数**：每周 64px / 待办 48px / 任务统计条 30px 的衬线数字是各页主角，右侧两行小注
+- **周行日期用英文大写**（`OCT 19 — OCT 25`），与眉题同一套编辑语言；`isoWeekNumber` 按 ISO 规则（周四定年定周）计算并有跨年测试
+
 ### 性能
 
 `BackdropFilter` 与渐变描边已全部移除：1.3.0 时代「按帧耗自适应降档」的两项重负载（真模糊、极光）不再存在，中低端机直接受益。`UiEffects` 降档体系保留，现在只管错峰入场与数字滚动。
@@ -420,7 +448,7 @@ flutter run
 flutter build apk --release
 # 产物：build/app/outputs/flutter-apk/app-release.apk
 # 发布到 Releases 时复制一份带版本号的，方便区分：
-#   cp .../app-release.apk .../app-release-1.5.1.apk
+#   cp .../app-release.apk .../app-release-1.6.0.apk
 ```
 
 ### 测试

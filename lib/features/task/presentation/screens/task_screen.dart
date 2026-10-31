@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/ui/paper.dart';
+import '../../../../core/utils/week.dart';
 import '../../data/models/task.dart';
 import '../../providers/task_provider.dart';
 import '../widgets/task_card.dart';
@@ -125,7 +126,41 @@ class _TaskScreenState extends State<TaskScreen> {
         children: [
           // 刊头。标题用应用名「时途」：这一页是计时主场，
           // 刊头正好点题（原顶栏就是这么做的）
-          Masthead(kicker: 'TIME WAY', title: '时途'),
+          Masthead(
+            kicker: 'TIME WAY',
+            title: '时途',
+            meta: Text.rich(
+              TextSpan(
+                style: AppText.caption.copyWith(
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.4,
+                ),
+                children: <InlineSpan>[
+                  TextSpan(text: '${_selectedDate.year} 年 ${_selectedDate.month} 月 · '),
+                  const TextSpan(text: '第 '),
+                  TextSpan(
+                    text: '${isoWeekNumber(_selectedDate)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  TextSpan(text: ' 周'),
+                  if (provider.activeTimers.isNotEmpty) ...<InlineSpan>[
+                    TextSpan(text: ' · 计时中 '),
+                    TextSpan(
+                      text: '${provider.activeTimers.length}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            ghost: '${_selectedDate.day}'.padLeft(2, '0'),
+          ),
           const SizedBox(height: AppSpacing.xs),
 
           // 日期行：衬线日期 + 两侧箭头，今天用朱砂标注
@@ -228,7 +263,10 @@ class _TaskScreenState extends State<TaskScreen> {
               value: value,
               format: (v) => '$v',
               duration: const Duration(milliseconds: 450),
-              style: AppText.numLg.copyWith(color: color),
+              style: AppText.serifNum.copyWith(
+                fontSize: 30,
+                color: color,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
@@ -309,10 +347,10 @@ class _TaskScreenState extends State<TaskScreen> {
           // 进行中的任务
           if (provider.activeTimers.isNotEmpty) ...[
             staged(
-              _buildSectionTitle(
-                '进行中',
-                provider.activeTimers.length,
-                AppColors.success,
+              SectionHeader(
+                index: 1,
+                title: '进行中',
+                trailing: '${provider.activeTimers.length} 项',
               ),
             ),
             ...provider.activeTimers.keys.map((taskId) {
@@ -341,10 +379,10 @@ class _TaskScreenState extends State<TaskScreen> {
           // 常驻任务
           if (repeatableTasks.isNotEmpty) ...[
             staged(
-              _buildSectionTitle(
-                '常驻任务',
-                repeatableTasks.length,
-                AppColors.info,
+              SectionHeader(
+                index: 2,
+                title: '常驻任务',
+                trailing: '${repeatableTasks.length} 项',
               ),
             ),
             ...repeatableTasks.map((task) {
@@ -370,10 +408,10 @@ class _TaskScreenState extends State<TaskScreen> {
           // 待完成任务
           if (oneTimeTasks.isNotEmpty) ...[
             staged(
-              _buildSectionTitle(
-                '待完成任务',
-                oneTimeTasks.length,
-                AppColors.warning,
+              SectionHeader(
+                index: 3,
+                title: '待完成任务',
+                trailing: '${oneTimeTasks.length} 项',
               ),
             ),
             ...oneTimeTasks.map((task) {
@@ -394,50 +432,6 @@ class _TaskScreenState extends State<TaskScreen> {
               );
             }),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title, int count, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 3,
-            height: 16,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(AppRadius.xs),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-              letterSpacing: 0.3,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Text(
-              '$count',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-          ),
         ],
       ),
     );

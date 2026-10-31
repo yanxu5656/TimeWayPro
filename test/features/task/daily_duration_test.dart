@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_way_pro/features/task/providers/task_provider.dart';
+import '../../support/app_harness.dart';
 import 'package:time_way_pro/shared/database/database_helper.dart';
 
 /// 任务页「当日累计时长」的按日聚合测试。
@@ -40,6 +41,9 @@ void main() {
   final DateTime day18 = DateTime(2026, 9, 18);
 
   setUp(() async {
+    // 本文件直接做真实文件 IO，必须先装平台通道 mock
+    // （v1.5.1 前落盘失败被吞掉，这里一直缺 mock 却侥幸通过）
+    installPathProviderMock();
     await db.importAll(
       seed(<Map<String, dynamic>>[
         // 9/18 那天，任务 A 两次、任务 B 一次

@@ -35,8 +35,9 @@ class SettingsScreen extends StatelessWidget {
 
               // 同步设置
               _buildSection(
+                index: 1,
                 title: '云端同步',
-                icon: Icons.cloud_outlined,
+                trailing: provider.isConfigured ? '已连接' : '未配置',
                 children: [
                   _buildSyncStatus(provider),
                   const SizedBox(height: 12),
@@ -79,8 +80,8 @@ class SettingsScreen extends StatelessWidget {
 
               // 数据管理
               _buildSection(
+                index: 2,
                 title: '数据管理',
-                icon: Icons.storage_outlined,
                 children: [
                   _buildSyncAction(
                     context,
@@ -102,8 +103,9 @@ class SettingsScreen extends StatelessWidget {
 
               // 关于
               _buildSection(
+                index: 3,
                 title: '关于',
-                icon: Icons.info_outline,
+                trailing: 'v${AppConstants.appVersion}',
                 children: [
                   _buildInfoTile('版本', AppConstants.appVersion),
                   _buildInfoTile(
@@ -120,8 +122,9 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSection({
+    required int index,
     required String title,
-    required IconData icon,
+    String? trailing,
     required List<Widget> children,
   }) {
     return PaperCard(
@@ -138,15 +141,34 @@ class SettingsScreen extends StatelessWidget {
               AppSpacing.xs,
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
-                Icon(icon, size: 20, color: AppColors.primary),
-                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  '${index}'.padLeft(2, '0'),
+                  style: AppText.serifNum.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   title,
-                  style: AppText.taskTitle.copyWith(
+                  style: AppText.label.copyWith(
+                    fontSize: 13,
+                    letterSpacing: 2.4,
                     color: AppColors.textPrimary,
                   ),
                 ),
+                const Spacer(),
+                if (trailing != null)
+                  Text(
+                    trailing,
+                    style: AppText.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
               ],
             ),
           ),

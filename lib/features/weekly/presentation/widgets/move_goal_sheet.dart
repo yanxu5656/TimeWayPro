@@ -48,64 +48,67 @@ class _MoveGoalSheet extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: AppSpacing.lg),
-        for (final int offset in _quickOffsets) ...<Widget>[
+        // 编号账本行（01–04）：行线分节，序号衬线朱砂
+        for (final (int i, int offset) in _quickOffsets.indexed)
           _buildWeekOption(
             context,
+            index: i + 1,
             monday: thisMonday.add(Duration(days: 7 * offset)),
           ),
-          const SizedBox(height: AppSpacing.cardGap),
-        ],
         _buildCustomOption(context),
       ],
     );
   }
 
-  Widget _buildWeekOption(BuildContext context, {required DateTime monday}) {
+  Widget _buildWeekOption(
+    BuildContext context, {
+    required int index,
+    required DateTime monday,
+  }) {
     final String key = weekKeyOf(monday);
     final bool isCurrent = key == goal.weekKey;
     final String? short = weekShortLabel(monday);
+    final Color strong = isCurrent ? AppColors.textHint : AppColors.textPrimary;
+    final Color weak = isCurrent ? AppColors.textHint : AppColors.textSecondary;
 
     return PaperCard(
-      tone: PaperTone.flat,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
+      tone: PaperTone.row,
+      padding: const EdgeInsets.symmetric(vertical: 14),
       // 当前所在周不可点：挪到原地没有意义，亮着反而让人怀疑没生效
       onTap: isCurrent ? null : () => _move(context, key),
       child: Row(
         children: <Widget>[
+          SizedBox(
+            width: 30,
+            child: Text(
+              '${index}'.padLeft(2, '0'),
+              style: AppText.serifNum.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isCurrent ? AppColors.textHint : AppColors.primary,
+              ),
+            ),
+          ),
           Text(
             short ?? weekRangeLabel(monday),
-            style: AppText.body.copyWith(
+            style: AppText.bodySerif.copyWith(
+              fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: isCurrent ? AppColors.textHint : AppColors.textPrimary,
+              color: strong,
             ),
           ),
           if (short != null) ...<Widget>[
             const SizedBox(width: AppSpacing.sm),
             Text(
               weekRangeLabel(monday),
-              style: AppText.caption.copyWith(
-                color: isCurrent ? AppColors.textHint : AppColors.textSecondary,
-              ),
+              style: AppText.caption.copyWith(color: weak),
             ),
           ],
           const Spacer(),
           if (isCurrent)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xs,
-                vertical: 3,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primarySubtle,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: Text(
-                '当前',
-                style: AppText.labelSm.copyWith(color: AppColors.primary),
-              ),
+            Text(
+              '当前',
+              style: AppText.labelSm.copyWith(color: AppColors.primary),
             )
           else
             const Icon(
@@ -120,23 +123,23 @@ class _MoveGoalSheet extends StatelessWidget {
 
   Widget _buildCustomOption(BuildContext context) {
     return PaperCard(
-      tone: PaperTone.flat,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
+      tone: PaperTone.row,
+      padding: const EdgeInsets.symmetric(vertical: 14),
       onTap: () => _pickWeek(context),
       child: Row(
         children: <Widget>[
-          Icon(
-            Icons.calendar_month_rounded,
-            size: 18,
-            color: AppColors.primary,
+          const SizedBox(
+            width: 30,
+            child: Icon(
+              Icons.calendar_month_rounded,
+              size: 17,
+              color: AppColors.primary,
+            ),
           ),
-          SizedBox(width: AppSpacing.sm),
           Text(
             '选其他周…',
-            style: AppText.body.copyWith(
+            style: AppText.bodySerif.copyWith(
+              fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.primary,
             ),

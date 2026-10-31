@@ -16,3 +16,20 @@ String? weekShortLabel(DateTime monday) {
     _ => null,
   };
 }
+
+// ── 编排精修（v1.6.0）：英文大写日期，与刊头眉题同一套编辑语言 ──
+
+const List<String> _monthsEn = <String>[
+  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+];
+
+/// `OCT 24`
+String monthDayCaps(DateTime d) => '${_monthsEn[d.month - 1]} ${d.day}';
+
+/// `OCT 19 — OCT 25`（周一到周日）
+String weekRangeCaps(DateTime date) {
+  final DateTime monday = startOfWeek(date);
+  final DateTime sunday = monday.add(const Duration(days: 6));
+  return '${monthDayCaps(monday)} — ${monthDayCaps(sunday)}';
+}

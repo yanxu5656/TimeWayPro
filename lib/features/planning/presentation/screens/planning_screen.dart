@@ -28,6 +28,22 @@ class _PlanningScreenState extends State<PlanningScreen> {
             return _buildEmptyState();
           }
 
+          // 遍历整棵树拿总数与平均进度（规划页数据量小，直接走）
+          int total = 0;
+          double progressSum = 0;
+          void walk(Plan plan) {
+            total++;
+            progressSum += plan.progress;
+            for (final child in provider.getChildPlans(plan.id)) {
+              walk(child);
+            }
+          }
+          for (final root in rootPlans) {
+            walk(root);
+          }
+          final int avgProgress =
+              total > 0 ? (progressSum / total * 100).round() : 0;
+
           return ListView(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.screenH,
@@ -36,8 +52,37 @@ class _PlanningScreenState extends State<PlanningScreen> {
               AppSpacing.navInset,
             ),
             children: [
-              const Masthead(kicker: 'LIFE PLAN', title: '人生规划'),
-              const SizedBox(height: AppSpacing.md),
+              Masthead(
+                kicker: 'LIFE PLAN',
+                title: '人生规划',
+                meta: Text.rich(
+                  TextSpan(
+                    style: AppText.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      letterSpacing: 0.4,
+                    ),
+                    children: <InlineSpan>[
+                      const TextSpan(text: '共 '),
+                      TextSpan(
+                        text: '$total',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      TextSpan(text: ' 个目标 · 平均进度 $avgProgress%'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              SectionHeader(
+                index: 1,
+                title: '目标树',
+                trailing: '$total 项',
+                topGap: false,
+              ),
+              const SizedBox(height: AppSpacing.sm),
               ...rootPlans
                   .map((plan) => _buildPlanTree(plan, provider, 0)),
             ],

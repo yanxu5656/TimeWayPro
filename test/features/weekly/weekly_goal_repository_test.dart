@@ -13,6 +13,9 @@ void main() {
   final String thisWeek = weekKeyOf(DateTime.now());
 
   setUp(() async {
+    // 本文件直接做真实文件 IO，必须先装平台通道 mock
+    // （v1.5.1 前落盘失败被 _saveData 吞掉，这里一直缺 mock 却侥幸通过）
+    installPathProviderMock();
     repo = WeeklyGoalRepository();
     await DatabaseHelper().importAll(seedData());
   });

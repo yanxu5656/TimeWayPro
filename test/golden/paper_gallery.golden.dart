@@ -112,8 +112,18 @@ Widget _gallery() {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // 刊头与衬线槽位（编辑风的核心视觉）
-            const Masthead(kicker: 'WEEKLY LEDGER', title: '每周目标'),
+            // 刊头与衬线槽位（编辑风的核心视觉）；
+            // v1.6.0 起带水印与元信息行
+            const Masthead(
+              kicker: 'WEEKLY LEDGER',
+              title: '每周目标',
+              meta: Text('第 44 周 · 10/19 - 10/25 · VOL.359'),
+              ghost: '44',
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // 编号区块头（v1.6.0）：重规线 + 发丝行线的粗细节奏
+            const SectionHeader(index: 1, title: '本周记事', trailing: '3 条'),
             const SizedBox(height: AppSpacing.md),
 
             for (final PaperTone tone in PaperTone.values) _contrastCard(tone),

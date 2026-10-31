@@ -15,6 +15,7 @@ export 'paper_nav_bar.dart';
 export 'paper_scaffold.dart';
 export 'paper_sheet.dart';
 export 'pressable_scale.dart';
+export 'section_header.dart';
 export 'segmented_control.dart';
 export 'staggered_entrance.dart';
 export 'tab_visibility.dart';

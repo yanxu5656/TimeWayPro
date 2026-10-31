@@ -337,24 +337,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '热力图',
-                style: AppText.label.copyWith(color: AppColors.textSecondary),
-              ),
-              if (_selectedPeriod == 0)
-                Text(
-                  DateFormat('yyyy年MM月dd日').format(_selectedDate),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textHint,
-                  ),
-                ),
-            ],
+          SectionHeader(
+            index: 1,
+            title: '热力图',
+            trailing: _selectedPeriod == 0
+                ? DateFormat('yyyy年MM月dd日').format(_selectedDate)
+                : null,
+            rule: false,
+            topGap: false,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           _buildHeatMapGrid(stats.dailyMap),
         ],
       ),
@@ -538,11 +530,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '任务占比',
-            style: AppText.label.copyWith(color: AppColors.textSecondary),
+          SectionHeader(
+            index: 2,
+            title: '任务占比',
+            trailing: '${stats.taskDurations.length} 项',
+            rule: false,
+            topGap: false,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           SizedBox(
             height: 200,
             child: PieChart(
@@ -634,11 +629,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '任务明细',
-            style: AppText.label.copyWith(color: AppColors.textSecondary),
+          SectionHeader(
+            index: 3,
+            title: '任务明细',
+            trailing: '共 ${formatDurationShort(stats.totalDuration)}',
+            rule: false,
+            topGap: false,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           ...stats.taskDurations.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;

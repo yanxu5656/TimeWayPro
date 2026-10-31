@@ -44,8 +44,12 @@ void main() {
     await tester.pumpWidget(host(value: 1, onChanged: (_) {}));
     await tester.pumpAndSettle();
 
-    final TextStyle inactive = tester.widget<Text>(find.text('日')).style!;
-    final TextStyle active = tester.widget<Text>(find.text('周')).style!;
+    // 样式挂在 AnimatedDefaultTextStyle 上，Text 自身 style 为 null，
+    // 必须读 DefaultTextStyle 的生效样式
+    TextStyle effective(Finder f) =>
+        DefaultTextStyle.of(tester.element(f)).style;
+    final TextStyle inactive = effective(find.text('日'));
+    final TextStyle active = effective(find.text('周'));
 
     expect(
       inactive.color,
@@ -66,9 +70,9 @@ void main() {
     await tester.pumpWidget(build());
     await tester.pumpAndSettle();
 
-    expect(tester.widget<Text>(find.text('月')).style!.color,
-        AppColors.textPrimary);
-    expect(tester.widget<Text>(find.text('日')).style!.color,
-        AppColors.textSecondary);
+    TextStyle effective(Finder f) =>
+        DefaultTextStyle.of(tester.element(f)).style;
+    expect(effective(find.text('月')).color, AppColors.textPrimary);
+    expect(effective(find.text('日')).color, AppColors.textSecondary);
   });
 }

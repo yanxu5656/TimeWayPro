@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:time_way_pro/core/ui/paper.dart';
 import 'package:time_way_pro/core/utils/week.dart';
+import 'package:time_way_pro/features/weekly/presentation/week_labels.dart';
 import 'package:time_way_pro/features/weekly/providers/weekly_provider.dart';
 
 import '../../support/app_harness.dart';
@@ -33,6 +34,18 @@ void main() {
         listen: false,
       );
 
+  // 放在文件第一位：这个用例直接 pumpSeededApp 走真实 IO，而排在
+  // 其它带 tapAndFlush 写盘的用例之后时，会等它们在写队列里的尾巴
+  // （实测在部分 Windows 环境下等到 10 分钟超时）。首位运行稳定全绿。
+  testWidgets('窄屏（320dp）下页面与 6 项导航栏不溢出', (tester) async {
+    await pumpSeededApp(tester, size: const Size(320, 640));
+    await switchToTab(tester, '每周');
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('本周目标 0'), findsOneWidget);
+    expect(find.byIcon(Icons.event_repeat_outlined), findsNWidgets(3));
+  });
+
   testWidgets('默认显示本周目标，不显示其它周的', (tester) async {
     await openWeeklyTab(tester);
 
@@ -52,11 +65,13 @@ void main() {
     // 上周的目标可见、本周的不在了
     expect(find.text('上周的目标（翻周后可见）'), findsOneWidget);
     expect(find.text('本周目标 0'), findsNothing);
-    // 中间卡从「本周」变成日期区间
+    // 中间卡从「本周」变成英文大写日期区间（v1.6.0 编排精修）
     expect(
-      find.text(weekRangeLabel(DateTime.now().subtract(const Duration(days: 7)))),
+      find.text(
+        weekRangeCaps(DateTime.now().subtract(const Duration(days: 7))),
+      ),
       findsOneWidget,
-      reason: '非当前周的中间卡应显示周一到周日的日期区间',
+      reason: '非当前周的中间行应显示周一到周日的英文大写日期区间',
     );
     expect(find.text('回到本周'), findsOneWidget);
 
@@ -146,12 +161,4 @@ void main() {
     expect(providerOf(tester).total, 2);
   });
 
-  testWidgets('窄屏（320dp）下页面与 6 项导航栏不溢出', (tester) async {
-    await pumpSeededApp(tester, size: const Size(320, 640));
-    await switchToTab(tester, '每周');
-
-    expect(tester.takeException(), isNull);
-    expect(find.text('本周目标 0'), findsOneWidget);
-    expect(find.byIcon(Icons.event_repeat_outlined), findsNWidgets(3));
-  });
 }

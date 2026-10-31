@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/ui/paper.dart';
+import '../../../../core/utils/week.dart';
 import '../../data/models/daily_task.dart';
 import '../../providers/daily_provider.dart';
 
@@ -68,7 +69,35 @@ class _DailyScreenState extends State<DailyScreen> {
           Masthead(
             kicker: 'DAILY LIST',
             title: '每日待办',
-            trailing: Text(DateFormat('yyyy/MM/dd').format(now)),
+            meta: Text.rich(
+              TextSpan(
+                style: AppText.caption.copyWith(
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.4,
+                ),
+                children: <InlineSpan>[
+                  TextSpan(text: '${provider.selectedDate.year} 年 ${provider.selectedDate.month} 月 · '),
+                  const TextSpan(text: '第 '),
+                  TextSpan(
+                    text: '${isoWeekNumber(provider.selectedDate)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  TextSpan(text: ' 周 · 共 '),
+                  TextSpan(
+                    text: '${provider.totalTasks}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const TextSpan(text: ' 条'),
+                ],
+              ),
+            ),
+            ghost: '${provider.selectedDate.day}'.padLeft(2, '0'),
           ),
           const SizedBox(height: AppSpacing.xs),
 
@@ -119,35 +148,56 @@ class _DailyScreenState extends State<DailyScreen> {
             ],
           ),
 
-          // 进度：衬线大分数 + 细墨条
+          // 进度：48px 衬线大分数 + 右侧两行小注 + 细墨条
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '今日进度',
-                style: AppText.caption.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const Spacer(),
-              // 数字滚动：分母是字符串拼接，只让分子动
               CountUpText(
                 value: provider.completedTasks,
                 format: (v) => '$v',
                 duration: const Duration(milliseconds: 450),
                 style: AppText.serifNum.copyWith(
-                  fontSize: 40,
+                  fontSize: 48,
                   color: AppColors.textPrimary,
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.only(bottom: 5),
                 child: Text(
-                  '/${provider.totalTasks}',
+                  ' /${provider.totalTasks}',
                   style: AppText.serifNum.copyWith(
-                    fontSize: 20,
+                    fontSize: 22,
                     color: AppColors.textHint,
                   ),
+                ),
+              ),
+              const Spacer(),
+              // Flexible + 截断：与每周页同款防御（320dp 挤压时不溢出）
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      provider.totalTasks - provider.completedTasks > 0
+                          ? '还剩 ${provider.totalTasks - provider.completedTasks} 条'
+                          : '全部完成',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '完成度 ${(provider.progress * 100).round()}%',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -208,10 +258,10 @@ class _DailyScreenState extends State<DailyScreen> {
           // 上午
           if (provider.morningTasks.isNotEmpty) ...[
             staged(
-              _buildSectionTitle(
-                '上午',
-                Icons.wb_sunny_outlined,
-                AppColors.warning,
+              SectionHeader(
+                index: 1,
+                title: '上午',
+                trailing: '${provider.morningTasks.length} 条',
               ),
             ),
             ...provider.morningTasks.map(
@@ -223,10 +273,10 @@ class _DailyScreenState extends State<DailyScreen> {
           // 下午
           if (provider.afternoonTasks.isNotEmpty) ...[
             staged(
-              _buildSectionTitle(
-                '下午',
-                Icons.wb_cloudy_outlined,
-                AppColors.info,
+              SectionHeader(
+                index: 2,
+                title: '下午',
+                trailing: '${provider.afternoonTasks.length} 条',
               ),
             ),
             ...provider.afternoonTasks.map(
@@ -238,10 +288,10 @@ class _DailyScreenState extends State<DailyScreen> {
           // 晚上
           if (provider.eveningTasks.isNotEmpty) ...[
             staged(
-              _buildSectionTitle(
-                '晚上',
-                Icons.nights_stay_outlined,
-                AppColors.primary,
+              SectionHeader(
+                index: 3,
+                title: '晚上',
+                trailing: '${provider.eveningTasks.length} 条',
               ),
             ),
             ...provider.eveningTasks.map(
@@ -290,30 +340,6 @@ class _DailyScreenState extends State<DailyScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title, IconData icon, Color color) {
-    // 编辑风的分组小标：字距拉开的墨色小字 + 细线，不再用彩色底块
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: AppText.label.copyWith(color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xxs),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTaskCard(DailyTask task, DailyProvider provider) {
     return Dismissible(
       key: Key(task.id),
@@ -353,7 +379,7 @@ class _DailyScreenState extends State<DailyScreen> {
       // 账本行：透明底 + 下缘发丝线，完成的行左缘加朱砂着重线
       child: PaperCard(
         tone: PaperTone.row,
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 17),
         tint: task.isCompleted ? AppColors.success : null,
         onTap: () => provider.toggleComplete(task.id),
         onLongPress: () => _showEditDialog(context, task, provider),

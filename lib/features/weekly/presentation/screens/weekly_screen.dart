@@ -65,7 +65,47 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
     return weeks < 0 ? 1 : weeks + 1;
   }
 
+  /// 刊头元信息行：`第 44 周 · 10/19 - 10/25 · VOL.359`
+  /// （周号朱砂，期号衬线——把原先散落的期号/日期收拢成一行）
+  Widget _buildMeta(String weekKey) {
+    final DateTime monday = DateTime.parse(weekKey);
+    return Text.rich(
+      TextSpan(
+        style: AppText.caption.copyWith(
+          color: AppColors.textSecondary,
+          letterSpacing: 0.4,
+        ),
+        children: <InlineSpan>[
+          const TextSpan(text: '第 '),
+          TextSpan(
+            text: '${isoWeekNumber(monday)}',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+          TextSpan(text: ' 周 · ${weekRangeLabel(monday)} · '),
+          TextSpan(
+            text: 'VOL.${_volNumber(weekKey)}',
+            style: AppText.serifNum.copyWith(
+              fontSize: 12.5,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader(WeeklyProvider provider) {
+    final int daysLeft = 7 - DateTime.now().weekday; // 周日为 0
+    final int remainingCount = provider.total - provider.completed;
+    // 与设计稿一致用短式「还剩 2 条 · 2 天」——「距周末」三字会把
+    // 390dp 下的分数行挤出 2.4px 溢出（golden 抓到过）
+    final String remaining = remainingCount > 0 ? '还剩 $remainingCount 条' : '全部完成';
+    final String daysPart =
+        provider.isCurrentWeek && daysLeft > 0 ? ' · $daysLeft 天' : '';
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.screenH,
@@ -79,11 +119,12 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
           Masthead(
             kicker: 'WEEKLY LEDGER',
             title: '每周目标',
-            trailing: Text('VOL.${_volNumber(provider.selectedWeekKey)}'),
+            meta: _buildMeta(provider.selectedWeekKey),
+            ghost:
+                '${isoWeekNumber(provider.selectedWeekStart)}'.padLeft(2, '0'),
           ),
-          const SizedBox(height: AppSpacing.xs),
 
-          // 周行：衬线的「本周」+ 日期区间，两侧箭头
+          // 周行：衬线的「本周」+ 英文大写日期（与眉题同一套编辑语言）
           Row(
             children: <Widget>[
               PaperIconButton(
@@ -107,16 +148,18 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                               : (weekShortLabel(provider.selectedWeekStart) ??
                                   ''),
                           style: AppText.titleSerif.copyWith(
+                            fontSize: 18,
                             color: provider.isCurrentWeek
                                 ? AppColors.primary
                                 : AppColors.textPrimary,
                           ),
                         ),
                         Text(
-                          weekRangeLabel(provider.selectedWeekStart),
+                          weekRangeCaps(provider.selectedWeekStart),
                           style: AppText.caption.copyWith(
                             color: AppColors.textSecondary,
-                            letterSpacing: 1.2,
+                            fontSize: 11.5,
+                            letterSpacing: 1.6,
                           ),
                         ),
                       ],
@@ -151,34 +194,55 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
               ),
             ),
 
-          // 大分数：衬线数字是这一页的主角
+          // 大分数：64px 衬线数字是这一页的主角，右侧两行小注
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
-              Text(
-                '${_overviewTitle(provider)} · 已完成',
-                style: AppText.caption.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const Spacer(),
               CountUpText(
                 value: provider.completed,
                 format: (int v) => '$v',
                 duration: const Duration(milliseconds: 450),
                 style: AppText.serifNum.copyWith(
-                  fontSize: 44,
+                  fontSize: 64,
                   color: AppColors.textPrimary,
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 5),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  '/${provider.total}',
+                  ' /${provider.total}',
                   style: AppText.serifNum.copyWith(
-                    fontSize: 20,
+                    fontSize: 26,
                     color: AppColors.textHint,
                   ),
+                ),
+              ),
+              const Spacer(),
+              // 右侧两行小注：Flexible 让它在窄屏优雅截断而不是把
+              // 分数行挤出溢出（320dp 实测溢出 19.8px，320dp 用例守护）
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Text(
+                      '$remaining$daysPart',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '完成度 ${(provider.progress * 100).round()}%',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -197,12 +261,6 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         ],
       ),
     );
-  }
-
-  String _overviewTitle(WeeklyProvider provider) {
-    final String? short = weekShortLabel(provider.selectedWeekStart);
-    if (short != null) return '$short目标';
-    return '${weekRangeLabel(provider.selectedWeekStart)} 的目标';
   }
 
   Widget _buildGoalList(WeeklyProvider provider) {
@@ -227,6 +285,13 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
           AppSpacing.navInset,
         ),
         children: <Widget>[
+          staged(
+            SectionHeader(
+              index: 1,
+              title: '本周记事',
+              trailing: '${provider.goals.length} 条',
+            ),
+          ),
           for (final (int i, WeeklyGoal goal) in provider.goals.indexed)
             staged(_buildGoalRow(context, i, goal, provider)),
         ],
@@ -283,7 +348,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       onDismissed: (_) => provider.deleteGoal(goal.id),
       child: PaperCard(
         tone: PaperTone.row,
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 17),
         tint: goal.isCompleted ? AppColors.success : null,
         // 点击整行进编辑；勾选与挪周是行内的独立按钮
         onTap: () => _showEditSheet(context, goal),

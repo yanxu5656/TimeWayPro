@@ -215,7 +215,7 @@ Future<void> pumpSeededApp(
   // getApplicationDocumentsDirectory()。未 mock 时这一步直接抛
   // MissingPluginException（被 _saveData 吞掉），看似无害——但配合下面的
   // 真实 IO 说明就有问题了。
-  _mockPathProvider();
+  installPathProviderMock();
 
   await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -233,13 +233,33 @@ Future<void> pumpSeededApp(
 
 Directory? _tempDir;
 
-void _mockPathProvider() {
-  _tempDir ??= Directory.systemTemp.createTempSync('timewaypro_test');
+/// 安装 path_provider 的平台通道 mock（指向一个共享的临时目录）。
+///
+/// 除了走 [pumpSeededApp] 的 widget 测试，**直接做真实文件 IO 的
+/// 仓储级测试也必须在 setUp 里调用它**——v1.5.1 起落盘失败会向上
+/// 抛异常，没有 mock 时 setUp 的 importAll 会直接炸掉整个文件。
+///
+/// 目录放在项目 build/ 之下而不是系统 %TEMP%：build/ 随 flutter clean
+/// 一起清理，不会在 %TEMP% 里堆积几十个测试残留目录（堆积后会被
+/// 杀毒软件深扫，实测能把每次 rename/write 拖到分钟级）。
+void installPathProviderMock() {
+  _tempDir ??= _createIoTempDir();
+
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
         const MethodChannel('plugins.flutter.io/path_provider'),
         (MethodCall call) async => _tempDir!.path,
       );
+}
+
+/// build/test_io/<随机>/:项目内的 IO 沙箱。
+///
+/// 每个 isolate 一个独立子目录（并行测试互不干扰）；残留随
+/// flutter clean 一并清理，不在 tear down 里删除——并行跑时
+/// 删别人的目录会直接把别的 isolate 的写入打断。
+Directory _createIoTempDir() {
+  final String suffix = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
+  return Directory('build/test_io/io_$suffix')..createSync(recursive: true);
 }
 
 /// 让**真实的文件 IO** 有机会完成。

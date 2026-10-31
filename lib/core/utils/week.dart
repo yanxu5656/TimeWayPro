@@ -47,6 +47,24 @@ String weekRangeLabel(DateTime date) {
   return '${md(monday)} - ${md(sunday)}';
 }
 
+/// ISO 周号（第几周）。
+///
+/// 用「本周四」推算：ISO 规定第 1 周是包含第一个周四的那一周，
+/// 所以任何一天的周号都等于它所在周的周四的周号——周四落在哪一年，
+/// 周号就属于哪一年（跨年边界的 12 月底可能是 53 或 1）。
+/// 传周内任意一天都可以，内部先归一到周一。
+int isoWeekNumber(DateTime date) {
+  final DateTime monday = startOfWeek(date);
+  final DateTime thursday = DateTime(
+    monday.year,
+    monday.month,
+    monday.day + 3,
+  );
+  final DateTime jan1 = DateTime(thursday.year, 1, 1);
+  final int dayOfYear = thursday.difference(jan1).inDays + 1;
+  return (dayOfYear - 1) ~/ 7 + 1;
+}
+
 /// 某天 00:00
 DateTime startOfDay(DateTime date) =>
     DateTime(date.year, date.month, date.day);
