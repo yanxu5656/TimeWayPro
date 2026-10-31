@@ -33,11 +33,30 @@ class _CjkFont {
   static Future<void> ensureLoaded() async {
     if (_loaded) return;
     final File file = File(r'C:\Windows\Fonts\Deng.ttf');
-    if (!file.existsSync()) return;
-    final Uint8List bytes = await file.readAsBytes();
-    final FontLoader loader = FontLoader(family)
-      ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
-    await loader.load();
+    if (file.existsSync()) {
+      final Uint8List bytes = await file.readAsBytes();
+      final FontLoader loader = FontLoader(family)
+        ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
+      await loader.load();
+    }
+    // pubspec 声明的衬线字体在 test 环境不会自动加载，手动按家族装载
+    for (final MapEntry<String, List<String>> family
+        in const <String, List<String>>{
+          'Playfair': <String>[
+            'assets/fonts/PlayfairDisplay-Medium.ttf',
+            'assets/fonts/PlayfairDisplay-Bold.ttf',
+          ],
+          'NotoSerifSC': <String>[
+            'assets/fonts/NotoSerifSC-Regular.ttf',
+            'assets/fonts/NotoSerifSC-SemiBold.ttf',
+          ],
+        }.entries) {
+      final FontLoader loader = FontLoader(family.key);
+      for (final String path in family.value) {
+        loader.addFont(Future<ByteData>.value(await rootBundle.load(path)));
+      }
+      await loader.load();
+    }
     _loaded = true;
   }
 }

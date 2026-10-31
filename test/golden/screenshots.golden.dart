@@ -60,8 +60,27 @@ Future<void> _loadFont(String family, File file) async {
 ///   家族名不受影响。
 /// - 图标字体从 Flutter SDK 缓存里取，路径由 FLUTTER_ROOT 推出来
 ///   （`flutter test` 会设置这个环境变量）。
+/// pubspec 声明的字体在 flutter test 里**不会**自动加载（v1.5.0 起
+/// README 截图里的衬线一直是占位块，就是这里漏了）——手动按家族装载。
+Future<void> _loadPackagedFont(String family, List<String> assets) async {
+  final FontLoader loader = FontLoader(family);
+  for (final String path in assets) {
+    final ByteData bytes = await rootBundle.load(path);
+    loader.addFont(Future<ByteData>.value(bytes));
+  }
+  await loader.load();
+}
+
 Future<void> _loadFonts() async {
   await _loadFont('Roboto', File(r'C:\Windows\Fonts\Deng.ttf'));
+  await _loadPackagedFont('Playfair', <String>[
+    'assets/fonts/PlayfairDisplay-Medium.ttf',
+    'assets/fonts/PlayfairDisplay-Bold.ttf',
+  ]);
+  await _loadPackagedFont('NotoSerifSC', <String>[
+    'assets/fonts/NotoSerifSC-Regular.ttf',
+    'assets/fonts/NotoSerifSC-SemiBold.ttf',
+  ]);
 
   final String? flutterRoot = Platform.environment['FLUTTER_ROOT'];
   if (flutterRoot == null) {
