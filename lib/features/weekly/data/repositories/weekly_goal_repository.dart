@@ -41,6 +41,18 @@ class WeeklyGoalRepository {
     await _dbHelper.update(_table, goal.toMap(), 'id');
   }
 
+  /// 落盘一组目标的新 sortOrder，一次写盘。
+  ///
+  /// 调用方给的列表已经是排好的最终顺序（sortOrder 由调用方重编号），
+  /// 这里只负责写，不再排序。
+  Future<void> reorder(List<WeeklyGoal> goals) async {
+    await _dbHelper.updateAll(
+      _table,
+      goals.map((WeeklyGoal g) => g.toMap()).toList(),
+      'id',
+    );
+  }
+
   Future<void> delete(String id) async {
     await _dbHelper.delete(_table, 'id', id);
   }

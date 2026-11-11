@@ -5,7 +5,7 @@ import '../theme/app_theme.dart';
 /// 编号区块标题：`01 · 本周记事 ····· 3 条`。
 ///
 /// 编排精修（v1.6.0）的核心组件——给每个内容区块一个衬线序号
-/// （朱砂）、一个拉开字距的小标、一个右对齐的计数，以及可选的
+/// （陶土）、一个拉开字距的小标、一个右对齐的计数，以及可选的
 /// 下方重规线（账本区的「起笔线」，与发丝行线形成粗细节奏）。
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
@@ -40,10 +40,7 @@ class SectionHeader extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Padding(
-          padding: EdgeInsets.only(
-            top: topGap ? AppSpacing.lg : 0,
-            bottom: 6,
-          ),
+          padding: EdgeInsets.only(top: topGap ? AppSpacing.lg : 0, bottom: 6),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,

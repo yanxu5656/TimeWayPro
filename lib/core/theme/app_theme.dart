@@ -13,17 +13,17 @@ export 'app_shadows.dart';
 export 'app_spacing.dart';
 export 'app_text.dart';
 
-/// 主题装配层 —— 静白志。
+/// 主题装配层 —— 陶土暖笺。
 ///
 /// 这里只做两件事：把令牌层组装成 `ThemeData`，以及配置那些
 /// 「框架组件会自己去读」的主题入口（输入框、对话框、SnackBar 等）。
 /// 页面不通过 `Theme.of(context)` 取样式——绝大多数样式走
 /// 编译期常量，以保持 `const` 与低分配开销。
 ///
-/// 颜色的分工约定：**墨是操作色**（主按钮、选中态的文字与底），
-/// **朱砂是强调色**（焦点、选中的日期、进度、点缀）。框架组件
-/// （datePicker / slider / switch）读 colorScheme.primary = 朱砂，
-/// 显式样式的按钮走墨色。
+/// 颜色的分工约定：**陶土既是操作色也是强调色**（主按钮、选中态、
+/// 焦点、进度、刊头色带），**墨只负责文字**。整个应用只有一个彩色，
+/// 层次交给暖阴影与发丝线。SnackBar / Tooltip 仍用墨底——它们是
+/// 提示而非操作，不该跟主按钮抢同一种颜色。
 class AppTheme {
   AppTheme._();
 
@@ -45,7 +45,7 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: AppColors.background,
 
-      // 输入框：暖灰填充、无描边；聚焦时朱砂细描边（唯一的强调时刻）
+      // 输入框：暖沙填充、无描边；聚焦时陶土细描边
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceVariant,
@@ -72,11 +72,11 @@ class AppTheme {
         ),
       ),
 
-      // 主按钮是墨色的（纸色文字）；朱砂留给强调不做操作底色
+      // 主按钮整块陶土（暖白文字），与刊头色带、FAB 同色
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.textPrimary,
-          foregroundColor: AppColors.textOnInk,
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.textOnPrimary,
           disabledBackgroundColor: AppColors.inkSubtle,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
@@ -94,7 +94,7 @@ class AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.textPrimary,
+          foregroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
@@ -110,13 +110,13 @@ class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.textPrimary,
+          foregroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(
             horizontal: 28,
             vertical: AppSpacing.md,
           ),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.brLg),
-          side: const BorderSide(color: AppColors.textPrimary, width: 1.2),
+          side: const BorderSide(color: AppColors.primary, width: 1.2),
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -125,7 +125,7 @@ class AppTheme {
         ),
       ),
 
-      // 发丝线是分层的第一工具：1px 暖灰
+      // 发丝线是分层的第一工具：1px 暖沙
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
         thickness: 1,
@@ -140,9 +140,7 @@ class AppTheme {
         titleTextStyle: AppText.titleSerif.copyWith(
           color: AppColors.textPrimary,
         ),
-        contentTextStyle: AppText.body.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        contentTextStyle: AppText.body.copyWith(color: AppColors.textSecondary),
       ),
 
       snackBarTheme: SnackBarThemeData(
@@ -180,10 +178,7 @@ class AppTheme {
           color: AppColors.textPrimary,
           borderRadius: AppRadius.brSm,
         ),
-        textStyle: const TextStyle(
-          color: AppColors.textOnInk,
-          fontSize: 12,
-        ),
+        textStyle: const TextStyle(color: AppColors.textOnInk, fontSize: 12),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,

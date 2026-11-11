@@ -59,14 +59,18 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
   /// 锚点之前的周（日期选择器已限到锚点，防御左箭头连点）不出 VOL.0
   int _volNumber(String weekKey) {
     final DateTime monday = DateTime.parse(weekKey);
-    final int weeks = DateTime.utc(monday.year, monday.month, monday.day)
-        .difference(DateTime.utc(2020, 1, 6))
-        .inDays ~/ 7;
+    final int weeks =
+        DateTime.utc(
+          monday.year,
+          monday.month,
+          monday.day,
+        ).difference(DateTime.utc(2020, 1, 6)).inDays ~/
+        7;
     return weeks < 0 ? 1 : weeks + 1;
   }
 
   /// 刊头元信息行：`第 44 周 · 10/19 - 10/25 · VOL.359`
-  /// （周号朱砂，期号衬线——把原先散落的期号/日期收拢成一行）
+  /// （周号陶土，期号衬线——把原先散落的期号/日期收拢成一行）
   Widget _buildMeta(String weekKey) {
     final DateTime monday = DateTime.parse(weekKey);
     return Text.rich(
@@ -102,9 +106,12 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
     final int remainingCount = provider.total - provider.completed;
     // 与设计稿一致用短式「还剩 2 条 · 2 天」——「距周末」三字会把
     // 390dp 下的分数行挤出 2.4px 溢出（golden 抓到过）
-    final String remaining = remainingCount > 0 ? '还剩 $remainingCount 条' : '全部完成';
-    final String daysPart =
-        provider.isCurrentWeek && daysLeft > 0 ? ' · $daysLeft 天' : '';
+    final String remaining = remainingCount > 0
+        ? '还剩 $remainingCount 条'
+        : '全部完成';
+    final String daysPart = provider.isCurrentWeek && daysLeft > 0
+        ? ' · $daysLeft 天'
+        : '';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -120,8 +127,10 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
             kicker: 'WEEKLY LEDGER',
             title: '每周目标',
             meta: _buildMeta(provider.selectedWeekKey),
-            ghost:
-                '${isoWeekNumber(provider.selectedWeekStart)}'.padLeft(2, '0'),
+            ghost: '${isoWeekNumber(provider.selectedWeekStart)}'.padLeft(
+              2,
+              '0',
+            ),
           ),
 
           // 周行：衬线的「本周」+ 英文大写日期（与眉题同一套编辑语言）
@@ -146,7 +155,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                           provider.isCurrentWeek
                               ? '本周'
                               : (weekShortLabel(provider.selectedWeekStart) ??
-                                  ''),
+                                    ''),
                           style: AppText.titleSerif.copyWith(
                             fontSize: 18,
                             color: provider.isCurrentWeek
@@ -252,11 +261,10 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
             value: provider.progress,
             backgroundColor: AppColors.surfaceVariant,
             valueColor: AlwaysStoppedAnimation<Color>(
-              provider.progress >= 1.0
-                  ? AppColors.success
-                  : AppColors.primary,
+              provider.progress >= 1.0 ? AppColors.success : AppColors.primary,
             ),
-            minHeight: 3,
+            minHeight: 5,
+            borderRadius: AppRadius.brFull,
           ),
         ],
       ),
@@ -268,33 +276,40 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       return _buildEmptyState(provider);
     }
 
-    // 错峰入场：与待办页同一套写法（StaggeredEntrance 在上限之后
-    // 直接返回 child，eager 构建不产生多余动画对象）
-    var slot = 0;
-    Widget staged(Widget child) =>
-        StaggeredEntrance(index: slot++, child: child);
-
     return StaggerScope(
       // 每周页是 MainScreen 里的第 1 个 Tab
       slotIndex: 1,
-      child: ListView(
+      child: ReorderableListView.builder(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.screenH,
           0,
           AppSpacing.screenH,
           AppSpacing.navInset,
         ),
-        children: <Widget>[
-          staged(
-            SectionHeader(
-              index: 1,
-              title: '本周记事',
-              trailing: '${provider.goals.length} 条',
-            ),
+        // 分区标题不参与排序，onReorderItem 的下标不含它
+        header: StaggeredEntrance(
+          index: 0,
+          child: SectionHeader(
+            index: 1,
+            title: '本周记事',
+            trailing: '${provider.goals.length} 条',
           ),
-          for (final (int i, WeeklyGoal goal) in provider.goals.indexed)
-            staged(_buildGoalRow(context, i, goal, provider)),
-        ],
+        ),
+        // 排序只走行尾的显式把手，见 _buildDragHandle
+        buildDefaultDragHandles: false,
+        itemCount: provider.goals.length,
+        // onReorderItem 给的已经是「移除后」的落点，不用再自己减 1
+        onReorderItem: provider.reorderGoals,
+        // 错峰入场的序号直接用列表下标：builder 是懒构建，累加计数器
+        // 会随构建顺序漂移，拿不到稳定的视觉次序
+        itemBuilder: (BuildContext context, int i) {
+          final WeeklyGoal goal = provider.goals[i];
+          return StaggeredEntrance(
+            key: ValueKey<String>(goal.id),
+            index: i + 1,
+            child: _buildGoalRow(context, i, goal, provider),
+          );
+        },
       ),
     );
   }
@@ -304,18 +319,12 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          const Icon(
-            Icons.flag_outlined,
-            size: 44,
-            color: AppColors.textHint,
-          ),
+          const Icon(Icons.flag_outlined, size: 44, color: AppColors.textHint),
           const SizedBox(height: AppSpacing.md),
           const Text('暂无目标', style: AppText.titleSerif),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            provider.isCurrentWeek
-                ? '点击下方按钮，记下这周想完成什么'
-                : '这一周还没有目标，翻到其它周看看',
+            provider.isCurrentWeek ? '点击下方按钮，记下这周想完成什么' : '这一周还没有目标，翻到其它周看看',
             style: AppText.caption.copyWith(color: AppColors.textSecondary),
           ),
         ],
@@ -337,10 +346,12 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
+        // 与卡片同一份下间距，否则滑动时红底会伸进卡间的空隙
+        margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         padding: const EdgeInsets.only(right: AppSpacing.md),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: AppRadius.brCard,
         ),
         child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
       ),
@@ -348,7 +359,11 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       onDismissed: (_) => provider.deleteGoal(goal.id),
       child: PaperCard(
         tone: PaperTone.row,
-        padding: const EdgeInsets.symmetric(vertical: 17),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.cardPad,
+          vertical: 15,
+        ),
+        margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         tint: goal.isCompleted ? AppColors.success : null,
         // 点击整行进编辑；勾选与挪周是行内的独立按钮
         onTap: () => _showEditSheet(context, goal),
@@ -390,7 +405,31 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
             ),
             const SizedBox(width: AppSpacing.xs),
             _buildMoveButton(context, goal),
+            _buildDragHandle(index),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 拖拽把手：按住这一小块上下拖动改顺序。
+  ///
+  /// 不用 ReorderableListView 默认的整行长按——整行已经承担了点击编辑
+  /// 与左滑删除，再叠一个长按拖拽会让三种手势互相抢。显式把手把「排序」
+  /// 圈在这一块里，其余手势不受影响。
+  Widget _buildDragHandle(int index) {
+    return ReorderableDragStartListener(
+      index: index,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xxs),
+        child: Semantics(
+          button: true,
+          label: '拖动调整顺序',
+          child: const Icon(
+            Icons.drag_handle_rounded,
+            size: 20,
+            color: AppColors.textSecondary,
+          ),
         ),
       ),
     );

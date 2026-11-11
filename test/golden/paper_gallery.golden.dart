@@ -84,10 +84,7 @@ Widget _contrastCard(PaperTone tone) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          'tone: ${tone.name}',
-          style: _t(AppText.label, AppColors.primary),
-        ),
+        Text('tone: ${tone.name}', style: _t(AppText.label, AppColors.primary)),
         const SizedBox(height: AppSpacing.xs),
         for (final (String text, TextStyle style, Color color) in rows)
           Padding(
@@ -175,7 +172,10 @@ Widget _gallery() {
                   ),
                   Text(
                     '1/3',
-                    style: _t(AppText.serifNum.copyWith(fontSize: 28), AppColors.textPrimary),
+                    style: _t(
+                      AppText.serifNum.copyWith(fontSize: 28),
+                      AppColors.textPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -230,9 +230,13 @@ Widget _gallery() {
                   child: _periodChip('上午', Icons.wb_sunny_outlined, false),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _periodChip('下午', Icons.wb_cloudy_outlined, true)),
+                Expanded(
+                  child: _periodChip('下午', Icons.wb_cloudy_outlined, true),
+                ),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _periodChip('晚上', Icons.nights_stay_outlined, false)),
+                Expanded(
+                  child: _periodChip('晚上', Icons.nights_stay_outlined, false),
+                ),
               ],
             ),
 
@@ -285,10 +289,7 @@ Widget _gallery() {
                         child: Center(
                           child: Text(
                             '空',
-                            style: _t(
-                              AppText.labelSm,
-                              AppColors.textPrimary,
-                            ),
+                            style: _t(AppText.labelSm, AppColors.textPrimary),
                           ),
                         ),
                       ),
@@ -387,14 +388,7 @@ void main() {
     await tester.pump();
     await tester.pump(); // 等 MainScreen 回填导航栏高度
 
-    const List<String> labels = <String>[
-      '待办',
-      '每周',
-      '任务',
-      '统计',
-      '规划',
-      '设置',
-    ];
+    const List<String> labels = <String>['待办', '每周', '任务', '统计', '规划', '设置'];
     for (int i = 0; i < labels.length; i++) {
       if (i > 0) {
         await tester.tap(find.text(labels[i]));

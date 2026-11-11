@@ -76,7 +76,10 @@ class _DailyScreenState extends State<DailyScreen> {
                   letterSpacing: 0.4,
                 ),
                 children: <InlineSpan>[
-                  TextSpan(text: '${provider.selectedDate.year} 年 ${provider.selectedDate.month} 月 · '),
+                  TextSpan(
+                    text:
+                        '${provider.selectedDate.year} 年 ${provider.selectedDate.month} 月 · ',
+                  ),
                   const TextSpan(text: '第 '),
                   TextSpan(
                     text: '${isoWeekNumber(provider.selectedDate)}',
@@ -101,7 +104,7 @@ class _DailyScreenState extends State<DailyScreen> {
           ),
           const SizedBox(height: AppSpacing.xs),
 
-          // 日期行：衬线日期 + 两侧箭头，今天用朱砂标注
+          // 日期行：衬线日期 + 两侧箭头，今天用陶土标注
           Row(
             children: [
               _buildDateButton(
@@ -148,7 +151,7 @@ class _DailyScreenState extends State<DailyScreen> {
             ],
           ),
 
-          // 进度：48px 衬线大分数 + 右侧两行小注 + 细墨条
+          // 进度：48px 衬线大分数 + 右侧两行小注 + 陶土粗条
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -207,11 +210,10 @@ class _DailyScreenState extends State<DailyScreen> {
             value: provider.progress,
             backgroundColor: AppColors.surfaceVariant,
             valueColor: AlwaysStoppedAnimation<Color>(
-              provider.progress >= 1.0
-                  ? AppColors.success
-                  : AppColors.primary,
+              provider.progress >= 1.0 ? AppColors.success : AppColors.primary,
             ),
-            minHeight: 3,
+            minHeight: 5,
+            borderRadius: AppRadius.brFull,
           ),
         ],
       ),
@@ -346,10 +348,12 @@ class _DailyScreenState extends State<DailyScreen> {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
+        // 与卡片同一份下间距，否则滑动时红底会伸进卡间的空隙
+        margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: AppRadius.brCard,
         ),
         child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
       ),
@@ -376,10 +380,14 @@ class _DailyScreenState extends State<DailyScreen> {
       onDismissed: (direction) {
         provider.deleteTask(task.id);
       },
-      // 账本行：透明底 + 下缘发丝线，完成的行左缘加朱砂着重线
+      // 列表项卡：暖白底 + 两层暖阴影，完成的行整圈换 success 细描边
       child: PaperCard(
         tone: PaperTone.row,
-        padding: const EdgeInsets.symmetric(vertical: 17),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.cardPad,
+          vertical: 15,
+        ),
+        margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         tint: task.isCompleted ? AppColors.success : null,
         onTap: () => provider.toggleComplete(task.id),
         onLongPress: () => _showEditDialog(context, task, provider),

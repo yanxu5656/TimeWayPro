@@ -55,19 +55,14 @@ String weekRangeLabel(DateTime date) {
 /// 传周内任意一天都可以，内部先归一到周一。
 int isoWeekNumber(DateTime date) {
   final DateTime monday = startOfWeek(date);
-  final DateTime thursday = DateTime(
-    monday.year,
-    monday.month,
-    monday.day + 3,
-  );
+  final DateTime thursday = DateTime(monday.year, monday.month, monday.day + 3);
   final DateTime jan1 = DateTime(thursday.year, 1, 1);
   final int dayOfYear = thursday.difference(jan1).inDays + 1;
   return (dayOfYear - 1) ~/ 7 + 1;
 }
 
 /// 某天 00:00
-DateTime startOfDay(DateTime date) =>
-    DateTime(date.year, date.month, date.day);
+DateTime startOfDay(DateTime date) => DateTime(date.year, date.month, date.day);
 
 /// 次日 00:00 —— 与 [startOfDay] 一起构成**半开区间** `[start, end)`
 ///

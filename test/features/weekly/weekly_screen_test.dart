@@ -28,11 +28,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  WeeklyProvider providerOf(WidgetTester tester) =>
-      Provider.of<WeeklyProvider>(
-        tester.element(find.text('每周目标')),
-        listen: false,
-      );
+  WeeklyProvider providerOf(WidgetTester tester) => Provider.of<WeeklyProvider>(
+    tester.element(find.text('每周目标')),
+    listen: false,
+  );
 
   // 放在文件第一位：这个用例直接 pumpSeededApp 走真实 IO，而排在
   // 其它带 tapAndFlush 写盘的用例之后时，会等它们在写队列里的尾巴
@@ -126,11 +125,7 @@ void main() {
     await tapAndFlush(tester, find.text('下周'));
 
     expect(find.text('挪到其他周'), findsNothing, reason: '挪完应关闭面板');
-    expect(
-      find.text('本周目标 1'),
-      findsNothing,
-      reason: '目标已不属于本周，应从当前视图消失',
-    );
+    expect(find.text('本周目标 1'), findsNothing, reason: '目标已不属于本周，应从当前视图消失');
 
     // 翻到下周：目标在那儿，且排在已有内容之后（下周原本为空，队尾即唯一）
     await tester.tap(find.byIcon(Icons.chevron_right_rounded));
@@ -142,17 +137,11 @@ void main() {
     await openWeeklyTab(tester);
 
     // 勾选第 3 条（w2 未完成 → 完成）
-    await tapAndFlush(
-      tester,
-      find.byType(InkCheckCircle).at(2),
-    );
+    await tapAndFlush(tester, find.byType(InkCheckCircle).at(2));
     expect(providerOf(tester).completed, 2, reason: 'w0 + w2 已完成');
 
     // 左滑第 3 条删除 → 确认对话框 → 删除
-    await tester.drag(
-      find.text('本周目标 2'),
-      const Offset(-400, 0),
-    );
+    await tester.drag(find.text('本周目标 2'), const Offset(-400, 0));
     await tester.pumpAndSettle();
     expect(find.text('删除目标'), findsOneWidget);
     await tapAndFlush(tester, find.text('删除'));
@@ -160,5 +149,4 @@ void main() {
     expect(find.text('本周目标 2'), findsNothing);
     expect(providerOf(tester).total, 2);
   });
-
 }

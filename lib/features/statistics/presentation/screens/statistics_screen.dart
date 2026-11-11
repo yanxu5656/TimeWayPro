@@ -741,9 +741,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       case 1: // 周
         return DateTimeRange(
           start: startOfWeek(_selectedDate),
-          end: nextDayStart(startOfWeek(_selectedDate).add(
-            const Duration(days: 6),
-          )),
+          end: nextDayStart(
+            startOfWeek(_selectedDate).add(const Duration(days: 6)),
+          ),
         );
       case 2: // 月
         return DateTimeRange(

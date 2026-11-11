@@ -1,10 +1,9 @@
 import 'package:flutter/painting.dart';
 
-/// 圆角 token —— 静白志。
+/// 圆角 token —— 陶土暖笺。
 ///
-/// 编辑风的圆角整体收紧：层次靠细线，不靠大圆角。只有「浮起」的
-/// 东西（弹窗、输入框、按钮）保有明显圆角，长在纸面上的内容
-/// （账本行、分区）是直角的。
+/// 卡片回到主表面之后，圆角整体放宽：暖白卡用 [card] 16，控件跟着
+/// 松一档。编辑风的直角只在卡内发丝线上保留。
 ///
 /// ## 按控件角色分档（改圆角前先看这里）
 ///
@@ -12,23 +11,24 @@ import 'package:flutter/painting.dart';
 /// |---|---|---|
 /// | 纯图标按钮 | 圆形 | 日期箭头、完成勾选、开始/停止 |
 /// | 浮动主按钮 | [full] 胶囊 | FAB、主按钮 |
-/// | 小控件 | [md] 8 | chip、小标签、热力图格子 |
-/// | 浮起块 | [lg] 12 | 输入框、白底浮起卡 |
+/// | 小控件 | [md] 10 | chip、小标签、热力图格子 |
+/// | 浮起块 | [lg] 12 | 输入框、卡内嵌套块 |
 /// | 对话框 | [xl] 14 | `app_theme.dart` 的 `dialogTheme` |
+/// | 内容卡片 | [card] 16 | 账本行卡、分区卡、刊头色带 |
 /// | 底部弹窗顶角 | [sheet] 16 | |
 class AppRadius {
   AppRadius._();
 
   /// 进度条裁剪、把手细条
-  static const double xs = 2;
+  static const double xs = 3;
 
   /// 标签、小徽标
-  static const double sm = 4;
+  static const double sm = 6;
 
   /// chip、热力图格子
-  static const double md = 8;
+  static const double md = 10;
 
-  /// 输入框、白底浮起卡
+  /// 输入框、卡内嵌套块
   static const double lg = 12;
 
   /// 对话框（`app_theme.dart` 的 `dialogTheme`）
@@ -36,6 +36,10 @@ class AppRadius {
 
   /// 底部弹窗顶角
   static const double sheet = 16;
+
+  /// 内容卡片。与 [sheet] 同值但语义不同：一个是页面上的卡，
+  /// 一个是弹层顶角，各自演进时不会互相牵动
+  static const double card = 16;
 
   /// 胶囊 / 圆形
   static const double full = 999;
@@ -51,6 +55,7 @@ class AppRadius {
   static const BorderRadius brMd = BorderRadius.all(Radius.circular(md));
   static const BorderRadius brLg = BorderRadius.all(Radius.circular(lg));
   static const BorderRadius brXl = BorderRadius.all(Radius.circular(xl));
+  static const BorderRadius brCard = BorderRadius.all(Radius.circular(card));
   static const BorderRadius brFull = BorderRadius.all(Radius.circular(full));
 
   /// 底部弹窗 / 底部导航的顶角

@@ -59,11 +59,7 @@ void main() {
   testWidgets('选中色可覆盖', (tester) async {
     await tester.pumpWidget(
       _host(
-        InkCheckCircle(
-          isChecked: true,
-          onTap: () {},
-          color: AppColors.primary,
-        ),
+        InkCheckCircle(isChecked: true, onTap: () {}, color: AppColors.primary),
       ),
     );
 

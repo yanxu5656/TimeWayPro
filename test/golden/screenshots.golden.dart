@@ -132,6 +132,10 @@ void main() {
     // 错峰入场要停掉（tier=reduced），否则同一份代码每次出图都不一样
     UiEffects.resetForTesting();
     UiEffects.tier.value = UiEffectTier.reduced;
+    // flutter_test 默认把阴影画成硬边灰板。1.7.0 起账本行卡默认带 e1，
+    // 不关掉这个开关每张截图的卡片下面都会拖着一块灰砖。
+    // 必须在测试体结束前复位——binding 的不变量检查跑在 tearDown 之前。
+    debugDisableShadows = false;
 
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -167,6 +171,7 @@ void main() {
     }
 
     expect(tester.takeException(), isNull);
+    debugDisableShadows = true;
   });
 
   testWidgets('弹窗截图', (WidgetTester tester) async {

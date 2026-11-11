@@ -64,17 +64,30 @@ void main() {
     // 统计页就漏过一次（仍是 EdgeInsets.all(20)）。
     await pumpSeededApp(tester);
 
-    for (final String label in const <String>['待办', '每周', '任务', '统计', '规划', '设置']) {
+    for (final String label in const <String>[
+      '待办',
+      '每周',
+      '任务',
+      '统计',
+      '规划',
+      '设置',
+    ]) {
       if (label != '待办') {
         await switchToTab(tester, label);
       }
 
-      final Finder lists = find.byType(ListView);
+      // 每周页换成了 ReorderableListView（内部是 CustomScrollView，不是
+      // ListView），只找 ListView 会让这一页静默地漏检
+      final Finder lists = find.byWidgetPredicate(
+        (Widget w) => w is ListView || w is ReorderableListView,
+      );
       expect(lists, findsWidgets, reason: '「$label」应有可滚动列表');
 
       for (final Element element in lists.evaluate()) {
-        final EdgeInsetsGeometry? padding =
-            (element.widget as ListView).padding;
+        final Widget widget = element.widget;
+        final EdgeInsetsGeometry? padding = widget is ListView
+            ? widget.padding
+            : (widget as ReorderableListView).padding;
         expect(padding, isNotNull, reason: '「$label」的列表应显式设置 padding');
         final EdgeInsets? resolved =
             padding!.resolve(TextDirection.ltr) as EdgeInsets?;
@@ -128,7 +141,14 @@ void main() {
     // 观感上就是「有的卡圆一点有的方一点」。
     await pumpSeededApp(tester);
 
-    for (final String label in const <String>['待办', '每周', '任务', '统计', '规划', '设置']) {
+    for (final String label in const <String>[
+      '待办',
+      '每周',
+      '任务',
+      '统计',
+      '规划',
+      '设置',
+    ]) {
       if (label != '待办') await switchToTab(tester, label);
 
       for (final Element element in find.byType(PaperCard).evaluate()) {
@@ -145,8 +165,14 @@ void main() {
     await pumpSeededApp(tester, size: const Size(320, 640));
 
     expect(tester.takeException(), isNull);
-    for (final String label
-        in const <String>['待办', '每周', '任务', '统计', '规划', '设置']) {
+    for (final String label in const <String>[
+      '待办',
+      '每周',
+      '任务',
+      '统计',
+      '规划',
+      '设置',
+    ]) {
       expect(find.text(label), findsOneWidget);
     }
   });

@@ -56,6 +56,9 @@ class PaperScaffold extends StatelessWidget {
   Widget _withNavBarInset(BuildContext context, Widget fab) {
     final double inset = NavBarInset.of(context);
     if (inset <= 0) return fab;
-    return Padding(padding: EdgeInsets.only(bottom: inset), child: fab);
+    return Padding(
+      padding: EdgeInsets.only(bottom: inset),
+      child: fab,
+    );
   }
 }

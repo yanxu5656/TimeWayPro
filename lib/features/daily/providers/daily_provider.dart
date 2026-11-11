@@ -45,11 +45,13 @@ class DailyProvider extends ChangeNotifier {
 
   // 前一天 / 后一天：构造函数日运算（±Duration 是绝对时间运算，
   // DST 切换日会差一小时），DateTime(y, m, d±n) 自动处理跨月跨年
-  void previousDay() =>
-      setDate(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day - 1));
+  void previousDay() => setDate(
+    DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day - 1),
+  );
 
-  void nextDay() =>
-      setDate(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1));
+  void nextDay() => setDate(
+    DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1),
+  );
 
   // 回到今天
   void goToToday() => setDate(DateTime.now());

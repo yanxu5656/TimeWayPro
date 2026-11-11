@@ -4,37 +4,43 @@ import '../theme/app_theme.dart';
 
 /// 表面档位。
 ///
-/// 静白志的分层工具是**细线**而不是底色：长在纸面上的内容用 [flat]/
-/// [ruled]，只有真正浮起的东西（弹窗内块、状态卡）用 [raised] 白底。
+/// 陶土暖笺把分层工具从「细线」换回**卡片**，但不是所有卡都浮起来：
+/// 同屏阴影数量要克制，所以只有列表项带阴影，大容器用描边卡。
 enum PaperTone {
-  /// 透明、无线——页面里的裸容器。分隔线由页面统一画
+  /// 透明、无线——卡内的裸容器（新建页的时段/类型选择行）
   flat,
 
-  /// 透明底 + 上下发丝线。独立分区（表格式的块）
+  /// 分区卡：暖白底 + 发丝描边 + 圆角，**不带阴影**。
+  /// 统计页的图表块、设置页的分组这类大容器用它——安静地圈出范围，
+  /// 不与里面的列表项抢体量
   ruled,
 
-  /// 账本行：透明底 + **仅下缘**发丝线（相邻行不会出现双线），
-  /// [tint] 非空时左缘加着重线
+  /// 列表项卡：暖白底 + 圆角 + 两层暖阴影。账本行（待办 / 每周目标 /
+  /// 任务）用它，是页面上真正「浮起」的东西。相邻项之间的间距由
+  /// 调用方用 `margin` 给出
   row,
 
-  /// 纯白底 + 微影 + 圆角。浮起表面：弹窗内块、同步状态卡
+  /// 卡内嵌套块：暖沙底 + 发丝描边 + 小一档圆角，不带阴影。
+  /// 嵌在分区卡里的状态卡用它——再叠一层阴影会糊
   raised,
 }
 
-/// 纸面卡片。
+/// 暖白卡片。
 ///
-/// 三种表面档位见 [PaperTone]。与玻璃版的对应关系：
-/// subtle → flat、regular → ruled、strong → raised。
+/// 四种表面档位见 [PaperTone]。与「静白志」的对应关系：flat 不变、
+/// ruled 从「上下发丝线」变成描边卡、row 从「下缘发丝线」变成浮起卡、
+/// raised 从纯白浮起块变成卡内嵌套块。
 ///
-/// [tint] 是强调态（计时进行中）：raised 档换该色细描边 + 极浅填充；
-/// ruled / flat 档在左缘加一条 2.5px 该色竖线（账本行的「着重线」）。
+/// [tint] 是强调态（已完成 / 计时进行中）：所有卡片档位统一换成该色
+/// 细描边 + 极浅填充。**不用左缘竖线**——BoxDecoration 的 borderRadius
+/// 不能与非均匀 Border 同用，圆角卡上的着重线只能靠整圈描边表达。
 class PaperCard extends StatelessWidget {
   const PaperCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(AppSpacing.cardPad),
     this.margin = EdgeInsets.zero,
-    this.radius = AppRadius.lg,
+    this.radius = AppRadius.card,
     this.tone = PaperTone.ruled,
     this.fill,
     this.tint,
@@ -50,7 +56,7 @@ class PaperCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
 
-  /// 仅 [PaperTone.raised] 生效
+  /// 除 [PaperTone.flat] 外都生效
   final double radius;
 
   final PaperTone tone;
@@ -58,13 +64,13 @@ class PaperCard extends StatelessWidget {
   /// 直接指定填充色，覆盖 [tone] 派生的值
   final Color? fill;
 
-  /// 强调色（计时进行中 = success）
+  /// 强调色（已完成 / 计时进行中 = success）
   final Color? tint;
 
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
-  /// 覆盖默认阴影（仅 raised 档）
+  /// 覆盖默认阴影（仅 row 档有默认阴影）
   final List<BoxShadow>? shadows;
 
   /// 仅在值会变化的卡片上开（计时状态切换），静止卡片保持普通 Container
@@ -72,47 +78,26 @@ class PaperCard extends StatelessWidget {
 
   final String? semanticLabel;
 
-  BorderSide get _hairSide => const BorderSide(color: AppColors.divider);
-
   BoxDecoration _decoration() {
-    final BorderSide accent = BorderSide(
-      color: tint ?? Colors.transparent,
-      // 无 tint 时宽度归零：透明边也占布局空间
-      width: tint == null ? 0 : 2.5,
-    );
-    switch (tone) {
-      case PaperTone.flat:
-        return BoxDecoration(
-          color: tint?.withValues(alpha: 0.04),
-        );
-      case PaperTone.row:
-        return BoxDecoration(
-          color: fill,
-          border: Border(
-            bottom: _hairSide,
-            left: accent,
-          ),
-        );
-      case PaperTone.ruled:
-        // 无圆角，非均匀 Border 合法（与 borderRadius 同用才会断言失败）
-        return BoxDecoration(
-          color: fill,
-          border: Border(
-            top: _hairSide,
-            bottom: _hairSide,
-            left: accent,
-          ),
-        );
-      case PaperTone.raised:
-        return BoxDecoration(
-          color: fill ?? AppColors.surface,
-          borderRadius: BorderRadius.circular(radius),
-          border: tint != null
-              ? Border.all(color: tint!.withValues(alpha: 0.55), width: 1.2)
-              : null,
-          boxShadow: shadows ?? AppShadows.e1,
-        );
+    if (tone == PaperTone.flat) {
+      return BoxDecoration(color: tint?.withValues(alpha: 0.05));
     }
+
+    final bool nested = tone == PaperTone.raised;
+    final Color base =
+        fill ?? (nested ? AppColors.surfaceVariant : AppColors.surface);
+    final Border border = tint != null
+        ? Border.all(color: tint!.withValues(alpha: 0.55), width: 1.4)
+        : Border.all(color: AppColors.divider);
+
+    return BoxDecoration(
+      color: tint == null
+          ? base
+          : Color.alphaBlend(tint!.withValues(alpha: 0.05), base),
+      borderRadius: BorderRadius.circular(nested ? AppRadius.lg : radius),
+      border: border,
+      boxShadow: tone == PaperTone.row ? (shadows ?? AppShadows.e1) : null,
+    );
   }
 
   @override
@@ -135,7 +120,9 @@ class PaperCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           onLongPress: onLongPress,
-          borderRadius: BorderRadius.circular(radius),
+          borderRadius: BorderRadius.circular(
+            tone == PaperTone.raised ? AppRadius.lg : radius,
+          ),
           splashColor: AppColors.inkSubtle,
           highlightColor: AppColors.inkFaint,
           child: surface,

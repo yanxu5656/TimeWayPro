@@ -11,8 +11,8 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.6.0-00BFA5)](#版本迭代)
-[![Release](https://img.shields.io/badge/Release-下载安装包-00BFA5?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
+[![Version](https://img.shields.io/badge/Version-1.7.0-A84E2B)](#版本迭代)
+[![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
   <img src="docs/screenshots/daily.webp" width="180" alt="每日待办">
@@ -34,7 +34,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 与常见的待办清单不同，时途不满足于「打勾」，而是记录**每件事真实消耗了多少时间** —— 这些记录会沉淀为热力图、饼图和任务明细，让「我很忙」变成「我忙在了这件事上，一共 3 小时 20 分」。
 
-界面在 1.5.0 重做为**静白志**（纸白编辑排版风）：纸白底、墨色文字、朱砂一笔，细线分层、衬线数字当主角。设计取舍写在下面的[设计系统](#设计系统)一节。
+界面在 1.7.0 换为**陶土暖笺**：暖纸底、墨色文字、陶土一笔，圆角卡片当主表面、衬线数字当主角。设计取舍写在下面的[设计系统](#设计系统)一节。
 
 ---
 
@@ -92,6 +92,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 - **任意周访问** —— 左右箭头翻周、直接选日期跳周，翻走后一键「回到本周」；旧周数据完整可回看
 - **提前规划下周** —— 翻到任意周后添加，目标就落在那一周
 - **快捷挪周** —— 每条目标行尾的挪动按钮打开快捷面板：上周 / 本周 / 下周 / 下下周（各带日期区间）一键挪，更远的周走日期选择器；挪动排在目标周队尾，不动它原有的顺序
+- **拖拽排序** —— 按住每条行尾的把手上下拖动即可改顺序，顺序立即落盘；点击编辑与左滑删除不受影响
 - **勾选进度** —— 逐条勾选，概览进度条实时显示完成度，满额变绿
 
 ### ☁️ 数据同步与备份
@@ -108,6 +109,28 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.7.0 — 陶土暖笺 + 每周拖拽排序
+*2026-11-11*
+
+**动机**：静白志的排版骨架是对的，但纸白 + 墨 + 朱砂偏冷、偏「文档」，日常用少了点温度。对比四个方向后选定**陶土暖笺**——保留编辑排版与衬线数字，把材料换成暖纸与陶土，并把分层语言从「发丝线」改回「圆角卡片」。
+
+**配色与表面**
+
+- **暖纸底 `#F6EDE3` + 墨字 `#2E2119` + 陶土 `#A84E2B`**：陶土既是操作色也是强调色（按钮 / 选中态 / 刊头色带 / 进度条），墨只负责文字
+- **卡片重新成为主表面**：`PaperCard` 四档——`row`（暖白卡 + 16px 圆角 + 微影，列表行默认）、`ruled`（细线分区）、`raised`（浅陶土底，嵌套块）、`flat`（透明）。同屏只有 `row` 带阴影，避免影子糊成一片
+- **刊头改实色陶土色带**：页面内缩的圆角色带，水印数字改暖白描边；页面写死的纸面语义色由 `_RecolorMeta` 统一重映射到色带上的可读色，六页文案不用改
+- **圆角放宽**：`xs 3 / sm 6 / md 10 / lg 12 / xl 14 / sheet 16`，新增 `card 16` 与 `full`
+- **对比度守住 AA**：`textPrimary` 13.5:1、`textSecondary` 5.5:1、`primary` 4.8:1、色带上文字 5.3:1。两处主动偏离设计稿：`success` 加深到 `#5C6B39`（原稿 3.8:1 不够小字用），色带次要文字用 92% 暖白（原稿 78% 不过 AA）
+
+**每周目标拖拽排序**
+
+- 每条行尾一个显式把手，按住上下拖动改顺序。不用整行长按——整行已经承担点击编辑与左滑删除，三种手势会互相抢
+- 整周 `sort_order` 重编号成 `0..n-1`，队尾追加取的 `max+1` 不会与现存值撞车
+- `DatabaseHelper.updateAll` 批量写：拖一次只落盘一次，而不是 N 条目标排 N 次全库写盘
+- 乐观更新，不走 `loadGoals`——否则拖完的瞬间整张列表会被加载圈替换
+
+**版本号防漂移**：设置页读的是 `AppConstants.appVersion`，它曾停在 1.3.3 而 pubspec 已到 1.6.0。两处同步到 1.7.0，并加 `test/core/constants/app_version_test.dart` 守护二者一致。
 
 ### v1.6.0 — 编排精修
 *2026-10-31*
@@ -318,16 +341,16 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 ## 设计系统
 
-1.3.0 把散落的样式收敛成令牌 + 组件，1.5.0 在同一套骨架上把视觉语言整体换血为「静白志」——纸、墨、朱砂三种材料，层次靠**发丝线与排版**表达，不再有模糊与渐变。
+1.3.0 把散落的样式收敛成令牌 + 组件，1.5.0 在同一套骨架上把视觉语言整体换血为「静白志」（纸、墨、朱砂），1.7.0 再换成「陶土暖笺」——暖纸、墨、陶土三种材料，层次靠**圆角卡片与排版**表达，不再有模糊与渐变。
 
 ### 令牌
 
 | 类别 | 位置 | 说明 |
 | --- | --- | --- |
-| 颜色 | `lib/core/theme/app_colors.dart` | 纸 `#FAF7F1` / 墨 `#1D1A14` / 朱砂 `#C5402C` + 墨色系图表色板 |
-| 圆角 | `lib/core/theme/app_radius.dart` | `xs 2` / `sm 4` / `md 8` / `lg 12` / `xl 14` / `sheet 16`（整体收紧，长在纸面上的内容是直角的） |
+| 颜色 | `lib/core/theme/app_colors.dart` | 暖纸 `#F6EDE3` / 墨 `#2E2119` / 陶土 `#A84E2B` + 暖色系图表色板 |
+| 圆角 | `lib/core/theme/app_radius.dart` | `xs 3` / `sm 6` / `md 10` / `lg 12` / `xl 14` / `sheet 16` + `card 16` / `full` |
 | 间距 | `lib/core/theme/app_spacing.dart` | 4pt 网格 + 语义常量（`screenH` / `cardPad` / `navInset`） |
-| 阴影 | `lib/core/theme/app_shadows.dart` | 只有 `e1`（浮起块）/ `e2`（弹窗、FAB）两档微影 |
+| 阴影 | `lib/core/theme/app_shadows.dart` | 只有 `e1`（账本行卡）/ `e2`（弹窗、FAB）两档微影 |
 | 文字 | `lib/core/theme/app_text.dart` | 15 档 M3 槽位 + 衬线组（`masthead` / `titleSerif` / `bodySerif` / `serifNum` / `kicker`）+ 补充组 |
 
 令牌全部是编译期常量，页面不通过 `Theme.of(context)` 取样式——这样绝大多数样式能保持 `const`。
@@ -345,25 +368,26 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 ### 纸面的对比度约束
 
-底色恒为纸白（亮度约 0.94），对比度比玻璃时代宽裕得多，但仍有一条硬规则由测试守护（`test/core/theme/tokens_test.dart`）：
+底色恒为暖纸（亮度约 0.87），对比度比玻璃时代宽裕得多，但仍有一条硬规则由测试守护（`test/core/theme/tokens_test.dart`）：
 
 | 前景色 | 对比度 | 结论 |
 | --- | --- | --- |
-| 墨 `textPrimary` | ≈ 16.1:1 | AAA |
-| `textSecondary` | ≈ 5.3:1 | AA |
+| 墨 `textPrimary` | ≈ 13.5:1 | AAA |
+| `textSecondary` | ≈ 5.5:1 | AA |
 | `textHint` | ≈ 2.7:1 | 仅限 ≥18px 或纯装饰，**不得用于承载语义的小字** |
-| 朱砂 `primary` | ≈ 4.8:1 | AA，可作文字色；其上文字用纸色 |
+| 陶土 `primary` | ≈ 4.8:1 | AA，可作文字色；其上文字用暖白 |
+| 色带上 `textOnPrimary` | ≈ 5.3:1 | AA |
 
-### 分层语言：细线，不是底色
+### 分层语言：卡片，不是双线
 
-组件只有三种表面：**flat**（透明裸容器）、**ruled**（上下发丝线的分区）、**raised**（纯白 + 微影，仅弹窗块与状态卡）。滚动列表里一律是「账本行」（row 档：仅下缘发丝线，强调态在左缘加 2.5px 着重线）——相邻行不会出现双线。
+组件有四种表面：**flat**（透明裸容器）、**ruled**（细线分区）、**raised**（浅陶土底 + 12px 圆角，嵌套块）、**row**（暖白卡 + 16px 圆角 + `e1` 微影）。滚动列表里一律是「账本行」（row 档），强调态用 1.4px 同色描边整圈勾出——`BoxDecoration` 的圆角与非均匀 `Border` 不能共存，所以左缘着重线那套做法在卡片语言下不再适用。同屏只有 row 档带阴影。
 
 ### 编排精修（v1.6.0）
 
 1.6.0 在静白志骨架上做了一轮纯排版升级，解决「素」与「排布不优雅」：
 
-- **刊头水印**：右上角当周周号 / 当日日期的 132px 描边空心数字（墨色 13%），被铅线裁切——印刷品的裁切感
-- **元信息行**：期号 / 年月 / 周号 / 计数收拢成标题下一行间隔号分节的 meta，关键数字朱砂
+- **刊头水印**：右上角当周周号 / 当日日期的巨号描边空心数字，被铅线裁切——印刷品的裁切感（1.6.0 是 132px 墨色 13%；1.7.0 改 104px 暖白描边，底边收在标题行内以免压到 meta 小字）
+- **元信息行**：期号 / 年月 / 周号 / 计数收拢成标题下一行间隔号分节的 meta，关键数字用强调色
 - **编号区块**：衬线序号（`01`）+ 拉字距小标 + 右对齐计数，下缘重规线与发丝行线形成粗细节奏
 - **大分数**：每周 64px / 待办 48px / 任务统计条 30px 的衬线数字是各页主角，右侧两行小注
 - **周行日期用英文大写**（`OCT 19 — OCT 25`），与眉题同一套编辑语言；`isoWeekNumber` 按 ISO 规则（周四定年定周）计算并有跨年测试
@@ -448,20 +472,20 @@ flutter run
 flutter build apk --release
 # 产物：build/app/outputs/flutter-apk/app-release.apk
 # 发布到 Releases 时复制一份带版本号的，方便区分：
-#   cp .../app-release.apk .../app-release-1.6.0.apk
+#   cp .../app-release.apk .../app-release-1.7.0.apk
 ```
 
 ### 测试
 
 ```bash
 flutter analyze          # 当前基线：0 error / 0 warning
-flutter test             # 164 个测试
+flutter test             # 183 个测试
 ```
 
 另有三类不在默认 test run 里的 golden（文件名不以 `_test.dart` 结尾，避免像素跨平台漂移影响别人的机器）：
 
 ```bash
-# 纸面设计系统（静白志）的视觉探针 + 各 Tab 截图（后者用于生成本文档的配图）
+# 纸面设计系统（陶土暖笺）的视觉探针 + 各 Tab 截图（后者用于生成本文档的配图）
 flutter test test/golden/paper_gallery.golden.dart --update-goldens
 flutter test test/golden/app_with_data.golden.dart --update-goldens
 flutter test test/golden/screenshots.golden.dart --update-goldens

@@ -38,11 +38,13 @@ class _PlanningScreenState extends State<PlanningScreen> {
               walk(child);
             }
           }
+
           for (final root in rootPlans) {
             walk(root);
           }
-          final int avgProgress =
-              total > 0 ? (progressSum / total * 100).round() : 0;
+          final int avgProgress = total > 0
+              ? (progressSum / total * 100).round()
+              : 0;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -83,8 +85,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
                 topGap: false,
               ),
               const SizedBox(height: AppSpacing.sm),
-              ...rootPlans
-                  .map((plan) => _buildPlanTree(plan, provider, 0)),
+              ...rootPlans.map((plan) => _buildPlanTree(plan, provider, 0)),
             ],
           );
         },
@@ -224,7 +225,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
               borderRadius: BorderRadius.circular(AppRadius.xs),
               child: LinearProgressIndicator(
                 value: plan.progress,
-                backgroundColor: AppColors.background,
+                backgroundColor: AppColors.surfaceVariant,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   _getProgressColor(plan.progress),
                 ),

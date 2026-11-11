@@ -90,9 +90,7 @@ Future<T?> showPaperSheet<T>(
     isScrollControlled: isScrollControlled,
     backgroundColor: Colors.transparent,
     barrierColor: AppColors.scrim,
-    builder: (BuildContext ctx) => PaperSheet(
-      showHandle: showHandle,
-      child: builder(ctx),
-    ),
+    builder: (BuildContext ctx) =>
+        PaperSheet(showHandle: showHandle, child: builder(ctx)),
   );
 }

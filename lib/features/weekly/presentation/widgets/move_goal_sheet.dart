@@ -48,7 +48,7 @@ class _MoveGoalSheet extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: AppSpacing.lg),
-        // 编号账本行（01–04）：行线分节，序号衬线朱砂
+        // 编号账本行（01–04）：行线分节，序号衬线陶土
         for (final (int i, int offset) in _quickOffsets.indexed)
           _buildWeekOption(
             context,
@@ -73,7 +73,11 @@ class _MoveGoalSheet extends StatelessWidget {
 
     return PaperCard(
       tone: PaperTone.row,
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.cardPad,
+        vertical: 13,
+      ),
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       // 当前所在周不可点：挪到原地没有意义，亮着反而让人怀疑没生效
       onTap: isCurrent ? null : () => _move(context, key),
       child: Row(
@@ -124,7 +128,11 @@ class _MoveGoalSheet extends StatelessWidget {
   Widget _buildCustomOption(BuildContext context) {
     return PaperCard(
       tone: PaperTone.row,
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.cardPad,
+        vertical: 13,
+      ),
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       onTap: () => _pickWeek(context),
       child: Row(
         children: <Widget>[

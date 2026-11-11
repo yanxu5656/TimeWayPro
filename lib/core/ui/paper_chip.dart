@@ -4,8 +4,8 @@ import '../theme/app_theme.dart';
 
 /// 可选中的纸面 chip。
 ///
-/// 静止时是「细线描边的空框」，选中时整个翻成墨底纸字——编辑风里
-/// 的表单选择件（时段、计时类型）。
+/// 静止时是「细线描边的空框」，选中时整个翻成陶土底暖白字——
+/// 表单里的选择件（时段、计时类型），选中态与主操作同色。
 ///
 /// - [vertical] true → 图标在上、文字在下（上午/下午/晚上时段选择）
 /// - [vertical] false → 图标在左、文字在右（正计时/倒计时选择）
@@ -36,7 +36,9 @@ class PaperChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = selected ? AppColors.textOnInk : AppColors.textSecondary;
+    final Color fg = selected
+        ? AppColors.textOnPrimary
+        : AppColors.textSecondary;
 
     final List<Widget> children = vertical
         ? <Widget>[
@@ -59,13 +61,13 @@ class PaperChip extends StatelessWidget {
               ? const EdgeInsets.symmetric(vertical: AppSpacing.md)
               : const EdgeInsets.symmetric(vertical: AppSpacing.sm)),
       decoration: BoxDecoration(
-        color: selected ? AppColors.textPrimary : Colors.transparent,
+        color: selected ? AppColors.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: selected
-              ? AppColors.textPrimary
-              // 描边用 30% 墨：比发丝线重一档，框出可点区域但不抢戏
-              : AppColors.textPrimary.withValues(alpha: 0.3),
+              ? AppColors.primary
+              // 描边用 30% 陶土：比发丝线重一档，框出可点区域但不抢戏
+              : AppColors.primary.withValues(alpha: 0.3),
           width: 1.2,
         ),
       ),

@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'pressable_scale.dart';
 
-/// 完成勾选圆钮（墨圈 · 朱砂）。
+/// 完成勾选圆钮（墨圈 · 陶土）。
 ///
 /// 静止是一个 1.4px 墨圈（账本行的「待办空位」），勾选后翻成
-/// 朱砂实心——完成是这个应用里最值得用强调色的一刻。
+/// 陶土实心——完成是这个应用里最值得用强调色的一刻。
 class InkCheckCircle extends StatelessWidget {
   const InkCheckCircle({
     super.key,

@@ -305,8 +305,7 @@ class TaskProvider extends ChangeNotifier {
 
   Future<void> startTimer(String taskId) async {
     // 同步占位：见 _startingTimers 的注释（双击防抖）
-    if (_activeTimers.containsKey(taskId) ||
-        _startingTimers.contains(taskId)) {
+    if (_activeTimers.containsKey(taskId) || _startingTimers.contains(taskId)) {
       return;
     }
     _startingTimers.add(taskId);
@@ -374,7 +373,9 @@ class TaskProvider extends ChangeNotifier {
     // 恢复/导入，recordId 已不在当前数据集里）就放弃更新——
     // 绝不能回退到 records.first，那会把该任务最旧的一条历史记录
     // 的时长和结束时间改掉。
-    final record = records.where((r) => r.id == timerState.recordId).firstOrNull;
+    final record = records
+        .where((r) => r.id == timerState.recordId)
+        .firstOrNull;
 
     if (record != null) {
       await _repository.updateRecord(

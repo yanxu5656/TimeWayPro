@@ -39,10 +39,14 @@ class TaskCard extends StatelessWidget {
     // 把重栅格化限制在真正变化的卡片上
     return RepaintBoundary(
       child: PaperCard(
-        // 账本行：透明底 + 下缘发丝线；计时中左缘加朱砂着重线并开隐式过渡
+        // 列表项卡：暖白底 + 两层暖阴影；计时中整圈换 success 细描边
+        // 并开隐式过渡
         tone: PaperTone.row,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.cardPad,
+          vertical: 14,
+        ),
+        margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         animate: true,
         tint: isRunning ? AppColors.success : null,
         onTap: onEdit,

@@ -136,7 +136,9 @@ class _TaskScreenState extends State<TaskScreen> {
                   letterSpacing: 0.4,
                 ),
                 children: <InlineSpan>[
-                  TextSpan(text: '${_selectedDate.year} 年 ${_selectedDate.month} 月 · '),
+                  TextSpan(
+                    text: '${_selectedDate.year} 年 ${_selectedDate.month} 月 · ',
+                  ),
                   const TextSpan(text: '第 '),
                   TextSpan(
                     text: '${isoWeekNumber(_selectedDate)}',
@@ -163,7 +165,7 @@ class _TaskScreenState extends State<TaskScreen> {
           ),
           const SizedBox(height: AppSpacing.xs),
 
-          // 日期行：衬线日期 + 两侧箭头，今天用朱砂标注
+          // 日期行：衬线日期 + 两侧箭头，今天用陶土标注
           Row(
             children: [
               _buildDateButton(
@@ -215,11 +217,7 @@ class _TaskScreenState extends State<TaskScreen> {
           IntrinsicHeight(
             child: Row(
               children: [
-                _buildStatColumn(
-                  '全部任务',
-                  totalTasks,
-                  AppColors.textPrimary,
-                ),
+                _buildStatColumn('全部任务', totalTasks, AppColors.textPrimary),
                 const VerticalDivider(width: 1, thickness: 1),
                 _buildStatColumn(
                   '进行中',
@@ -263,10 +261,7 @@ class _TaskScreenState extends State<TaskScreen> {
               value: value,
               format: (v) => '$v',
               duration: const Duration(milliseconds: 450),
-              style: AppText.serifNum.copyWith(
-                fontSize: 30,
-                color: color,
-              ),
+              style: AppText.serifNum.copyWith(fontSize: 30, color: color),
             ),
             const SizedBox(height: 2),
             Text(

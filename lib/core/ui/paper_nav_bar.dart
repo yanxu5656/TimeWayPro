@@ -34,17 +34,16 @@ class _NavItemData {
   final String label;
 }
 
-/// 纸面底部导航。
+/// 暖白底部导航。
 ///
-/// 编辑风的导航是一张纸的最下沿：纸色底 + 一条发丝线，仅此而已。
-/// 选中态不靠底色块（那是玻璃体系的语言），靠**墨色图标文字 +
-/// 朱砂圆点**——像目录页上当前条目旁的点标记。
+/// 导航是暖白卡面而不是纸面：它要和浮起的列表项区分开，同时比纸底
+/// 亮一档，托住整页。选中态不靠底色块，靠**陶土图标文字 + 陶土圆点**
+/// ——像目录页上当前条目旁的点标记。
+///
+/// 未选中项用 [AppColors.textSecondary]（5.5:1）而不是 textHint：
+/// 导航标签是 11px 的语义文字，hint 档（2.8:1）在这个字号下读不清。
 class PaperNavBar extends StatelessWidget {
-  const PaperNavBar({
-    super.key,
-    required this.index,
-    required this.onChanged,
-  });
+  const PaperNavBar({super.key, required this.index, required this.onChanged});
 
   final int index;
   final ValueChanged<int> onChanged;
@@ -66,7 +65,7 @@ class PaperNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.divider)),
       ),
       child: SafeArea(
@@ -104,7 +103,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = selected ? AppColors.textPrimary : AppColors.textHint;
+    final Color fg = selected ? AppColors.primary : AppColors.textSecondary;
 
     return PressableScale(
       child: GestureDetector(

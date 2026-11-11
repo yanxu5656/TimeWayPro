@@ -9,8 +9,11 @@ void main() {
 
     test('周内任意一天都归到同一周号', () {
       expect(isoWeekNumber(DateTime(2026, 10, 31)), 44);
-      expect(isoWeekNumber(DateTime(2026, 10, 25)), 43,
-          reason: '10/25 是周日，属于上一周');
+      expect(
+        isoWeekNumber(DateTime(2026, 10, 25)),
+        43,
+        reason: '10/25 是周日，属于上一周',
+      );
     });
 
     test('年初：2026-01-01（周四）是 2026 年第 1 周', () {
@@ -26,7 +29,6 @@ void main() {
       expect(isoWeekNumber(DateTime(2026, 12, 28)), 53);
     });
   });
-
 
   group('startOfWeek —— 周一为起点', () {
     test('周一返回当天 00:00', () {

@@ -37,12 +37,12 @@ class WeeklyProvider extends ChangeNotifier {
   // 运算，DST 切换周会差 1 小时，锚点又是本地 00:00，落点会掉到
   // 前一天 23:00——翻周直接跳过一周或原地不动。
   void previousWeek() => selectWeek(
-        DateTime(_weekAnchor.year, _weekAnchor.month, _weekAnchor.day - 7),
-      );
+    DateTime(_weekAnchor.year, _weekAnchor.month, _weekAnchor.day - 7),
+  );
 
   void nextWeek() => selectWeek(
-        DateTime(_weekAnchor.year, _weekAnchor.month, _weekAnchor.day + 7),
-      );
+    DateTime(_weekAnchor.year, _weekAnchor.month, _weekAnchor.day + 7),
+  );
 
   /// 跳到 [date] 所在的周。传周内任意一天都会归一到周一。
   void selectWeek(DateTime date) {
@@ -106,20 +106,39 @@ class WeeklyProvider extends ChangeNotifier {
     await loadGoals();
   }
 
+  /// 拖拽排序：把 [oldIndex] 的条目移到 [newIndex]（移除后的最终下标，
+  /// 与 ReorderableListView.onReorderItem 的语义一致）。
+  ///
+  /// 整周重编号成 0..n-1 而不是只改被拖的那一条：sort_order 保持连续，
+  /// 队尾追加取的 max+1 才不会与现存值撞车。
+  ///
+  /// 不走 [loadGoals]——它会把 isLoading 置真，整张列表在拖完的瞬间
+  /// 被替换成加载圈。这里乐观更新 + 落盘，顺序在磁盘上已经是最终态。
+  Future<void> reorderGoals(int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex) return;
+    final List<WeeklyGoal> reordered = List<WeeklyGoal>.from(_goals);
+    final WeeklyGoal moved = reordered.removeAt(oldIndex);
+    reordered.insert(newIndex, moved);
+    _goals = <WeeklyGoal>[
+      for (final (int i, WeeklyGoal g) in reordered.indexed)
+        g.copyWith(sortOrder: i),
+    ];
+    notifyListeners();
+    await _repository.reorder(_goals);
+  }
+
   int get _maxSortOrder => _goals.fold<int>(
-        -1,
-        (int max, WeeklyGoal g) => g.sortOrder > max ? g.sortOrder : max,
-      );
+    -1,
+    (int max, WeeklyGoal g) => g.sortOrder > max ? g.sortOrder : max,
+  );
 
   /// 把 [goal] 挪到 [targetWeekKey] 对应的周，排到目标周队尾
   /// （不动目标周现有条目的顺序）。目标周就是所在周时视作无操作。
-  Future<void> moveGoalToWeek(
-    WeeklyGoal goal,
-    String targetWeekKey,
-  ) async {
+  Future<void> moveGoalToWeek(WeeklyGoal goal, String targetWeekKey) async {
     if (goal.weekKey == targetWeekKey) return;
-    final List<WeeklyGoal> targetGoals =
-        await _repository.getByWeek(targetWeekKey);
+    final List<WeeklyGoal> targetGoals = await _repository.getByWeek(
+      targetWeekKey,
+    );
     final int maxOrder = targetGoals.fold<int>(
       -1,
       (int max, WeeklyGoal g) => g.sortOrder > max ? g.sortOrder : max,

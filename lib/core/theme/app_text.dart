@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 文字样式 token —— 静白志。
+/// 文字样式 token —— 陶土暖笺。
 ///
 /// 分三组：
 /// - **M3 槽位组**（[display] ~ [labelSm]）：装配回 `ThemeData.textTheme`，

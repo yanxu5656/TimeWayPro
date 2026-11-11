@@ -16,9 +16,7 @@ void main() {
   group('SectionHeader', () {
     testWidgets('渲染序号 / 标题 / 右侧计数', (tester) async {
       await tester.pumpWidget(
-        host(
-          const SectionHeader(index: 1, title: '本周记事', trailing: '3 条'),
-        ),
+        host(const SectionHeader(index: 1, title: '本周记事', trailing: '3 条')),
       );
 
       expect(find.text('01'), findsOneWidget);

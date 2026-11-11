@@ -13,7 +13,7 @@ class Segment<T> {
 /// 下划线分段控件（编辑风的页签）。
 ///
 /// 玻璃版是「底色块 + 滑动指示块」；纸面版换成**目录页语言**：
-/// 等宽文字 + 选中项下方的朱砂短线。选中的文字加粗变墨色，
+/// 等宽文字 + 选中项下方的陶土短线。选中的文字加粗变墨色，
 /// 未选中是灰的——字重和颜色一起表达层级，不靠底色。
 class SegmentedControl<T> extends StatelessWidget {
   const SegmentedControl({
@@ -58,13 +58,10 @@ class SegmentedControl<T> extends StatelessWidget {
                             ? AppColors.textPrimary
                             : AppColors.textSecondary,
                       ),
-                      child: Text(
-                        segment.label,
-                        textAlign: TextAlign.center,
-                      ),
+                      child: Text(segment.label, textAlign: TextAlign.center),
                     ),
                   ),
-                  // 朱砂短线：高度恒定，避免切换时下方内容跳动
+                  // 陶土短线：高度恒定，避免切换时下方内容跳动
                   AnimatedContainer(
                     duration: duration,
                     curve: Curves.easeOutCubic,

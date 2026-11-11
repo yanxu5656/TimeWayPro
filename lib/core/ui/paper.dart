@@ -1,4 +1,4 @@
-// 静白志组件层的统一入口。
+// 陶土暖笺组件层的统一入口。
 //
 // 页面只 import 本文件即可拿到全部组件 + 设计令牌
 // （AppColors / AppRadius / AppSpacing / AppShadows / AppText）。

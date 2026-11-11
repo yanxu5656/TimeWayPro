@@ -195,7 +195,7 @@ class DatabaseHelper {
   /// 这类占用是瞬时的（通常 <100ms），退避重试几次就能过去——
   /// 并行测试里多个 isolate 同时做大量小文件 IO 时尤其容易撞上。
   Future<void> _renameWithRetry(File from, String to) async {
-    for (int attempt = 0;; attempt++) {
+    for (int attempt = 0; ; attempt++) {
       try {
         await from.rename(to);
         return;
@@ -249,6 +249,27 @@ class DatabaseHelper {
         'Warning: Record not found for update in $table with $idField=${record[idField]}',
       );
     }
+  }
+
+  /// 批量更新同一表的多行，**只落盘一次**。
+  ///
+  /// 拖拽排序要重写整周的 sort_order。逐行调 [update] 会排 N 次写队列，
+  /// 每次都是一遍全量 JSON 编码 + 备份轮转 + 两次 rename——10 条目标
+  /// 拖一下就是 10 次全库写盘。这里先在内存里改完，再排一次队。
+  Future<void> updateAll(
+    String table,
+    List<Map<String, dynamic>> records,
+    String idField,
+  ) async {
+    await _ensureInitialized();
+    final list = _data[table] as List? ?? [];
+    for (final Map<String, dynamic> record in records) {
+      final index = list.indexWhere((r) => r[idField] == record[idField]);
+      if (index != -1) {
+        list[index] = record;
+      }
+    }
+    await _enqueueSave();
   }
 
   Future<void> delete(String table, String idField, String id) async {

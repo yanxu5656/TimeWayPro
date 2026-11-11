@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'pressable_scale.dart';
 
-/// 墨色胶囊悬浮按钮。
+/// 陶土胶囊悬浮按钮。
 ///
-/// 编辑风里唯一的「重」元素：整块墨色压在纸面上，天然是页面上
-/// 对比度最高的东西，正好配「当前页的主操作」。
+/// 页面上唯一的「重」元素：整块陶土压在暖纸上，天然是对比度最高的
+/// 东西，正好配「当前页的主操作」。与刊头色带同色，前后呼应。
 /// 放在 `Scaffold.floatingActionButton` 槽位即可。
 class PaperFab extends StatelessWidget {
   const PaperFab({
@@ -29,7 +29,7 @@ class PaperFab extends StatelessWidget {
 
     Widget fab = Container(
       decoration: const BoxDecoration(
-        color: AppColors.textPrimary,
+        color: AppColors.primary,
         borderRadius: AppRadius.brFull,
         boxShadow: AppShadows.e2,
       ),
@@ -40,12 +40,12 @@ class PaperFab extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(icon, color: AppColors.textOnInk, size: 21),
+          Icon(icon, color: AppColors.textOnPrimary, size: 21),
           if (extended) ...<Widget>[
             const SizedBox(width: AppSpacing.xs),
             Text(
               label!,
-              style: AppText.labelLg.copyWith(color: AppColors.textOnInk),
+              style: AppText.labelLg.copyWith(color: AppColors.textOnPrimary),
             ),
           ],
         ],

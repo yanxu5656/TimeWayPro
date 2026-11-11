@@ -5,7 +5,10 @@ import 'package:time_way_pro/core/ui/paper.dart';
 void main() {
   setUp(UiEffects.resetForTesting);
 
-  Widget hostWithButton({required VoidCallback onPressed, bool showHandle = true}) {
+  Widget hostWithButton({
+    required VoidCallback onPressed,
+    bool showHandle = true,
+  }) {
     return MaterialApp(
       home: Scaffold(
         body: Builder(
@@ -73,10 +76,13 @@ void main() {
     final sheet = find.byType(PaperSheet);
     expect(
       tester
-          .widget<DecoratedBox>(
-            find.descendant(of: sheet, matching: find.byType(DecoratedBox)).first,
-          )
-          .decoration is BoxDecoration,
+              .widget<DecoratedBox>(
+                find
+                    .descendant(of: sheet, matching: find.byType(DecoratedBox))
+                    .first,
+              )
+              .decoration
+          is BoxDecoration,
       isTrue,
     );
   });

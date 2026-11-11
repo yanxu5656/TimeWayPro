@@ -17,9 +17,7 @@ class TimeWayProApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => DailyProvider()),
-        ChangeNotifierProvider(
-          create: (_) => WeeklyProvider()..loadGoals(),
-        ),
+        ChangeNotifierProvider(create: (_) => WeeklyProvider()..loadGoals()),
         ChangeNotifierProvider(create: (_) => TaskProvider()..loadTasks()),
         ChangeNotifierProvider(create: (_) => PlanProvider()..loadPlans()),
         ChangeNotifierProvider(

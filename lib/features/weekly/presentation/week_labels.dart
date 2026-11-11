@@ -5,8 +5,7 @@ import '../../../core/utils/week.dart';
 /// 只覆盖 ±2 周——再远的周相对称呼没有意义，返回 null 让调用方
 /// 退回 `weekRangeLabel()` 的日期区间文本。
 String? weekShortLabel(DateTime monday) {
-  final int offset =
-      monday.difference(startOfWeek(DateTime.now())).inDays ~/ 7;
+  final int offset = monday.difference(startOfWeek(DateTime.now())).inDays ~/ 7;
   return switch (offset) {
     -2 => '上上周',
     -1 => '上周',
@@ -20,8 +19,18 @@ String? weekShortLabel(DateTime monday) {
 // ── 编排精修（v1.6.0）：英文大写日期，与刊头眉题同一套编辑语言 ──
 
 const List<String> _monthsEn = <String>[
-  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+  'JAN',
+  'FEB',
+  'MAR',
+  'APR',
+  'MAY',
+  'JUN',
+  'JUL',
+  'AUG',
+  'SEP',
+  'OCT',
+  'NOV',
+  'DEC',
 ];
 
 /// `OCT 24`
