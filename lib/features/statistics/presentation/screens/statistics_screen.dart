@@ -23,6 +23,42 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   int _lastPeriod = -1;
   int _lastDataVersion = -1;
   String _lastDateKey = '';
+  bool _isRefreshing = false;
+
+  Future<void> _refreshStats() async {
+    if (_isRefreshing) return;
+    setState(() => _isRefreshing = true);
+    try {
+      final provider = context.read<TaskProvider>();
+      await provider.loadTasks();
+      if (!mounted) return;
+      final Future<_StatsData> future = _loadStats(provider);
+      setState(() {
+        _lastPeriod = _selectedPeriod;
+        _lastDataVersion = provider.dataVersion;
+        _lastDateKey =
+            '$_selectedPeriod-${_selectedDate.toIso8601String().substring(0, 10)}';
+        _statsFuture = future;
+      });
+      final _StatsData fresh = await future;
+      if (!mounted) return;
+      setState(() {
+        _cachedStats = fresh;
+      });
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('统计数据已刷新'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,8 +117,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         AppSpacing.navInset,
       ),
       children: [
-        // 刊头
-        const Masthead(kicker: 'STATISTICS', title: '统计'),
+        // 刊头 + 立即刷新按钮
+        Masthead(
+          kicker: 'STATISTICS',
+          title: '统计',
+          trailing: _buildRefreshButton(),
+        ),
         const SizedBox(height: AppSpacing.xs),
 
         // 时间段选择器
@@ -104,6 +144,54 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         // 任务明细
         _buildTaskDetail(stats),
       ],
+    );
+  }
+
+  Widget _buildRefreshButton() {
+    return Material(
+      color: AppColors.textOnPrimary.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(AppRadius.full),
+      child: InkWell(
+        onTap: _isRefreshing ? null : _refreshStats,
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            border: Border.all(
+              color: AppColors.textOnPrimary.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isRefreshing)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.textOnPrimary,
+                  ),
+                )
+              else
+                const Icon(
+                  Icons.refresh_rounded,
+                  size: 16,
+                  color: AppColors.textOnPrimary,
+                ),
+              const SizedBox(width: 4),
+              Text(
+                _isRefreshing ? '刷新中' : '立即刷新',
+                style: AppText.labelSm.copyWith(
+                  color: AppColors.textOnPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

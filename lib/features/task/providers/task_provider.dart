@@ -127,10 +127,14 @@ class TaskProvider extends ChangeNotifier {
 
       if (activeTimersJson != null) {
         final Map<String, dynamic> timersMap = jsonDecode(activeTimersJson);
+        bool restoredAny = false;
 
         for (var entry in timersMap.entries) {
           final taskId = entry.key;
           final timerData = entry.value as Map<String, dynamic>;
+
+          // 已经在内存里运行中的计时器不要重复恢复，否则会泄漏一个周期 Timer
+          if (_activeTimers.containsKey(taskId)) continue;
 
           // 检查任务是否还存在
           final task = await _repository.getTaskById(taskId);
@@ -152,13 +156,14 @@ class TaskProvider extends ChangeNotifier {
           }
 
           _activeTimers[taskId] = timerState;
+          restoredAny = true;
         }
 
         // 清除已恢复的状态（已暂停的保留）
         if (_activeTimers.isEmpty) {
           await _clearSavedTimers();
           await _notificationService.removeTimerNotification();
-        } else {
+        } else if (restoredAny) {
           await _saveActiveTimers();
 
           // 恢复通知
@@ -454,6 +459,7 @@ class TaskProvider extends ChangeNotifier {
         }
       }
 
+      _dataVersion++;
       notifyListeners();
 
       await loadTasks();

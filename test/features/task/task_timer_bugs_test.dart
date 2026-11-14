@@ -203,6 +203,20 @@ void main() {
           .element(find.byType(MaterialApp))
           .read<TaskProvider>();
       expect(provider.activeTimers, isEmpty);
+
+      // 点击「立即刷新」按钮也应可正常手动刷新且不抛异常
+      expect(find.text('立即刷新'), findsOneWidget);
+      await tester.tap(find.text('立即刷新'));
+      await tester.pump();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('统计数据已刷新'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(tester.takeException(), isNull);
     });
   });
 }

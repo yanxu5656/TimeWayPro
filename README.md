@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.7.1-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.7.2-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -109,6 +109,12 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.7.2 — 统计页「立即刷新」按钮与恢复防重入
+*2026-11-14*
+
+- **统计页「立即刷新」按钮**：在统计页刊头右侧新增「立即刷新」按钮，点击后立即重载任务/计时记录并刷新图表与总时长
+- **同步与防重入**：`stopTimer` 更新记录后立即递增 `dataVersion`；`_restoreActiveTimers` 跳过内存中已在运行中的计时器，避免重载任务时重复创建定时器
 
 ### v1.7.1 — 任务计时与统计刷新修复
 *2026-11-14*
