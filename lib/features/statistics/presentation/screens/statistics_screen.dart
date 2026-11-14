@@ -17,10 +17,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   int _selectedPeriod = 0; // 0: 日, 1: 周, 2: 月
   DateTime _selectedDate = DateTime.now();
 
-  // 缓存统计数据，避免频繁刷新
+  // 缓存统计数据，避免计时每秒 tick 引起频繁刷新
   _StatsData? _cachedStats;
+  Future<_StatsData>? _statsFuture;
   int _lastPeriod = -1;
-  int _lastTaskCount = 0;
+  int _lastDataVersion = -1;
   String _lastDateKey = '';
 
   @override
@@ -28,40 +29,42 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return PaperScaffold(
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
-          // 检查是否需要刷新
-          final currentTaskCount = provider.tasks.length;
+          // 仅在周期、日期或任务/记录版本号变化时重新查询，
+          // 既避免每秒计时 tick 反复查库，也保证结束计时后立刻刷新。
           final currentDateKey =
               '$_selectedPeriod-${_selectedDate.toIso8601String().substring(0, 10)}';
           final needRefresh =
+              _statsFuture == null ||
               _lastPeriod != _selectedPeriod ||
-              _cachedStats == null ||
-              currentTaskCount != _lastTaskCount ||
+              _lastDataVersion != provider.dataVersion ||
               _lastDateKey != currentDateKey;
 
           if (needRefresh) {
             _lastPeriod = _selectedPeriod;
-            _lastTaskCount = currentTaskCount;
+            _lastDataVersion = provider.dataVersion;
             _lastDateKey = currentDateKey;
-            return FutureBuilder<_StatsData>(
-              future: _loadStats(provider),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: AppColors.primary,
-                    ),
-                  );
-                }
-
-                _cachedStats = snapshot.data ?? _StatsData.empty();
-                return _buildContent(_cachedStats!);
-              },
-            );
+            _statsFuture = _loadStats(provider);
           }
 
-          // 使用缓存的数据
-          return _buildContent(_cachedStats!);
+          return FutureBuilder<_StatsData>(
+            future: _statsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  _cachedStats == null) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.primary,
+                  ),
+                );
+              }
+
+              if (snapshot.hasData) {
+                _cachedStats = snapshot.data;
+              }
+              return _buildContent(_cachedStats ?? _StatsData.empty());
+            },
+          );
         },
       ),
     );

@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.7.0-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.7.1-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -109,6 +109,13 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.7.1 — 任务计时与统计刷新修复
+*2026-11-14*
+
+- **一键结束计时**：移除点击停止按钮时弹出的二次确认弹窗，点击一次直接结束计时并记录用时；新增 `_stoppingTimers` 防止连点重入
+- **通知栏残留修复**：`NotificationService` 引入代次令牌与串行队列，在 `stopTimer` 开头同步停掉周期更新并严格串行 `show`/`cancel`，消除异步刷新在 `cancel` 后把通知贴回的竞态；完成正在计时的一次性任务及重启恢复后无活跃计时时同步清理通知
+- **统计时长即时刷新**：`TaskProvider` 新增 `dataVersion` 版本号，`StatisticsScreen` 与 `TaskScreen` 跟随版本号变化实时刷新（保留计时每秒 tick 不闪烁、通知栏每 5 秒刷新节流）
 
 ### v1.7.0 — 陶土暖笺 + 每周拖拽排序
 *2026-11-11*

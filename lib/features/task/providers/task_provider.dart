@@ -72,9 +72,17 @@ class TaskProvider extends ChangeNotifier {
   /// 进入时先在这里占位，整个启动链走完才释放。
   final Set<String> _startingTimers = <String>{};
 
+  /// 停止中的任务（同步防抖，防止连点结束或倒计时并发重入）。
+  final Set<String> _stoppingTimers = <String>{};
+
+  /// 数据版本号：每次任务或计时记录落盘重载完成时递增，
+  /// 供统计页与任务页识别记录变化并刷新时长。
+  int _dataVersion = 0;
+
   List<Task> get tasks => _tasks;
   List<TaskRecord> get records => _records;
   bool get isLoading => _isLoading;
+  int get dataVersion => _dataVersion;
   Map<String, TimerState> get activeTimers => _activeTimers;
 
   List<Task> get activeTasks => _tasks.where((t) => !t.isCompleted).toList();
@@ -106,6 +114,7 @@ class TaskProvider extends ChangeNotifier {
       _tasks = [];
     } finally {
       _isLoading = false;
+      _dataVersion++;
       notifyListeners();
     }
   }
@@ -148,6 +157,7 @@ class TaskProvider extends ChangeNotifier {
         // 清除已恢复的状态（已暂停的保留）
         if (_activeTimers.isEmpty) {
           await _clearSavedTimers();
+          await _notificationService.removeTimerNotification();
         } else {
           await _saveActiveTimers();
 
@@ -167,7 +177,7 @@ class TaskProvider extends ChangeNotifier {
               taskTitle: task.title,
               getElapsedSeconds: () => firstEntry.value.currentElapsedSeconds,
               isCountDown: task.timerType == TimerType.countDown,
-              getTotalDuration: () => task.duration,
+              getTotalDuration: () => _taskById(firstEntry.key)?.duration,
             );
           }
         }
@@ -297,6 +307,13 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> completeTask(String taskId) async {
+    final task = _taskById(taskId) ?? await _repository.getTaskById(taskId);
+    // 一次性任务完成时会移出活跃列表并隐藏停止按钮，若仍在计时必须先结束计时并清理通知。
+    if (task != null &&
+        task.repeatType == RepeatType.none &&
+        _activeTimers.containsKey(taskId)) {
+      await stopTimer(taskId, autoComplete: false);
+    }
     await _repository.completeTask(taskId);
     await loadTasks();
   }
@@ -305,7 +322,9 @@ class TaskProvider extends ChangeNotifier {
 
   Future<void> startTimer(String taskId) async {
     // 同步占位：见 _startingTimers 的注释（双击防抖）
-    if (_activeTimers.containsKey(taskId) || _startingTimers.contains(taskId)) {
+    if (_activeTimers.containsKey(taskId) ||
+        _startingTimers.contains(taskId) ||
+        _stoppingTimers.contains(taskId)) {
       return;
     }
     _startingTimers.add(taskId);
@@ -339,6 +358,11 @@ class TaskProvider extends ChangeNotifier {
         totalDuration: task.duration,
       );
 
+      if (!_activeTimers.containsKey(taskId) ||
+          _stoppingTimers.contains(taskId)) {
+        return;
+      }
+
       // 启动通知定时更新。闭包按 taskId 现查任务，
       // 计时中编辑时长后通知里的总时长也会跟上。
       _notificationService.startPeriodicUpdate(
@@ -359,77 +383,83 @@ class TaskProvider extends ChangeNotifier {
 
   Future<void> stopTimer(String taskId, {bool autoComplete = true}) async {
     final timerState = _activeTimers[taskId];
-    if (timerState == null) return;
+    if (timerState == null || _stoppingTimers.contains(taskId)) return;
+    _stoppingTimers.add(taskId);
 
-    // 停止定时器
+    // 同步停掉本地计时器与通知栏周期更新，防止后续落盘 await 期间
+    // 周期更新继续弹出通知而和移除通知产生竞态。
     timerState.timer?.cancel();
+    _notificationService.stopPeriodicUpdate();
 
-    // 计算实际经过的秒数
-    final actualElapsed = timerState.currentElapsedSeconds;
+    try {
+      // 计算实际经过的秒数
+      final actualElapsed = timerState.currentElapsedSeconds;
 
-    // 更新记录
-    final records = await _repository.getRecordsByTaskId(taskId);
-    // 只更新本次计时对应的那条记录。找不到（比如计时中途做了数据
-    // 恢复/导入，recordId 已不在当前数据集里）就放弃更新——
-    // 绝不能回退到 records.first，那会把该任务最旧的一条历史记录
-    // 的时长和结束时间改掉。
-    final record = records
-        .where((r) => r.id == timerState.recordId)
-        .firstOrNull;
+      // 更新记录
+      final records = await _repository.getRecordsByTaskId(taskId);
+      // 只更新本次计时对应的那条记录。找不到（比如计时中途做了数据
+      // 恢复/导入，recordId 已不在当前数据集里）就放弃更新——
+      // 绝不能回退到 records.first，那会把该任务最旧的一条历史记录
+      // 的时长和结束时间改掉。
+      final record = records
+          .where((r) => r.id == timerState.recordId)
+          .firstOrNull;
 
-    if (record != null) {
-      await _repository.updateRecord(
-        record.copyWith(
-          endTime: DateTime.now(),
-          duration: actualElapsed,
-          completedAt: DateTime.now(),
-        ),
-      );
-    }
-
-    // 获取任务信息
-    final task = await _repository.getTaskById(taskId);
-
-    // 倒计时模式自动完成任务，正计时模式只保存时间
-    if (autoComplete && task?.timerType == TimerType.countDown) {
-      await _repository.completeTask(taskId);
-    }
-
-    // 移除计时状态
-    _activeTimers.remove(taskId);
-
-    // 更新保存的状态
-    if (_activeTimers.isEmpty) {
-      await _clearSavedTimers();
-      // 移除通知
-      await _notificationService.removeTimerNotification();
-      _notificationService.stopPeriodicUpdate();
-    } else {
-      await _saveActiveTimers();
-      // 更新通知为下一个活跃任务。
-      // 必须同步重绑 startPeriodicUpdate：5 秒前为已停止任务启动的
-      // 周期更新器还持有旧闭包，不重绑的话通知会被刷回已停止的任务。
-      final nextEntry = _activeTimers.entries.first;
-      final nextTask = await _repository.getTaskById(nextEntry.key);
-      if (nextTask != null) {
-        await _notificationService.showTimerNotification(
-          taskTitle: nextTask.title,
-          elapsedSeconds: nextEntry.value.currentElapsedSeconds,
-          isCountDown: nextTask.timerType == TimerType.countDown,
-          totalDuration: nextTask.duration,
-        );
-        _notificationService.startPeriodicUpdate(
-          taskTitle: nextTask.title,
-          getElapsedSeconds: () => nextEntry.value.currentElapsedSeconds,
-          isCountDown: nextTask.timerType == TimerType.countDown,
-          getTotalDuration: () => _taskById(nextEntry.key)?.duration,
+      if (record != null) {
+        await _repository.updateRecord(
+          record.copyWith(
+            endTime: DateTime.now(),
+            duration: actualElapsed,
+            completedAt: DateTime.now(),
+          ),
         );
       }
+
+      // 获取任务信息
+      final task = await _repository.getTaskById(taskId);
+
+      // 倒计时模式自动完成任务，正计时模式只保存时间
+      if (autoComplete && task?.timerType == TimerType.countDown) {
+        await _repository.completeTask(taskId);
+      }
+
+      // 移除计时状态
+      _activeTimers.remove(taskId);
+
+      // 更新保存的状态
+      if (_activeTimers.isEmpty) {
+        await _clearSavedTimers();
+        // 移除通知
+        await _notificationService.removeTimerNotification();
+      } else {
+        await _saveActiveTimers();
+        // 更新通知为下一个活跃任务。
+        // 必须同步重绑 startPeriodicUpdate：5 秒前为已停止任务启动的
+        // 周期更新器还持有旧闭包，不重绑的话通知会被刷回已停止的任务。
+        final nextEntry = _activeTimers.entries.first;
+        final nextTask = await _repository.getTaskById(nextEntry.key);
+        if (nextTask != null) {
+          await _notificationService.showTimerNotification(
+            taskTitle: nextTask.title,
+            elapsedSeconds: nextEntry.value.currentElapsedSeconds,
+            isCountDown: nextTask.timerType == TimerType.countDown,
+            totalDuration: nextTask.duration,
+          );
+          _notificationService.startPeriodicUpdate(
+            taskTitle: nextTask.title,
+            getElapsedSeconds: () => nextEntry.value.currentElapsedSeconds,
+            isCountDown: nextTask.timerType == TimerType.countDown,
+            getTotalDuration: () => _taskById(nextEntry.key)?.duration,
+          );
+        }
+      }
+
+      notifyListeners();
+
+      await loadTasks();
+    } finally {
+      _stoppingTimers.remove(taskId);
     }
-
-    notifyListeners();
-
-    await loadTasks();
   }
 
   /// 数据恢复/导入前调用：停掉所有计时器并清空持久化计时状态。
@@ -471,7 +501,9 @@ class TaskProvider extends ChangeNotifier {
     if (oldTimerState == null || !oldTimerState.isPaused) return;
 
     // 同步占位，防连点导致的重复恢复（会产生两个 Timer，先启的那个泄漏）
-    if (_startingTimers.contains(taskId)) return;
+    if (_startingTimers.contains(taskId) || _stoppingTimers.contains(taskId)) {
+      return;
+    }
     _startingTimers.add(taskId);
     try {
       final task = await _repository.getTaskById(taskId);
@@ -505,6 +537,10 @@ class TaskProvider extends ChangeNotifier {
         isCountDown: task.timerType == TimerType.countDown,
         totalDuration: task.duration,
       );
+      if (!_activeTimers.containsKey(taskId) ||
+          _stoppingTimers.contains(taskId)) {
+        return;
+      }
       _notificationService.startPeriodicUpdate(
         taskTitle: task.title,
         getElapsedSeconds: () {

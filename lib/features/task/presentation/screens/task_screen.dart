@@ -19,6 +19,7 @@ class _TaskScreenState extends State<TaskScreen> {
   DateTime _selectedDate = DateTime.now();
   Map<String, int> _dailyDurations = {};
   bool _isLoadingDurations = false;
+  int _lastDataVersion = -1;
 
   /// 加载中又来了新请求时置位，等当前这次结束后补跑一次。
   /// 见 [_loadDailyDurations] 的说明。
@@ -86,6 +87,15 @@ class _TaskScreenState extends State<TaskScreen> {
                 color: AppColors.primary,
               ),
             );
+          }
+
+          if (_lastDataVersion != provider.dataVersion) {
+            _lastDataVersion = provider.dataVersion;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _loadDailyDurations();
+              }
+            });
           }
 
           final activeTasks = provider.activeTasks;
@@ -482,29 +492,32 @@ class _TaskScreenState extends State<TaskScreen> {
     ).then((_) => _loadDailyDurations());
   }
 
-  void _completeTask(Task task) {
+  Future<void> _completeTask(Task task) async {
     final provider = context.read<TaskProvider>();
-    provider.completeTask(task.id);
+    await provider.completeTask(task.id);
 
     // 重新加载每日时长
-    _loadDailyDurations();
+    await _loadDailyDurations();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(
-              Icons.check_circle,
-              color: AppColors.textOnPrimary,
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Text(task.isRepeatable ? '完成次数 +1' : '任务已完成'),
-          ],
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.textOnPrimary,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(task.isRepeatable ? '完成次数 +1' : '任务已完成'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
         ),
-        backgroundColor: AppColors.success,
-      ),
-    );
+      );
   }
 
   void _deleteTask(Task task) {
@@ -535,47 +548,25 @@ class _TaskScreenState extends State<TaskScreen> {
     final provider = context.read<TaskProvider>();
     provider.startTimer(task.id);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.play_circle, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Text('开始计时: ${task.title}'),
-          ],
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.play_circle, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Text('开始计时: ${task.title}'),
+            ],
+          ),
+          backgroundColor: AppColors.primary,
         ),
-        backgroundColor: AppColors.primary,
-      ),
-    );
+      );
   }
 
   void _stopTask(Task task) {
     final isCountUp = task.timerType == TimerType.countUp;
-    final content = isCountUp
-        ? '结束计时后时间将被记录，但任务不会自动完成。\n需要点击左侧圆圈才算完成。'
-        : '倒计时结束后将自动标记为完成。';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('结束计时'),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _stopTaskAndRefresh(task, isCountUp);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('结束计时'),
-          ),
-        ],
-      ),
-    );
+    _stopTaskAndRefresh(task, isCountUp);
   }
 
   /// 结束计时 → **等 stopTimer 写完记录** → 再查当日时长。
@@ -588,22 +579,24 @@ class _TaskScreenState extends State<TaskScreen> {
     await _loadDailyDurations();
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.textOnPrimary,
-                size: 20,
-              ),
-              const SizedBox(width: 10),
-              Text(isCountUp ? '时间已记录' : '任务已完成'),
-            ],
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  color: AppColors.textOnPrimary,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Text(isCountUp ? '时间已记录' : '任务已完成'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
           ),
-          backgroundColor: AppColors.success,
-        ),
-      );
+        );
     }
   }
 }

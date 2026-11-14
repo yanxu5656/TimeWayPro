@@ -199,7 +199,7 @@ class TaskCard extends StatelessWidget {
             ),
 
             // 操作按钮
-            if (!task.isCompleted)
+            if (!task.isCompleted || isRunning)
               isRunning ? _buildStopButton() : _buildStartButton(),
           ],
         ),
