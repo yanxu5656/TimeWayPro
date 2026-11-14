@@ -1,6 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/ui/paper.dart';
 import '../features/daily/presentation/screens/daily_screen.dart';
+import '../features/focus/presentation/screens/focus_timer_screen.dart';
+import '../features/focus/presentation/widgets/focus_alarm_banner.dart';
+import '../features/focus/presentation/widgets/focus_timer_fab.dart';
+import '../features/focus/providers/focus_timer_provider.dart';
 import '../features/weekly/presentation/screens/weekly_screen.dart';
 import '../features/task/presentation/screens/task_screen.dart';
 import '../features/statistics/presentation/screens/statistics_screen.dart';
@@ -23,6 +30,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// 详见 [NavBarInset] 的文档。
   final GlobalKey _navBarKey = GlobalKey();
   double _navBarHeight = 0;
+  Offset _focusFabShift = Offset.zero;
 
   final List<Widget> _screens = const [
     DailyScreen(), // 0 待办
@@ -52,6 +60,21 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   void didChangeMetrics() => _measureNavBar(const Duration());
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<FocusTimerProvider>().syncWithClock();
+    }
+  }
+
+  void _openFocusTimer() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const FocusTimerScreen(),
+      ),
+    );
+  }
+
   void _measureNavBar(Duration _) {
     final RenderBox? box =
         _navBarKey.currentContext?.findRenderObject() as RenderBox?;
@@ -75,8 +98,63 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         child: Scaffold(
           // 内容延伸到纸面底部导航之下，FAB 靠 NavBarInset 避让
           extendBody: true,
-          body: RepaintBoundary(
-            child: IndexedStack(index: _currentIndex, children: _screens),
+          body: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final double baseBottom =
+                  (_navBarHeight > 0 ? _navBarHeight : 72) + 16;
+              final double minBottom = baseBottom - 8;
+              final double maxBottom = math.max(
+                minBottom,
+                constraints.maxHeight - 104,
+              );
+              final double maxLeft = math.max(
+                AppSpacing.xs,
+                constraints.maxWidth - 132,
+              );
+              final double left = (AppSpacing.screenH + _focusFabShift.dx).clamp(
+                AppSpacing.xs,
+                maxLeft,
+              );
+              final double bottom = (baseBottom - _focusFabShift.dy).clamp(
+                minBottom,
+                maxBottom,
+              );
+
+              return Stack(
+                children: <Widget>[
+                  RepaintBoundary(
+                    child: IndexedStack(index: _currentIndex, children: _screens),
+                  ),
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + AppSpacing.xs,
+                    left: AppSpacing.screenH,
+                    right: AppSpacing.screenH,
+                    child: FocusAlarmBanner(onOpenTimer: _openFocusTimer),
+                  ),
+                  Positioned(
+                    left: left,
+                    bottom: bottom,
+                    child: FocusTimerFab(
+                      onTap: _openFocusTimer,
+                      onDragDelta: (Offset delta) {
+                        setState(() {
+                          final double nextLeft =
+                              (AppSpacing.screenH + _focusFabShift.dx + delta.dx)
+                                  .clamp(AppSpacing.xs, maxLeft);
+                          final double nextBottom =
+                              (baseBottom - _focusFabShift.dy - delta.dy)
+                                  .clamp(minBottom, maxBottom);
+                          _focusFabShift = Offset(
+                            nextLeft - AppSpacing.screenH,
+                            baseBottom - nextBottom,
+                          );
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           bottomNavigationBar: PaperNavBar(
             key: _navBarKey,

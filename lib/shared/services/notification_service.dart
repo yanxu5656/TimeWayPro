@@ -25,10 +25,22 @@ class NotificationService {
   /// 不会出现 `cancel` 先落地、更早发起的 `show` 后落地的问题。
   Future<void> _opQueue = Future<void>.value();
 
+  /// 专注计时通知队列与代次（独立于任务计时通知，互不干扰）
+  int _focusEpoch = 0;
+  Future<void> _focusOpQueue = Future<void>.value();
+
   // 通知ID
   static const int _timerNotificationId = 1001;
   static const String _channelId = 'timer_channel';
   static const String _channelName = '计时通知';
+
+  static const int _focusNotificationId = 1002;
+  static const String _focusChannelId = 'focus_channel';
+  static const String _focusChannelName = '专注计时通知';
+
+  static const int _focusAlarmNotificationId = 1003;
+  static const String _focusAlarmChannelId = 'focus_alarm_channel';
+  static const String _focusAlarmChannelName = '专注闹铃提醒';
 
   Future<void> _enqueueOp(Future<void> Function() action) {
     final Future<void> task = _opQueue
@@ -38,10 +50,35 @@ class NotificationService {
     return task;
   }
 
+  Future<void> _enqueueFocusOp(Future<void> Function() action) {
+    final Future<void> task = _focusOpQueue
+        .catchError((Object _) {})
+        .then((_) => action());
+    _focusOpQueue = task.then((_) {}, onError: (Object _) {});
+    return task;
+  }
+
+  Future<void> _safePluginCall(
+    String actionName,
+    Future<void> Function() action,
+  ) async {
+    try {
+      await action();
+    } on MissingPluginException catch (e) {
+      debugPrint('NotificationService $actionName skipped: $e');
+    } on PlatformException catch (e) {
+      debugPrint('NotificationService $actionName skipped: $e');
+    } catch (e) {
+      // flutter_local_notifications 在未注册平台实现的宿主环境（如桌面测试）
+      // 会抛出 LateInitializationError，这里降级跳过以保持纯逻辑/UI 测试稳定。
+      debugPrint('NotificationService $actionName skipped: $e');
+    }
+  }
+
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    try {
+    await _safePluginCall('initialize', () async {
       const androidSettings = AndroidInitializationSettings(
         '@mipmap/ic_launcher',
       );
@@ -70,16 +107,36 @@ class NotificationService {
         enableVibration: false,
       );
 
-      await _plugin
+      const focusChannel = AndroidNotificationChannel(
+        _focusChannelId,
+        _focusChannelName,
+        description: '显示 45/5 专注与休息倒计时',
+        importance: Importance.low,
+        playSound: false,
+        enableVibration: false,
+      );
+
+      final focusAlarmChannel = AndroidNotificationChannel(
+        _focusAlarmChannelId,
+        _focusAlarmChannelName,
+        description: '每 45 分钟专注结束或 5 分钟休息结束时的闹铃提醒',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+        vibrationPattern: Int64List.fromList(<int>[0, 650, 350]),
+      );
+
+      final androidPlugin = _plugin
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.createNotificationChannel(channel);
+          >();
+      await androidPlugin?.createNotificationChannel(channel);
+      await androidPlugin?.createNotificationChannel(focusChannel);
+      await androidPlugin?.createNotificationChannel(focusAlarmChannel);
 
       _isInitialized = true;
-    } on MissingPluginException catch (e) {
-      debugPrint('NotificationService initialize skipped: $e');
-    }
+    });
   }
 
   // 显示计时通知
@@ -201,6 +258,104 @@ class NotificationService {
     _notificationEpoch++;
     _updateTimer?.cancel();
     _updateTimer = null;
+  }
+
+  // ==================== 专注 45/5 计时与闹铃通知 ====================
+
+  Future<void> showFocusTimerNotification({
+    required String title,
+    required String body,
+  }) {
+    final int epoch = _focusEpoch;
+    return _enqueueFocusOp(() async {
+      if (epoch != _focusEpoch) return;
+      await initialize();
+      if (epoch != _focusEpoch) return;
+
+      final androidDetails = AndroidNotificationDetails(
+        _focusChannelId,
+        _focusChannelName,
+        channelDescription: '显示 45/5 专注与休息倒计时',
+        importance: Importance.low,
+        priority: Priority.low,
+        ongoing: true,
+        autoCancel: false,
+        showWhen: false,
+        enableLights: false,
+        enableVibration: false,
+        playSound: false,
+        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        styleInformation: BigTextStyleInformation(body, contentTitle: title),
+      );
+
+      await _safePluginCall('focus show', () async {
+        await _plugin.show(
+          _focusNotificationId,
+          title,
+          body,
+          NotificationDetails(android: androidDetails),
+        );
+      });
+    });
+  }
+
+  Future<void> removeFocusTimerNotification() {
+    _focusEpoch++;
+    return _enqueueFocusOp(() async {
+      await _safePluginCall(
+        'focus cancel',
+        () => _plugin.cancel(_focusNotificationId),
+      );
+    });
+  }
+
+  Future<void> showFocusAlarmNotification({
+    required String title,
+    required String body,
+  }) {
+    final int epoch = _focusEpoch;
+    return _enqueueFocusOp(() async {
+      if (epoch != _focusEpoch) return;
+      await initialize();
+      if (epoch != _focusEpoch) return;
+
+      final androidDetails = AndroidNotificationDetails(
+        _focusAlarmChannelId,
+        _focusAlarmChannelName,
+        channelDescription: '每 45 分钟专注结束或 5 分钟休息结束时的闹铃提醒',
+        importance: Importance.max,
+        priority: Priority.max,
+        ongoing: true,
+        autoCancel: false,
+        enableVibration: true,
+        playSound: true,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+        category: AndroidNotificationCategory.alarm,
+        vibrationPattern: Int64List.fromList(<int>[0, 650, 350]),
+        // Android Notification.FLAG_INSISTENT (4)：在通知被取消前持续循环提醒
+        additionalFlags: Int32List.fromList(<int>[4]),
+        styleInformation: BigTextStyleInformation(body, contentTitle: title),
+      );
+
+      await _safePluginCall('focus alarm show', () async {
+        await _plugin.show(
+          _focusAlarmNotificationId,
+          title,
+          body,
+          NotificationDetails(android: androidDetails),
+        );
+      });
+    });
+  }
+
+  Future<void> removeFocusAlarmNotification() {
+    _focusEpoch++;
+    return _enqueueFocusOp(() async {
+      await _safePluginCall(
+        'focus alarm cancel',
+        () => _plugin.cancel(_focusAlarmNotificationId),
+      );
+    });
   }
 
   String _formatDuration(int seconds) {

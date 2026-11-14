@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
 import '../core/ui/ui_effects.dart';
 import '../features/daily/providers/daily_provider.dart';
+import '../features/focus/providers/focus_timer_provider.dart';
 import '../features/task/providers/task_provider.dart';
 import '../features/planning/providers/plan_provider.dart';
 import '../features/settings/providers/settings_provider.dart';
@@ -22,6 +23,9 @@ class TimeWayProApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PlanProvider()..loadPlans()),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider()..loadSyncConfig(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => FocusTimerProvider()..restoreState(),
         ),
       ],
       child: MaterialApp(

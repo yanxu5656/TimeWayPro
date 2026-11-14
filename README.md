@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.7.2-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.7.3-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -109,6 +109,13 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.7.3 — 全局悬浮 45/5 专注计时与持续振动闹铃
+*2026-11-14*
+
+- **全局可拖动悬浮入口**：在「待办 / 每周 / 任务 / 统计 / 规划 / 设置」六个页面表层统一展示「专注」悬浮胶囊按钮（支持拖拽调整位置），任意页面一键进入专心计时页。
+- **45 分钟专注 / 5 分钟休息循环**：基于壁钟截止时间与本地持久化计算剩余倒计时，切后台或恢复前台自动校准时间节点并推送通知栏倒计时。
+- **持续振动闹铃强提醒**：原生集成 Android `Vibrator` 循环波形振动 + `USAGE_ALARM` 循环闹铃 + `FLAG_INSISTENT` 高优先级通知，在专注满 45 分钟或休息满 5 分钟时持续提醒，支持在计时页、通知栏或任意页面顶部横幅一键停铃并衔接下一阶段。
 
 ### v1.7.2 — 统计页「立即刷新」按钮与恢复防重入
 *2026-11-14*
