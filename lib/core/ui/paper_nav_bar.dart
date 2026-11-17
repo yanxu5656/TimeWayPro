@@ -34,14 +34,18 @@ class _NavItemData {
   final String label;
 }
 
-/// 暖白底部导航。
+/// 暖白底部导航，v1.10.0 起**两行 4×2** 共八个入口。
+///
+/// 一行六格时再加两格会把每格挤到 48dp 以下、标签放不下；两行让每格
+/// 保持 ~85dp 宽与 ≥44dp 的触控高度，代价是导航本身高约 35dp——
+/// 同期刊头瘦身省下的 ~48dp 补回来还有余。
 ///
 /// 导航是暖白卡面而不是纸面：它要和浮起的列表项区分开，同时比纸底
 /// 亮一档，托住整页。选中态不靠底色块，靠**陶土图标文字 + 陶土圆点**
-/// ——像目录页上当前条目旁的点标记。
+/// ——像目录页上当前条目旁的点标记。两行之间一条发丝线分栏。
 ///
 /// 未选中项用 [AppColors.textSecondary]（5.5:1）而不是 textHint：
-/// 导航标签是 11px 的语义文字，hint 档（2.8:1）在这个字号下读不清。
+/// 导航标签是 10px 的语义文字，hint 档（2.8:1）在这个字号下读不清。
 class PaperNavBar extends StatelessWidget {
   const PaperNavBar({super.key, required this.index, required this.onChanged});
 
@@ -57,7 +61,21 @@ class PaperNavBar extends StatelessWidget {
       '任务',
     ),
     _NavItemData(Icons.bar_chart_rounded, Icons.bar_chart_rounded, '统计'),
-    _NavItemData(Icons.account_tree_outlined, Icons.account_tree_rounded, '规划'),
+    _NavItemData(
+      Icons.account_tree_outlined,
+      Icons.account_tree_rounded,
+      '规划',
+    ),
+    _NavItemData(
+      Icons.sports_esports_outlined,
+      Icons.sports_esports_rounded,
+      '闲时',
+    ),
+    _NavItemData(
+      Icons.calendar_month_outlined,
+      Icons.calendar_month_rounded,
+      '月历',
+    ),
     _NavItemData(Icons.settings_outlined, Icons.settings_rounded, '设置'),
   ];
 
@@ -71,21 +89,36 @@ class PaperNavBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Row(
+          padding: const EdgeInsets.only(top: 4, bottom: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              for (int i = 0; i < _items.length; i++)
-                Expanded(
-                  child: _NavItem(
-                    data: _items[i],
-                    selected: i == index,
-                    onTap: () => onChanged(i),
-                  ),
-                ),
+              _buildRow(0),
+              Container(
+                height: 1,
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                color: AppColors.divider,
+              ),
+              _buildRow(4),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRow(int start) {
+    return Row(
+      children: <Widget>[
+        for (int i = start; i < start + 4; i++)
+          Expanded(
+            child: _NavItem(
+              data: _items[i],
+              selected: i == index,
+              onTap: () => onChanged(i),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -109,30 +142,34 @@ class _NavItem extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(selected ? data.activeIcon : data.icon, size: 22, color: fg),
-            const SizedBox(height: 3),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              style: (selected ? AppText.navLabelActive : AppText.navLabel)
-                  .copyWith(color: fg),
-              child: Text(data.label),
-            ),
-            // 当前条目的「点标记」。高度恒定避免切换时导航栏跳动
-            const SizedBox(height: 3),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                color: selected ? AppColors.primary : Colors.transparent,
-                shape: BoxShape.circle,
+        child: Padding(
+          // 两行导航每行仍要 ≥44dp 触控高度
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(selected ? data.activeIcon : data.icon, size: 20, color: fg),
+              const SizedBox(height: 2),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                style: (selected ? AppText.navLabelActive : AppText.navLabel)
+                    .copyWith(color: fg),
+                child: Text(data.label),
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              // 当前条目的「点标记」。高度恒定避免切换时导航栏跳动
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 3,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.primary : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

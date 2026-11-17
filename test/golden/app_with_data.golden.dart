@@ -194,6 +194,55 @@ Map<String, dynamic> _seed() {
         'created_at': nowIso,
       },
     ],
+    'leisure_items': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'l1',
+        'title': '打《丝之歌》的新存档',
+        'note': '等周末有空再开荒',
+        'is_done': 0,
+        'sort_order': 0,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'l2',
+        'title': '学做提拉米苏',
+        'note': '马斯卡彭芝士先买好',
+        'is_done': 0,
+        'sort_order': 1,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'l3',
+        'title': '重看一遍《千与千寻》',
+        'note': null,
+        'is_done': 1,
+        'sort_order': 2,
+        'created_at': nowIso,
+      },
+    ],
+    'calendar_notes': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'c1',
+        'date_key': today,
+        'text': '9-11 高数期末考试',
+        'sort_order': 0,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'c2',
+        'date_key': today,
+        'text': '抢回家的车票',
+        'sort_order': 1,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'c3',
+        'date_key': '${today.substring(0, 7)}-20',
+        'text': '交房租',
+        'sort_order': 0,
+        'created_at': nowIso,
+      },
+    ],
     'sync_config': <Map<String, dynamic>>[],
   };
 }
@@ -220,10 +269,25 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
     }
 
-    const List<String> labels = <String>['待办', '每周', '任务', '统计', '规划', '设置'];
+    const List<String> labels = <String>[
+      '待办',
+      '每周',
+      '任务',
+      '统计',
+      '规划',
+      '闲时',
+      '月历',
+      '设置',
+    ];
     for (int i = 0; i < labels.length; i++) {
       if (i > 0) {
-        await tester.tap(find.text(labels[i]));
+        // 限定导航栏内：月历刊头标题与导航 label 同名
+        await tester.tap(
+          find.descendant(
+            of: find.byType(PaperNavBar),
+            matching: find.text(labels[i]),
+          ),
+        );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 600));
       }

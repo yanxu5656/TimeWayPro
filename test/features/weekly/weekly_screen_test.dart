@@ -36,7 +36,7 @@ void main() {
   // 放在文件第一位：这个用例直接 pumpSeededApp 走真实 IO，而排在
   // 其它带 tapAndFlush 写盘的用例之后时，会等它们在写队列里的尾巴
   // （实测在部分 Windows 环境下等到 10 分钟超时）。首位运行稳定全绿。
-  testWidgets('窄屏（320dp）下页面与 6 项导航栏不溢出', (tester) async {
+  testWidgets('窄屏（320dp）下页面与 8 项两行导航栏不溢出', (tester) async {
     await pumpSeededApp(tester, size: const Size(320, 640));
     await switchToTab(tester, '每周');
 

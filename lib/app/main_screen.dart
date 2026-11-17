@@ -12,6 +12,8 @@ import '../features/weekly/presentation/screens/weekly_screen.dart';
 import '../features/task/presentation/screens/task_screen.dart';
 import '../features/statistics/presentation/screens/statistics_screen.dart';
 import '../features/planning/presentation/screens/planning_screen.dart';
+import '../features/leisure/presentation/screens/leisure_screen.dart';
+import '../features/calendar/presentation/screens/calendar_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -38,7 +40,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     TaskScreen(), // 2 任务
     StatisticsScreen(), // 3 统计
     PlanningScreen(), // 4 规划
-    SettingsScreen(), // 5 设置
+    LeisureScreen(), // 5 闲时
+    CalendarScreen(), // 6 月历
+    SettingsScreen(), // 7 设置
   ];
 
   @override
@@ -101,7 +105,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           body: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
               final double baseBottom =
-                  (_navBarHeight > 0 ? _navBarHeight : 72) + 16;
+                  (_navBarHeight > 0 ? _navBarHeight : 100) + 16;
               final double minBottom = baseBottom - 8;
               final double maxBottom = math.max(
                 minBottom,

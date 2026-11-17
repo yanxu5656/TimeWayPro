@@ -7,7 +7,7 @@ class AppConstants {
   /// 必须与 pubspec.yaml 的 `version:` 语义段一致——由
   /// `test/core/constants/app_version_test.dart` 守护。这两处曾经漂移过
   /// （pubspec 到 1.6.0 时这里还停在 1.3.3），改版本号要同时改两处。
-  static const String appVersion = '1.9.0';
+  static const String appVersion = '1.10.0';
 
   // WebDAV默认配置
   static const String defaultWebDavUrl = 'https://dav.jianguoyun.com/dav/';

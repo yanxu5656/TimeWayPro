@@ -157,7 +157,7 @@ void main() {
     });
   });
 
-  testWidgets('六个 Tab 表面都存在专注悬浮按钮且不破坏主 FAB', (WidgetTester tester) async {
+  testWidgets('八个 Tab 表面都存在专注悬浮按钮且不破坏主 FAB', (WidgetTester tester) async {
     await pumpSeededApp(tester);
 
     const Map<String, int> expectedPaperFabCount = <String, int>{
@@ -166,6 +166,8 @@ void main() {
       '任务': 1,
       '统计': 0,
       '规划': 1,
+      '闲时': 1,
+      '月历': 0,
       '设置': 0,
     };
 

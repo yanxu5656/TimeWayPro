@@ -25,7 +25,7 @@ DST_DIR = os.path.join('docs', 'screenshots')
 WIDTH = 420
 QUALITY = 88
 
-NAMES = ['daily', 'weekly', 'task', 'stats', 'planning']
+NAMES = ['daily', 'weekly', 'task', 'stats', 'planning', 'leisure', 'calendar']
 
 
 def main():

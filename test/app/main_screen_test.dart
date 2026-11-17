@@ -41,7 +41,7 @@ void main() {
     );
   });
 
-  testWidgets('6 个 Tab 都能切换并渲染各自的标题', (WidgetTester tester) async {
+  testWidgets('8 个 Tab 都能切换并渲染各自的标题', (WidgetTester tester) async {
     await pumpSeededApp(tester);
 
     expect(find.text('每日待办'), findsOneWidget);
@@ -51,6 +51,8 @@ void main() {
       ('任务', '时途'),
       ('统计', '统计'),
       ('规划', '人生规划'),
+      ('闲时', '闲时清单'),
+      ('月历', '月历'),
       ('设置', '设置'),
     ]) {
       await switchToTab(tester, label);
@@ -70,6 +72,8 @@ void main() {
       '任务',
       '统计',
       '规划',
+      '闲时',
+      '月历',
       '设置',
     ]) {
       if (label != '待办') {
@@ -100,9 +104,9 @@ void main() {
     }
   });
 
-  testWidgets('6 个 Tab 的刊头标题存在且起始边对齐', (WidgetTester tester) async {
+  testWidgets('8 个 Tab 的刊头标题存在且起始边对齐', (WidgetTester tester) async {
     // 静白志的页面标题在正文刊头里（不是顶栏）。一致性要求随之变成：
-    // 每页都有刊头大标题，且六页标题的左缘在同一 x 上——
+    // 每页都有刊头大标题，且八页标题的左缘在同一 x 上——
     // v1.3.1 修的就是「有的页标题靠左 40px」那种错位。
     await pumpSeededApp(tester);
 
@@ -112,6 +116,8 @@ void main() {
       ('任务', '时途'),
       ('统计', '统计'),
       ('规划', '人生规划'),
+      ('闲时', '闲时清单'),
+      ('月历', '月历'),
       ('设置', '设置'),
     ];
 
@@ -147,6 +153,8 @@ void main() {
       '任务',
       '统计',
       '规划',
+      '闲时',
+      '月历',
       '设置',
     ]) {
       if (label != '待办') await switchToTab(tester, label);
@@ -161,7 +169,7 @@ void main() {
     }
   });
 
-  testWidgets('窄屏（320dp）下导航栏 6 项不溢出', (WidgetTester tester) async {
+  testWidgets('窄屏（320dp）下两行导航 8 项不溢出', (WidgetTester tester) async {
     await pumpSeededApp(tester, size: const Size(320, 640));
 
     expect(tester.takeException(), isNull);
@@ -171,6 +179,8 @@ void main() {
       '任务',
       '统计',
       '规划',
+      '闲时',
+      '月历',
       '设置',
     ]) {
       expect(find.text(label), findsOneWidget);

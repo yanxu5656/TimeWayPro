@@ -30,8 +30,10 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:time_way_pro/app/main_screen.dart';
 import 'package:time_way_pro/core/ui/paper.dart';
+import 'package:time_way_pro/features/calendar/providers/calendar_provider.dart';
 import 'package:time_way_pro/features/daily/providers/daily_provider.dart';
 import 'package:time_way_pro/features/focus/providers/focus_timer_provider.dart';
+import 'package:time_way_pro/features/leisure/providers/leisure_provider.dart';
 import 'package:time_way_pro/features/planning/providers/plan_provider.dart';
 import 'package:time_way_pro/features/settings/providers/settings_provider.dart';
 import 'package:time_way_pro/features/task/providers/task_provider.dart';
@@ -109,6 +111,12 @@ Widget _appWithRealFont() {
       ChangeNotifierProvider<PlanProvider>(
         create: (_) => PlanProvider()..loadPlans(),
       ),
+      ChangeNotifierProvider<LeisureProvider>(
+        create: (_) => LeisureProvider()..loadItems(),
+      ),
+      ChangeNotifierProvider<CalendarProvider>(
+        create: (_) => CalendarProvider()..loadMonth(),
+      ),
       ChangeNotifierProvider<SettingsProvider>(
         create: (_) => SettingsProvider()..loadSyncConfig(),
       ),
@@ -165,11 +173,19 @@ void main() {
       ('任务', 'task'),
       ('统计', 'stats'),
       ('规划', 'planning'),
+      ('闲时', 'leisure'),
+      ('月历', 'calendar'),
     ];
 
     for (int i = 0; i < shots.length; i++) {
       if (i > 0) {
-        await tester.tap(find.text(shots[i].$1));
+        // 限定导航栏内：月历刊头标题与导航 label 同名
+        await tester.tap(
+          find.descendant(
+            of: find.byType(PaperNavBar),
+            matching: find.text(shots[i].$1),
+          ),
+        );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 700));
       }
@@ -232,7 +248,12 @@ void main() {
     }
 
     // 每周页第一条目标的挪周按钮
-    await tester.tap(find.text('每周'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(PaperNavBar),
+        matching: find.text('每周'),
+      ),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     await tester.tap(find.byIcon(Icons.event_repeat_outlined).first);
@@ -245,6 +266,48 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('../../build/readme_screenshots/sheet_move.png'),
+    );
+    debugDisableShadows = true;
+  });
+
+  testWidgets('日标注面板截图', (WidgetTester tester) async {
+    UiEffects.resetForTesting();
+    UiEffects.tier.value = UiEffectTier.reduced;
+    debugDisableShadows = false;
+
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.runAsync(() => DatabaseHelper().importAll(seedData()));
+
+    await tester.pumpWidget(_appWithRealFont());
+    for (int i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    // 月历页点今天，打开当天标注面板
+    await tester.tap(
+      find.descendant(
+        of: find.byType(PaperNavBar),
+        matching: find.text('月历'),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    final DateTime now = DateTime.now();
+    final String today =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+    await tester.tap(find.byKey(Key('cal_day_$today')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(tester.takeException(), isNull);
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/readme_screenshots/sheet_day.png'),
     );
     debugDisableShadows = true;
   });

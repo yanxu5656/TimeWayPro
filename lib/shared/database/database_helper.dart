@@ -22,6 +22,8 @@ class DatabaseHelper {
     'daily_tasks',
     'weekly_goals',
     'sync_config',
+    'leisure_items',
+    'calendar_notes',
   ];
 
   static Map<String, dynamic> _emptyData() => <String, dynamic>{

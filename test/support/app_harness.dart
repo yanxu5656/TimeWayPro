@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -188,6 +187,55 @@ Map<String, dynamic> seedData() {
         'created_at': nowIso,
       },
     ],
+    'leisure_items': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'l1',
+        'title': '打一款新游戏',
+        'note': '等周末打折再入手',
+        'is_done': 0,
+        'sort_order': 0,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'l2',
+        'title': '学做提拉米苏',
+        'note': null,
+        'is_done': 0,
+        'sort_order': 1,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'l3',
+        'title': '重看一遍《千与千寻》',
+        'note': null,
+        'is_done': 1,
+        'sort_order': 2,
+        'created_at': nowIso,
+      },
+    ],
+    'calendar_notes': <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'c1',
+        'date_key': today,
+        'text': '9-11 高数期末考试',
+        'sort_order': 0,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'c2',
+        'date_key': today,
+        'text': '抢回家的车票',
+        'sort_order': 1,
+        'created_at': nowIso,
+      },
+      <String, dynamic>{
+        'id': 'c3',
+        'date_key': '${today.substring(0, 7)}-20',
+        'text': '交房租',
+        'sort_order': 0,
+        'created_at': nowIso,
+      },
+    ],
     'sync_config': <Map<String, dynamic>>[],
   };
 }
@@ -283,9 +331,17 @@ Future<void> tapAndFlush(WidgetTester tester, Finder finder) async {
   await tester.pump(const Duration(milliseconds: 600));
 }
 
-/// 切到指定 Tab 并等动画落定
+/// 切到指定 Tab 并等动画落定。
+///
+/// 限定在导航栏内找 label：月历页的刊头标题与导航 label 同名，
+/// 全树 find.text 会命中两处导致 tap 歧义。
 Future<void> switchToTab(WidgetTester tester, String label) async {
-  await tester.tap(find.text(label));
+  await tester.tap(
+    find.descendant(
+      of: find.byType(PaperNavBar),
+      matching: find.text(label),
+    ),
+  );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 600));
 }

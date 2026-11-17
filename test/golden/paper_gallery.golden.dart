@@ -375,7 +375,7 @@ void main() {
     );
   });
 
-  testWidgets('6 个 Tab 逐个出图', (WidgetTester tester) async {
+  testWidgets('8 个 Tab 逐个出图', (WidgetTester tester) async {
     // FAB 被导航栏遮挡那个回归就是在"没看过的页面"里藏着的，
     // 所以每个 Tab 都出图过一遍。
     UiEffects.resetForTesting();
@@ -388,10 +388,25 @@ void main() {
     await tester.pump();
     await tester.pump(); // 等 MainScreen 回填导航栏高度
 
-    const List<String> labels = <String>['待办', '每周', '任务', '统计', '规划', '设置'];
+    const List<String> labels = <String>[
+      '待办',
+      '每周',
+      '任务',
+      '统计',
+      '规划',
+      '闲时',
+      '月历',
+      '设置',
+    ];
     for (int i = 0; i < labels.length; i++) {
       if (i > 0) {
-        await tester.tap(find.text(labels[i]));
+        // 限定导航栏内：月历刊头标题与导航 label 同名
+        await tester.tap(
+          find.descendant(
+            of: find.byType(PaperNavBar),
+            matching: find.text(labels[i]),
+          ),
+        );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 600));
       }
