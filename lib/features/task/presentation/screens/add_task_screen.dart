@@ -63,9 +63,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       title: isEditing ? '编辑任务' : '新建任务',
       actions: [
         if (isEditing)
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.error),
-            onPressed: _deleteTask,
+          PaperIconButton(
+            icon: Icons.delete_outline,
+            color: AppColors.error,
+            size: PaperIconButton.sizeChrome,
+            onTap: _deleteTask,
+            tooltip: '删除任务',
           ),
       ],
       body: Form(
@@ -234,13 +237,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       ),
                       const Spacer(),
                       if (_dueDate != null)
-                        GestureDetector(
+                        PaperIconButton(
+                          icon: Icons.close,
+                          iconSize: 18,
+                          size: 32,
+                          color: AppColors.textSecondary,
                           onTap: () => setState(() => _dueDate = null),
-                          child: const Icon(
-                            Icons.close,
-                            size: 18,
-                            color: AppColors.textHint,
-                          ),
+                          tooltip: '清除截止日期',
                         ),
                     ],
                   ),
@@ -270,9 +273,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             const SizedBox(height: 32),
 
             // 保存按钮
-            ElevatedButton(
+            PaperButton(
               onPressed: _saveTask,
-              child: Text(isEditing ? '保存修改' : '创建任务'),
+              label: isEditing ? '保存修改' : '创建任务',
             ),
 
             const SizedBox(height: 16),
@@ -335,10 +338,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            icon: const Icon(Icons.remove_circle_outline),
-            onPressed: value > min ? () => onChanged(value - 1) : null,
+          PaperIconButton(
+            icon: Icons.remove_circle_outline,
+            onTap: value > min ? () => onChanged(value - 1) : null,
+            enabled: value > min,
             color: AppColors.primary,
+            size: 40,
           ),
           Column(
             children: [
@@ -358,10 +363,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: value < max ? () => onChanged(value + 1) : null,
+          PaperIconButton(
+            icon: Icons.add_circle_outline,
+            onTap: value < max ? () => onChanged(value + 1) : null,
+            enabled: value < max,
             color: AppColors.primary,
+            size: 40,
           ),
         ],
       ),
@@ -432,17 +439,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         title: const Text('删除任务'),
         content: Text('确定要删除「${widget.task!.title}」吗？'),
         actions: [
-          TextButton(
+          PaperTextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            label: '取消',
           ),
-          TextButton(
+          PaperTextButton(
             onPressed: () {
+              AppHaptics.confirm();
               Navigator.pop(context);
               context.read<TaskProvider>().deleteTask(widget.task!.id);
               Navigator.pop(context);
             },
-            child: const Text('删除', style: TextStyle(color: AppColors.error)),
+            color: AppColors.error,
+            label: '删除',
           ),
         ],
       ),

@@ -1,3 +1,5 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -8,6 +10,9 @@ import 'pressable_scale.dart';
 /// 页面上唯一的「重」元素：整块陶土压在暖纸上，天然是对比度最高的
 /// 东西，正好配「当前页的主操作」。与刊头色带同色，前后呼应。
 /// 放在 `Scaffold.floatingActionButton` 槽位即可。
+///
+/// v1.9.0：按下时不只是缩放——投影同步压缩（e2 → 贴近纸面）+
+/// 整体下沉 1.5px，读起来像「按进纸里」而不是「缩小一圈」。
 class PaperFab extends StatelessWidget {
   const PaperFab({
     super.key,
@@ -27,37 +32,55 @@ class PaperFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool extended = label != null;
 
-    Widget fab = Container(
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: AppRadius.brFull,
-        boxShadow: AppShadows.e2,
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: extended ? AppSpacing.lg : AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(icon, color: AppColors.textOnPrimary, size: 21),
-          if (extended) ...<Widget>[
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              label!,
-              style: AppText.labelLg.copyWith(color: AppColors.textOnPrimary),
-            ),
-          ],
-        ],
-      ),
-    );
-
-    fab = PressableScale(
+    Widget fab = PressableScale(
       enabled: onPressed != null,
+      pressOffset: 1.5,
+      builder: (BuildContext context, double press, Widget? child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: AppRadius.brFull,
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Color.lerp(
+                  AppColors.shadowMedium,
+                  AppColors.shadow,
+                  press,
+                )!,
+                blurRadius: lerpDouble(24, 6, press)!,
+                offset: Offset(0, lerpDouble(10, 2, press)!),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: extended ? AppSpacing.lg : AppSpacing.md,
+            vertical: AppSpacing.md,
+          ),
+          child: child,
+        );
+      },
       child: GestureDetector(
         onTap: onPressed,
         behavior: HitTestBehavior.opaque,
-        child: Semantics(button: true, label: label, child: fab),
+        child: Semantics(
+          button: true,
+          label: label,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(icon, color: AppColors.textOnPrimary, size: 21),
+              if (extended) ...<Widget>[
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  label!,
+                  style: AppText.labelLg.copyWith(
+                    color: AppColors.textOnPrimary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
 

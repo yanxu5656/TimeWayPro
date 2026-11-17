@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
+import 'paper_icon_button.dart';
 
 /// 平顶栏（二级页用）。
 ///
@@ -71,10 +72,12 @@ class PaperAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (!canPop) return const SizedBox(width: AppSpacing.xs);
     return Padding(
       padding: const EdgeInsets.only(left: AppSpacing.xxs),
-      child: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-        color: AppColors.textPrimary,
-        onPressed: () => Navigator.of(context).maybePop(),
+      child: PaperIconButton(
+        icon: Icons.arrow_back_ios_new_rounded,
+        iconSize: 20,
+        size: PaperIconButton.sizeChrome,
+        onTap: () => Navigator.of(context).maybePop(),
+        tooltip: '返回',
       ),
     );
   }

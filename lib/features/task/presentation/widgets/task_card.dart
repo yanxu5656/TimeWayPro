@@ -198,9 +198,28 @@ class TaskCard extends StatelessWidget {
               ),
             ),
 
-            // 操作按钮
+            // 操作按钮：开始↔停止交叉淡入 + 缩放，两个按钮同尺寸，
+            // 切换时行内布局不跳
             if (!task.isCompleted || isRunning)
-              isRunning ? _buildStopButton() : _buildStartButton(),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                transitionBuilder:
+                    (Widget child, Animation<double> animation) =>
+                        FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: Tween<double>(
+                              begin: 0.7,
+                              end: 1,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        ),
+                child: KeyedSubtree(
+                  key: ValueKey<bool>(isRunning),
+                  child: isRunning ? _buildStopButton() : _buildStartButton(),
+                ),
+              ),
           ],
         ),
       ),

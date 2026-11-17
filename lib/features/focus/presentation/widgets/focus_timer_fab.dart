@@ -58,7 +58,9 @@ class FocusTimerFab extends StatelessWidget {
           child: Semantics(
             button: true,
             label: '专注计时悬浮按钮：$label',
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               decoration: BoxDecoration(
@@ -72,7 +74,29 @@ class FocusTimerFab extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Icon(icon, size: 19, color: fgColor),
+                  // 图标随阶段形变（计时→咖啡→闹铃）；秒数文本每秒都变，
+                  // 不做交叉淡入，否则一直在闪
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    transitionBuilder:
+                        (Widget child, Animation<double> animation) =>
+                            FadeTransition(
+                              opacity: animation,
+                              child: ScaleTransition(
+                                scale: Tween<double>(
+                                  begin: 0.7,
+                                  end: 1,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            ),
+                    child: Icon(
+                      icon,
+                      key: ValueKey<IconData>(icon),
+                      size: 19,
+                      color: fgColor,
+                    ),
+                  ),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
                     label,

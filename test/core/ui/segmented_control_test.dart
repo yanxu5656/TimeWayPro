@@ -75,4 +75,38 @@ void main() {
     expect(effective(find.text('月')).color, AppColors.textPrimary);
     expect(effective(find.text('日')).color, AppColors.textSecondary);
   });
+
+  testWidgets('指示线是一整条滑动过去，不是各自淡入淡出', (tester) async {
+    int value = 0;
+    Widget build() => host(value: value, onChanged: (v) => value = v);
+    await tester.pumpWidget(build());
+    await tester.pumpAndSettle();
+
+    // 只有一条指示线（Stack 层的 AnimatedPositioned），
+    // 而不是每个分段各挂一条
+    expect(find.byType(AnimatedPositioned), findsOneWidget);
+    final double segWidth =
+        tester.getSize(find.byType(SegmentedControl<int>)).width / 3;
+    // widget.left 是目标值，动画中的实时位置要从渲染树读
+    double barLeft() => tester
+        .getTopLeft(
+          find.descendant(
+            of: find.byType(SegmentedControl<int>),
+            matching: find.byType(ColoredBox),
+          ),
+        )
+        .dx;
+    expect(barLeft(), moreOrLessEquals(0, epsilon: 0.5));
+
+    await tester.tap(find.text('月'));
+    await tester.pumpWidget(build());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 130)); // 260ms 的一半
+    final double mid = barLeft();
+    expect(mid, greaterThan(segWidth * 0.5), reason: '线应在路上，不是瞬移');
+    expect(mid, lessThan(segWidth * 2 - 0.5));
+
+    await tester.pumpAndSettle();
+    expect(barLeft(), moreOrLessEquals(segWidth * 2, epsilon: 0.5));
+  });
 }

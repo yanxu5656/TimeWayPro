@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.8.0-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.9.0-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -109,6 +109,16 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.9.0 — 全按钮交互升级：按压、触感与状态形变
+*2026-11-17*
+
+- **统一按压语言**：`PressableScale` 下沉式按压——110ms easeOut 按下、220ms easeOutBack 回弹，主按钮与 FAB 附加 1.5px 下沉与阴影压缩（FAB 影随按压从 24px 收到 6px），按钮 / 芯片 / 勾选圈 / 刷新按钮全 app 同一手感；系统「减弱动效」开启时自动只留触感、不做缩放。
+- **触感词汇 `AppHaptics`**：轻点与选择 `selectionClick`、完成 `mediumImpact`、删除等破坏性确认 `heavyImpact`、停铃 `mediumImpact`——按语义分级，不再一律重震。
+- **`PaperButton` 家族**：包装真实 Material 按钮（语义与无障碍不变），标签 / 图标 180ms `AnimatedSwitcher` 形变（开始↔暂停、创建↔保存、刷新↔刷新中）；专注开始与同步保存带 loading 态——spinner 替换图标、文案切换、期间禁用防连点。
+- **完成时刻**：`InkCheckCircle` 仅在「未勾→勾选」瞬间打勾 easeOutBack 弹出 + 陶土涟漪环 320ms 扩散 + 一次 mediumImpact；恢复已勾选数据与取消勾选均不播动画。
+- **分段与芯片**：`SegmentedControl` 指示线 260ms easeOutCubic 滑动到选中段并伴随选择触感；`PaperChip` 220ms 填充形变 + 图标 easeOutBack 轻弹。
+- **暖色涟漪**：三套按钮主题统一 `overlayColor`——陶土底上暖白波纹、纸底上陶土波纹，替换默认灰波纹；弹窗 / 表单 / 横幅 / 设置页全部迁移到 Paper 家族，触控目标保持 ≥44dp。
 
 ### v1.8.0 — 专注闹铃后台准时响铃 + 仅振动模式
 *2026-11-16*

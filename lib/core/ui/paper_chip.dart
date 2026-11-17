@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'pressable_scale.dart';
 
 /// 可选中的纸面 chip。
 ///
@@ -10,10 +11,14 @@ import '../theme/app_theme.dart';
 /// - [vertical] true → 图标在上、文字在下（上午/下午/晚上时段选择）
 /// - [vertical] false → 图标在左、文字在右（正计时/倒计时选择）
 ///
+/// v1.9.0：按下有回弹（[PressableScale]），翻色走 easeOutCubic，
+/// 选中瞬间图标做一次小小的弹跳——「选上了」这件事有实体反馈。
+///
 /// 注意：`expanded: true`（默认）时本组件直接返回 `Expanded`，
 /// 因此**必须**作为 `Row` / `Column` 的直接子项使用。
 /// （Expanded 是 ParentDataWidget、必须是 Flex 直接子节点——
-/// v1.3.2 那个 release 灰方块 bug 的教训，见 git 历史。）
+/// v1.3.2 那个 release 灰方块 bug 的教训，见 git 历史。
+/// 回弹包装放在 Expanded **里面**，别反过来。）
 class PaperChip extends StatelessWidget {
   const PaperChip({
     super.key,
@@ -36,25 +41,39 @@ class PaperChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool reduced =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final Color fg = selected
         ? AppColors.textOnPrimary
         : AppColors.textSecondary;
 
+    // 选中瞬间图标从 0.85 弹回 1（easeOutBack 带一点过冲）。
+    // key 挂在 selected 上：每次翻面都重新起跳，静止时恒为 1。
+    Widget bounceIcon(double size) => TweenAnimationBuilder<double>(
+      key: ValueKey<bool>(selected),
+      tween: Tween<double>(begin: selected ? 0.85 : 1.0, end: 1.0),
+      duration: reduced ? Duration.zero : const Duration(milliseconds: 240),
+      curve: Curves.easeOutBack,
+      builder: (BuildContext context, double scale, Widget? child) =>
+          Transform.scale(scale: scale, child: child),
+      child: Icon(icon, size: size, color: fg),
+    );
+
     final List<Widget> children = vertical
         ? <Widget>[
-            Icon(icon, size: 22, color: fg),
+            bounceIcon(22),
             const SizedBox(height: 6),
             Text(label!, style: _labelStyle(fg)),
           ]
         : <Widget>[
-            Icon(icon, size: 18, color: fg),
+            bounceIcon(18),
             const SizedBox(width: 6),
             Text(label!, style: _labelStyle(fg)),
           ];
 
     final Widget chip = AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
+      duration: reduced ? Duration.zero : const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
       padding:
           padding ??
           (vertical
@@ -79,10 +98,13 @@ class PaperChip extends StatelessWidget {
             ),
     );
 
-    final Widget tappable = GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: chip,
+    final Widget tappable = PressableScale(
+      scale: 0.97,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: chip,
+      ),
     );
 
     return expanded ? Expanded(child: tappable) : tappable;

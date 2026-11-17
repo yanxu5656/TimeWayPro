@@ -338,16 +338,18 @@ class _PlanningScreenState extends State<PlanningScreen> {
         title: const Text('删除目标'),
         content: Text('确定要删除「${plan.title}」吗？子目标也会被删除。'),
         actions: [
-          TextButton(
+          PaperTextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            label: '取消',
           ),
-          TextButton(
+          PaperTextButton(
             onPressed: () {
+              AppHaptics.confirm();
               Navigator.pop(context);
               provider.deletePlan(plan.id);
             },
-            child: const Text('删除', style: TextStyle(color: AppColors.error)),
+            color: AppColors.error,
+            label: '删除',
           ),
         ],
       ),
@@ -475,22 +477,16 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: PaperOutlinedButton(
                 onPressed: widget.onAddChild,
-                icon: const Icon(Icons.add),
-                label: const Text('添加子目标'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  // 不再就地覆盖 shape：原先这里指定 md(12)，
-                  // 而主题里的 OutlinedButton 是 lg(16)，同一个 app 两个圆角
-                ),
+                icon: Icons.add,
+                label: '添加子目标',
+                padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: ElevatedButton(
+              child: PaperButton(
                 onPressed: () {
                   widget.onUpdate(
                     widget.plan.copyWith(
@@ -502,7 +498,7 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
                     ),
                   );
                 },
-                child: const Text('保存'),
+                label: '保存',
               ),
             ),
           ],
@@ -580,7 +576,7 @@ class _AddPlanSheetState extends State<_AddPlanSheet> {
 
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
+          child: PaperButton(
             onPressed: () {
               if (_titleController.text.trim().isEmpty) return;
               final now = DateTime.now();
@@ -597,7 +593,7 @@ class _AddPlanSheetState extends State<_AddPlanSheet> {
                 ),
               );
             },
-            child: const Text('创建'),
+            label: '创建',
           ),
         ),
       ],

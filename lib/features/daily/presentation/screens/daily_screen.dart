@@ -364,14 +364,17 @@ class _DailyScreenState extends State<DailyScreen> {
             title: const Text('删除待办'),
             content: Text('确定要删除「${task.title}」吗？'),
             actions: [
-              TextButton(
+              PaperTextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('取消'),
+                label: '取消',
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                child: const Text('删除'),
+              PaperTextButton(
+                onPressed: () {
+                  AppHaptics.confirm();
+                  Navigator.pop(context, true);
+                },
+                color: AppColors.error,
+                label: '删除',
               ),
             ],
           ),
@@ -608,7 +611,7 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
         // 添加按钮
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(onPressed: _addTask, child: const Text('添加')),
+          child: PaperButton(onPressed: _addTask, label: '添加'),
         ),
       ],
     );
@@ -744,7 +747,7 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
         // 保存按钮
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(onPressed: _saveTask, child: const Text('保存')),
+          child: PaperButton(onPressed: _saveTask, label: '保存'),
         ),
       ],
     );

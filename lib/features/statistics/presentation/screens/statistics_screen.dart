@@ -148,47 +148,56 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildRefreshButton() {
-    return Material(
-      color: AppColors.textOnPrimary.withValues(alpha: 0.14),
-      borderRadius: BorderRadius.circular(AppRadius.full),
-      child: InkWell(
-        onTap: _isRefreshing ? null : _refreshStats,
+    return PressableScale(
+      enabled: !_isRefreshing,
+      scale: 0.95,
+      pressOffset: 0.8,
+      child: Material(
+        color: AppColors.textOnPrimary.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(AppRadius.full),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.full),
-            border: Border.all(
-              color: AppColors.textOnPrimary.withValues(alpha: 0.35),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_isRefreshing)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.textOnPrimary,
-                  ),
-                )
-              else
-                const Icon(
-                  Icons.refresh_rounded,
-                  size: 16,
-                  color: AppColors.textOnPrimary,
-                ),
-              const SizedBox(width: 4),
-              Text(
-                _isRefreshing ? '刷新中' : '立即刷新',
-                style: AppText.labelSm.copyWith(
-                  color: AppColors.textOnPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
+        child: InkWell(
+          onTap: _isRefreshing ? null : _refreshStats,
+          borderRadius: BorderRadius.circular(AppRadius.full),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.full),
+              border: Border.all(
+                color: AppColors.textOnPrimary.withValues(alpha: 0.35),
               ),
-            ],
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: Row(
+                key: ValueKey<bool>(_isRefreshing),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_isRefreshing)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.textOnPrimary,
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.refresh_rounded,
+                      size: 16,
+                      color: AppColors.textOnPrimary,
+                    ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _isRefreshing ? '刷新中' : '立即刷新',
+                    style: AppText.labelSm.copyWith(
+                      color: AppColors.textOnPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

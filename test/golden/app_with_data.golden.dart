@@ -26,6 +26,8 @@ import 'package:time_way_pro/core/ui/paper.dart';
 import 'package:time_way_pro/core/utils/week.dart';
 import 'package:time_way_pro/shared/database/database_helper.dart';
 
+import '../support/app_harness.dart';
+
 String get _todayKey => DateFormat('yyyy-MM-dd').format(DateTime.now());
 
 DateTime _todayAt(int hour, [int minute = 0]) {
@@ -200,6 +202,7 @@ void main() {
   setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    installPathProviderMock();
   });
 
   testWidgets('带数据时各 Tab 的真实渲染', (WidgetTester tester) async {

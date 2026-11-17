@@ -527,17 +527,18 @@ class _TaskScreenState extends State<TaskScreen> {
         title: const Text('删除任务'),
         content: Text('确定要删除「${task.title}」吗？此操作不可撤销。'),
         actions: [
-          TextButton(
+          PaperTextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            label: '取消',
           ),
-          TextButton(
+          PaperTextButton(
             onPressed: () {
+              AppHaptics.confirm();
               Navigator.pop(context);
               context.read<TaskProvider>().deleteTask(task.id);
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('删除'),
+            color: AppColors.error,
+            label: '删除',
           ),
         ],
       ),

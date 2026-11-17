@@ -342,13 +342,16 @@ class SettingsScreen extends StatelessWidget {
         title: const Text('恢复数据'),
         content: const Text('恢复将覆盖当前所有数据，确定继续吗？'),
         actions: [
-          TextButton(
+          PaperTextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            label: '取消',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定恢复'),
+          PaperTextButton(
+            onPressed: () {
+              AppHaptics.confirm();
+              Navigator.pop(context, true);
+            },
+            label: '确定恢复',
           ),
         ],
       ),
@@ -394,13 +397,17 @@ class SettingsScreen extends StatelessWidget {
         title: const Text('断开连接'),
         content: const Text('确定要断开坚果云连接吗？本地数据不会被删除。'),
         actions: [
-          TextButton(
+          PaperTextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            label: '取消',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定断开', style: TextStyle(color: AppColors.error)),
+          PaperTextButton(
+            onPressed: () {
+              AppHaptics.confirm();
+              Navigator.pop(context, true);
+            },
+            color: AppColors.error,
+            label: '确定断开',
           ),
         ],
       ),
@@ -453,13 +460,16 @@ class SettingsScreen extends StatelessWidget {
         title: const Text('导入数据'),
         content: const Text('导入将覆盖当前所有数据，确定继续吗？'),
         actions: [
-          TextButton(
+          PaperTextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            label: '取消',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定导入'),
+          PaperTextButton(
+            onPressed: () {
+              AppHaptics.confirm();
+              Navigator.pop(context, true);
+            },
+            label: '确定导入',
           ),
         ],
       ),
@@ -513,7 +523,7 @@ class SettingsScreen extends StatelessWidget {
 
 class _SyncConfigSheet extends StatefulWidget {
   final SyncConfig? currentConfig;
-  final Function(SyncConfig) onSave;
+  final Future<void> Function(SyncConfig) onSave;
 
   const _SyncConfigSheet({required this.currentConfig, required this.onSave});
 
@@ -526,6 +536,26 @@ class _SyncConfigSheetState extends State<_SyncConfigSheet> {
   late TextEditingController _urlController;
   late TextEditingController _usernameController;
   late TextEditingController _passwordController;
+
+  /// 连接测试是网络请求，可能走几秒——按钮自己显示进度，
+  /// 而不是让用户对着没反应的「保存」反复点。
+  bool _saving = false;
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    try {
+      await widget.onSave(
+        SyncConfig(
+          webdavUrl: _urlController.text.trim(),
+          username: _usernameController.text.trim(),
+          password: _passwordController.text.trim(),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   void initState() {
@@ -626,18 +656,11 @@ class _SyncConfigSheetState extends State<_SyncConfigSheet> {
 
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                if (!_formKey.currentState!.validate()) return;
-                widget.onSave(
-                  SyncConfig(
-                    webdavUrl: _urlController.text.trim(),
-                    username: _usernameController.text.trim(),
-                    password: _passwordController.text.trim(),
-                  ),
-                );
-              },
-              child: const Text('保存并测试连接'),
+            child: PaperButton(
+              onPressed: _save,
+              loading: _saving,
+              loadingLabel: '连接测试中…',
+              label: '保存并测试连接',
             ),
           ),
         ],

@@ -461,14 +461,17 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         title: const Text('删除目标'),
         content: Text('确定要删除「${goal.title}」吗？'),
         actions: <Widget>[
-          TextButton(
+          PaperTextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            label: '取消',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('删除'),
+          PaperTextButton(
+            onPressed: () {
+              AppHaptics.confirm();
+              Navigator.pop(ctx, true);
+            },
+            color: AppColors.error,
+            label: '删除',
           ),
         ],
       ),
@@ -590,9 +593,9 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
         const SizedBox(height: AppSpacing.lg),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
+          child: PaperButton(
             onPressed: _submit,
-            child: Text(isEditing ? '保存' : '添加'),
+            label: isEditing ? '保存' : '添加',
           ),
         ),
       ],
