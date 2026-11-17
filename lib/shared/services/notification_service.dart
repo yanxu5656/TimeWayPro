@@ -25,8 +25,7 @@ class NotificationService {
   /// 不会出现 `cancel` 先落地、更早发起的 `show` 后落地的问题。
   Future<void> _opQueue = Future<void>.value();
 
-  /// 专注计时通知队列与代次（独立于任务计时通知，互不干扰）
-  int _focusEpoch = 0;
+  /// 专注计时通知队列（独立于任务计时通知，互不干扰）
   Future<void> _focusOpQueue = Future<void>.value();
 
   // 通知ID
@@ -261,46 +260,10 @@ class NotificationService {
   }
 
   // ==================== 专注 45/5 计时与闹铃通知 ====================
-
-  Future<void> showFocusTimerNotification({
-    required String title,
-    required String body,
-  }) {
-    final int epoch = _focusEpoch;
-    return _enqueueFocusOp(() async {
-      if (epoch != _focusEpoch) return;
-      await initialize();
-      if (epoch != _focusEpoch) return;
-
-      final androidDetails = AndroidNotificationDetails(
-        _focusChannelId,
-        _focusChannelName,
-        channelDescription: '显示 45/5 专注与休息倒计时',
-        importance: Importance.low,
-        priority: Priority.low,
-        ongoing: true,
-        autoCancel: false,
-        showWhen: false,
-        enableLights: false,
-        enableVibration: false,
-        playSound: false,
-        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
-        styleInformation: BigTextStyleInformation(body, contentTitle: title),
-      );
-
-      await _safePluginCall('focus show', () async {
-        await _plugin.show(
-          _focusNotificationId,
-          title,
-          body,
-          NotificationDetails(android: androidDetails),
-        );
-      });
-    });
-  }
+  // 倒计时与闹铃通知均由原生前台服务发出（见 FocusAlarmService.kt），
+  // Dart 侧仅保留渠道创建与清理入口。
 
   Future<void> removeFocusTimerNotification() {
-    _focusEpoch++;
     return _enqueueFocusOp(() async {
       await _safePluginCall(
         'focus cancel',
@@ -309,47 +272,7 @@ class NotificationService {
     });
   }
 
-  Future<void> showFocusAlarmNotification({
-    required String title,
-    required String body,
-  }) {
-    final int epoch = _focusEpoch;
-    return _enqueueFocusOp(() async {
-      if (epoch != _focusEpoch) return;
-      await initialize();
-      if (epoch != _focusEpoch) return;
-
-      final androidDetails = AndroidNotificationDetails(
-        _focusAlarmChannelId,
-        _focusAlarmChannelName,
-        channelDescription: '每 45 分钟专注结束或 5 分钟休息结束时的闹铃提醒',
-        importance: Importance.max,
-        priority: Priority.max,
-        ongoing: true,
-        autoCancel: false,
-        enableVibration: true,
-        playSound: true,
-        audioAttributesUsage: AudioAttributesUsage.alarm,
-        category: AndroidNotificationCategory.alarm,
-        vibrationPattern: Int64List.fromList(<int>[0, 650, 350]),
-        // Android Notification.FLAG_INSISTENT (4)：在通知被取消前持续循环提醒
-        additionalFlags: Int32List.fromList(<int>[4]),
-        styleInformation: BigTextStyleInformation(body, contentTitle: title),
-      );
-
-      await _safePluginCall('focus alarm show', () async {
-        await _plugin.show(
-          _focusAlarmNotificationId,
-          title,
-          body,
-          NotificationDetails(android: androidDetails),
-        );
-      });
-    });
-  }
-
   Future<void> removeFocusAlarmNotification() {
-    _focusEpoch++;
     return _enqueueFocusOp(() async {
       await _safePluginCall(
         'focus alarm cancel',

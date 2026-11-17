@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
+import 'app_haptics.dart';
 
 /// 按下回弹。
 ///
@@ -34,21 +35,43 @@ import 'package:flutter/services.dart';
 ///
 /// 解决"在列表里按下后开始滚动，卡片一直保持缩小"的粘滞感：
 /// 指针移动超过 8px 即取消压下态。
+///
+/// ## 下沉模式（v1.9.0）
+///
+/// [pressOffset] 让按下除了缩放还向桌面方向位移——「纸被压下去」的
+/// 实体感（参考 Duolingo 的厚度按压）。[builder] 变体把按压进度
+/// （0..1）交给调用方，用来同步收阴影：浮起元素按下时阴影收窄，
+/// 松手弹回时阴影恢复，见 [PaperFab]。
+///
+/// 系统开启「减弱动效」时缩放/位移全部退化为瞬时（触觉保留）。
 class PressableScale extends StatefulWidget {
   const PressableScale({
     super.key,
-    required this.child,
+    this.child,
+    this.builder,
     this.scale = 0.965,
+    this.pressOffset = 0.0,
     this.pressDuration = const Duration(milliseconds: 110),
     this.releaseDuration = const Duration(milliseconds: 220),
     this.haptic = true,
     this.enabled = true,
-  });
+  }) : assert(
+         child != null || builder != null,
+         'child 与 builder 至少给一个',
+       );
 
-  final Widget child;
+  final Widget? child;
+
+  /// 按压感知的构建器：[press] 为 0（静止）..1（完全按下）。
+  /// 与 [child] 二选一；给了 builder 时 child 作为它的第三个参数传入。
+  final Widget Function(BuildContext context, double press, Widget? child)?
+  builder;
 
   /// 按下时缩到的比例
   final double scale;
+
+  /// 按下时向 Y 正方向（桌面方向）位移的像素数，0 为纯缩放。
+  final double pressOffset;
 
   final Duration pressDuration;
   final Duration releaseDuration;
@@ -84,6 +107,7 @@ class _PressableScaleState extends State<PressableScale>
   final Set<int> _pointers = <int>{};
   Offset? _origin;
   bool _moved = false;
+  bool _reducedMotion = false;
 
   @override
   void dispose() {
@@ -97,8 +121,8 @@ class _PressableScaleState extends State<PressableScale>
     if (_pointers.length == 1) {
       _origin = event.position;
       _moved = false;
-      _controller.forward();
-      if (widget.haptic) HapticFeedback.selectionClick();
+      if (!_reducedMotion) _controller.forward();
+      if (widget.haptic) AppHaptics.tap();
     }
   }
 
@@ -118,11 +142,16 @@ class _PressableScaleState extends State<PressableScale>
   void _release() {
     _pointers.clear();
     _origin = null;
-    _controller.reverse();
+    if (_reducedMotion) {
+      _controller.value = 0;
+    } else {
+      _controller.reverse();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    _reducedMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return Listener(
       onPointerDown: _onDown,
       onPointerMove: _onMove,
@@ -136,9 +165,21 @@ class _PressableScaleState extends State<PressableScale>
       // Listener 不参与手势竞技场，只旁听原始指针事件。
       behavior: HitTestBehavior.opaque,
       child: AnimatedBuilder(
-        animation: _scale,
-        builder: (context, child) =>
-            Transform.scale(scale: _scale.value, child: child),
+        animation: _controller,
+        builder: (context, child) {
+          final Widget content = widget.builder != null
+              ? widget.builder!(context, _controller.value, child)
+              : child!;
+          return Transform.scale(
+            scale: _scale.value,
+            child: widget.pressOffset == 0
+                ? content
+                : Transform.translate(
+                    offset: Offset(0, widget.pressOffset * _controller.value),
+                    child: content,
+                  ),
+          );
+        },
         child: widget.child,
       ),
     );

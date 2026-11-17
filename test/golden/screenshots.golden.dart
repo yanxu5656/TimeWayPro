@@ -22,16 +22,16 @@
 library;
 
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:time_way_pro/app/main_screen.dart';
-import 'package:time_way_pro/core/theme/app_theme.dart';
 import 'package:time_way_pro/core/ui/paper.dart';
 import 'package:time_way_pro/features/daily/providers/daily_provider.dart';
+import 'package:time_way_pro/features/focus/providers/focus_timer_provider.dart';
 import 'package:time_way_pro/features/planning/providers/plan_provider.dart';
 import 'package:time_way_pro/features/settings/providers/settings_provider.dart';
 import 'package:time_way_pro/features/task/providers/task_provider.dart';
@@ -112,6 +112,9 @@ Widget _appWithRealFont() {
       ChangeNotifierProvider<SettingsProvider>(
         create: (_) => SettingsProvider()..loadSyncConfig(),
       ),
+      ChangeNotifierProvider<FocusTimerProvider>(
+        create: (_) => FocusTimerProvider()..restoreState(),
+      ),
     ],
     child: MaterialApp(
       title: 'TimeWayPro',
@@ -126,6 +129,14 @@ void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     await _loadFonts();
+  });
+
+  // 与 pumpSeededApp 相同的平台通道前提：没有这两个 mock，
+  // importAll 的落盘会抛 MissingPluginException、FocusTimerProvider
+  // 的 restoreState 会卡在 SharedPreferences 上
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    installPathProviderMock();
   });
 
   testWidgets('README 截图', (WidgetTester tester) async {
@@ -179,6 +190,7 @@ void main() {
     // ParentDataWidget 误用一直没被发现（release 下会变成一块灰色方块）。
     UiEffects.resetForTesting();
     UiEffects.tier.value = UiEffectTier.reduced;
+    debugDisableShadows = false;
 
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -201,11 +213,13 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('../../build/readme_screenshots/sheet_add.png'),
     );
+    debugDisableShadows = true;
   });
 
   testWidgets('挪周弹窗截图', (WidgetTester tester) async {
     UiEffects.resetForTesting();
     UiEffects.tier.value = UiEffectTier.reduced;
+    debugDisableShadows = false;
 
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -232,5 +246,6 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('../../build/readme_screenshots/sheet_move.png'),
     );
+    debugDisableShadows = true;
   });
 }

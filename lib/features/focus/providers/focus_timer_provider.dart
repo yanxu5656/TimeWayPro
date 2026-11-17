@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,8 +19,9 @@ enum FocusPhase {
 
 /// 悬浮球全局 45/5 专注计时控制器。
 ///
-/// 使用壁钟截止时间（`_phaseEndTime`）推算剩余秒数，熄屏或切后台后回到前台
-/// 仍能准确结算；到达 45 分钟或 5 分钟节点时触发持续振动闹铃 + 强提醒通知。
+/// 使用壁钟截止时间（`_phaseEndTime`）推算剩余秒数；每个阶段开始时拉起
+/// 原生前台服务全程保活——倒计时通知由系统渲染，到点由原生服务直接
+/// 切换持续振动闹铃。锁屏、切后台、最近任务清理后依然准时提醒。
 class FocusTimerProvider extends ChangeNotifier {
   FocusTimerProvider({
     int focusDurationSeconds = defaultFocusSeconds,
@@ -38,6 +40,8 @@ class FocusTimerProvider extends ChangeNotifier {
   static const int defaultFocusSeconds = 45 * 60;
   static const int defaultBreakSeconds = 5 * 60;
   static const String _prefsKey = 'focus_timer_state';
+  static const String _modePrefsKey = 'focus_alarm_mode';
+  static const String _batteryPromptPrefsKey = 'focus_battery_prompt_shown';
 
   final FocusAlarmService _alarmService;
   final NotificationService _notificationService;
@@ -51,9 +55,9 @@ class FocusTimerProvider extends ChangeNotifier {
   int _pausedRemainingSeconds = 0;
   int _completedRounds = 0;
   bool _isTestingAlarm = false;
+  FocusAlarmMode _alarmMode = FocusAlarmMode.soundAndVibration;
 
   Timer? _ticker;
-  int _lastNotificationSyncSecond = -1;
 
   FocusPhase get phase => _phase;
   bool get isPaused => _isPaused;
@@ -63,6 +67,7 @@ class FocusTimerProvider extends ChangeNotifier {
       _phase == FocusPhase.focusAlarm || _phase == FocusPhase.breakAlarm;
   bool get isActive => _phase != FocusPhase.idle;
   bool get isTestingAlarm => _isTestingAlarm;
+  FocusAlarmMode get alarmMode => _alarmMode;
   int get completedRounds => _completedRounds;
   int get focusDurationSeconds => _focusDurationSeconds;
   int get breakDurationSeconds => _breakDurationSeconds;
@@ -120,11 +125,62 @@ class FocusTimerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 切换闹铃模式并持久化；正在响铃（含试听）时立即按新模式重放。
+  Future<void> setAlarmMode(FocusAlarmMode mode) async {
+    if (_alarmMode == mode) return;
+    _alarmMode = mode;
+    notifyListeners();
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_modePrefsKey, mode.prefValue);
+    } catch (e) {
+      debugPrint('FocusTimerProvider setAlarmMode persist error: $e');
+    }
+    if (isAlarming) {
+      await _alarmService.startAlarm(
+        mode: mode,
+        title: _alarmTitle(_phase == FocusPhase.focusAlarm),
+        body: _alarmBody(_phase == FocusPhase.focusAlarm),
+      );
+    } else if (_isTestingAlarm) {
+      await _alarmService.startAlarm(mode: mode);
+    }
+  }
+
+  /// 首次开始专注前是否需要引导用户关闭电池优化（仅 Android）。
+  Future<bool> needsBatteryOptimizationPrompt() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_batteryPromptPrefsKey) == true) return false;
+      return !await _alarmService.isIgnoringBatteryOptimizations();
+    } catch (e) {
+      debugPrint('FocusTimerProvider battery prompt check error: $e');
+      return false;
+    }
+  }
+
+  Future<void> markBatteryPromptShown() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_batteryPromptPrefsKey, true);
+    } catch (e) {
+      debugPrint('FocusTimerProvider markBatteryPromptShown error: $e');
+    }
+  }
+
+  Future<bool> requestIgnoreBatteryOptimizations() =>
+      _alarmService.requestIgnoreBatteryOptimizations();
+
   Future<void> restoreState() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
+      _alarmMode = FocusAlarmMode.fromPref(prefs.getString(_modePrefsKey));
       final String? raw = prefs.getString(_prefsKey);
-      if (raw == null || raw.isEmpty) return;
+      if (raw == null || raw.isEmpty) {
+        notifyListeners();
+        return;
+      }
 
       final Map<String, dynamic> data =
           jsonDecode(raw) as Map<String, dynamic>;
@@ -150,13 +206,16 @@ class FocusTimerProvider extends ChangeNotifier {
 
       if (isRunning) {
         if (_isPaused) {
-          await _showStatusNotification();
+          await _alarmService.pauseCountdown(
+            remainingSeconds: _pausedRemainingSeconds,
+            isFocus: _phase == FocusPhase.focusing,
+          );
           notifyListeners();
         } else if (remainingSeconds <= 0) {
           await _triggerAlarm(fromPhase: _phase);
         } else {
           _startTicker();
-          await _showStatusNotification();
+          await _syncNativeCountdown();
           notifyListeners();
         }
       }
@@ -167,8 +226,6 @@ class FocusTimerProvider extends ChangeNotifier {
 
   Future<void> startFocus() async {
     await stopTestAlarm();
-    await _alarmService.stopAlarm();
-    await _notificationService.removeFocusAlarmNotification();
 
     _phase = FocusPhase.focusing;
     _isPaused = false;
@@ -176,18 +233,15 @@ class FocusTimerProvider extends ChangeNotifier {
       Duration(seconds: _focusDurationSeconds),
     );
     _pausedRemainingSeconds = _focusDurationSeconds;
-    _lastNotificationSyncSecond = -1;
 
     _startTicker();
     await _persistState();
-    await _showStatusNotification();
+    await _syncNativeCountdown();
     notifyListeners();
   }
 
   Future<void> startBreak() async {
     await stopTestAlarm();
-    await _alarmService.stopAlarm();
-    await _notificationService.removeFocusAlarmNotification();
 
     _phase = FocusPhase.breaking;
     _isPaused = false;
@@ -195,11 +249,10 @@ class FocusTimerProvider extends ChangeNotifier {
       Duration(seconds: _breakDurationSeconds),
     );
     _pausedRemainingSeconds = _breakDurationSeconds;
-    _lastNotificationSyncSecond = -1;
 
     _startTicker();
     await _persistState();
-    await _showStatusNotification();
+    await _syncNativeCountdown();
     notifyListeners();
   }
 
@@ -211,7 +264,10 @@ class FocusTimerProvider extends ChangeNotifier {
     _ticker = null;
 
     await _persistState();
-    await _showStatusNotification();
+    await _alarmService.pauseCountdown(
+      remainingSeconds: _pausedRemainingSeconds,
+      isFocus: _phase == FocusPhase.focusing,
+    );
     notifyListeners();
   }
 
@@ -226,18 +282,17 @@ class FocusTimerProvider extends ChangeNotifier {
       Duration(seconds: _pausedRemainingSeconds),
     );
     _isPaused = false;
-    _lastNotificationSyncSecond = -1;
 
     _startTicker();
     await _persistState();
-    await _showStatusNotification();
+    await _syncNativeCountdown();
     notifyListeners();
   }
 
   /// 仅关闭闹铃并回到未开始状态（保留已完成轮数供本次界面展示）。
   Future<void> dismissAlarm() async {
     await stopTestAlarm();
-    await _alarmService.stopAlarm();
+    await _alarmService.stopAll();
     await _notificationService.removeFocusAlarmNotification();
     await _notificationService.removeFocusTimerNotification();
 
@@ -255,7 +310,7 @@ class FocusTimerProvider extends ChangeNotifier {
   /// 彻底结束本轮专注循环并清零。
   Future<void> stop() async {
     await stopTestAlarm();
-    await _alarmService.stopAlarm();
+    await _alarmService.stopAll();
     await _notificationService.removeFocusAlarmNotification();
     await _notificationService.removeFocusTimerNotification();
 
@@ -277,7 +332,7 @@ class FocusTimerProvider extends ChangeNotifier {
     } else {
       _isTestingAlarm = true;
       notifyListeners();
-      await _alarmService.startAlarm();
+      await _alarmService.startAlarm(mode: _alarmMode);
     }
   }
 
@@ -296,7 +351,6 @@ class FocusTimerProvider extends ChangeNotifier {
     if (remainingSeconds <= 0) {
       await _triggerAlarm(fromPhase: _phase);
     } else {
-      await _showStatusNotification();
       notifyListeners();
     }
   }
@@ -315,17 +369,9 @@ class FocusTimerProvider extends ChangeNotifier {
       return;
     }
 
-    final int rem = remainingSeconds;
-    if (rem <= 0) {
+    if (remainingSeconds <= 0) {
       _triggerAlarm(fromPhase: _phase);
       return;
-    }
-
-    // 通知栏状态条每 5 秒刷新一次，兼顾省电与系统流畅度
-    if (_lastNotificationSyncSecond == -1 ||
-        (_lastNotificationSyncSecond - rem).abs() >= 5) {
-      _lastNotificationSyncSecond = rem;
-      _showStatusNotification();
     }
 
     notifyListeners();
@@ -345,25 +391,31 @@ class FocusTimerProvider extends ChangeNotifier {
     _phase = finishedFocus ? FocusPhase.focusAlarm : FocusPhase.breakAlarm;
 
     await _persistState();
-    await _notificationService.removeFocusTimerNotification();
-    await _notificationService.showFocusAlarmNotification(
-      title: finishedFocus ? '⏰ 45 分钟专注时间到' : '🔔 5 分钟休息结束',
-      body: finishedFocus
-          ? '请放下手头工作，点击关闭闹铃并休息 5 分钟'
-          : '休息结束，点击关闭闹铃并开始下一轮 45 分钟专注',
+    await _alarmService.startAlarm(
+      mode: _alarmMode,
+      title: _alarmTitle(finishedFocus),
+      body: _alarmBody(finishedFocus),
     );
-    await _alarmService.startAlarm();
     notifyListeners();
   }
 
-  Future<void> _showStatusNotification() async {
-    if (!isRunning) return;
-    final bool isFocus = _phase == FocusPhase.focusing;
-    final String stateText = _isPaused ? '已暂停' : (isFocus ? '专注中' : '休息中');
-    await _notificationService.showFocusTimerNotification(
-      title: isFocus ? '🎯 45 分钟专注 · 第 ${_completedRounds + 1} 轮' : '☕ 5 分钟休息',
-      body: '$stateText · 剩余 $formattedRemaining',
-    );
+  static String _alarmTitle(bool finishedFocus) =>
+      finishedFocus ? '⏰ 45 分钟专注时间到' : '🔔 5 分钟休息结束';
+
+  static String _alarmBody(bool finishedFocus) => finishedFocus
+      ? '请放下手头工作，点击关闭闹铃并休息 5 分钟'
+      : '休息结束，点击关闭闹铃并开始下一轮 45 分钟专注';
+
+  /// 让原生前台服务与当前阶段对齐：常驻保活 + 系统渲染倒计时通知。
+  Future<void> _syncNativeCountdown() async {
+    final DateTime? end = _phaseEndTime;
+    if (end != null && isRunning && !_isPaused) {
+      await _alarmService.startCountdown(
+        end: end,
+        isFocus: _phase == FocusPhase.focusing,
+        rounds: _completedRounds + 1,
+      );
+    }
   }
 
   Future<void> _persistState() async {

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/ui/paper.dart';
 import '../../providers/focus_timer_provider.dart';
+import '../../services/focus_alarm_service.dart';
 
 /// 全局悬浮专注计时页：45 分钟专注 -> 持续振动闹铃提醒 -> 5 分钟休息循环。
 class FocusTimerScreen extends StatelessWidget {
@@ -221,9 +222,13 @@ class _DialCard extends StatelessWidget {
                 icon: Icons.coffee_rounded,
                 label: '休息 $breakMinutes 分钟',
               ),
-              const _InfoPill(
-                icon: Icons.vibration_rounded,
-                label: '持续振动闹铃',
+              _InfoPill(
+                icon: timer.alarmMode == FocusAlarmMode.vibrationOnly
+                    ? Icons.vibration_rounded
+                    : Icons.notifications_active_rounded,
+                label: timer.alarmMode == FocusAlarmMode.vibrationOnly
+                    ? '仅振动闹铃'
+                    : '响铃 + 振动闹铃',
               ),
             ],
           ),
@@ -265,10 +270,30 @@ class _InfoPill extends StatelessWidget {
   }
 }
 
-class _PrimaryControls extends StatelessWidget {
+class _PrimaryControls extends StatefulWidget {
   const _PrimaryControls({required this.timer});
 
   final FocusTimerProvider timer;
+
+  @override
+  State<_PrimaryControls> createState() => _PrimaryControlsState();
+}
+
+class _PrimaryControlsState extends State<_PrimaryControls> {
+  /// 「开始专注」要先过电池优化引导（异步平台通道），期间按钮
+  /// 自己显示进度环，而不是点了没反应。
+  bool _starting = false;
+
+  FocusTimerProvider get timer => widget.timer;
+
+  Future<void> _start() async {
+    setState(() => _starting = true);
+    try {
+      await _startFocusWithBatteryCheck(context, timer);
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -277,20 +302,21 @@ class _PrimaryControls extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          ElevatedButton.icon(
+          PaperButton(
             onPressed: isFocusDone ? timer.startBreak : timer.startFocus,
-            icon: Icon(
-              isFocusDone ? Icons.coffee_rounded : Icons.play_arrow_rounded,
-            ),
-            label: Text(
-              isFocusDone ? '关闭闹铃 · 开始休息 5 分钟' : '关闭闹铃 · 开始下一轮专注',
-            ),
+            icon: isFocusDone
+                ? Icons.coffee_rounded
+                : Icons.play_arrow_rounded,
+            label: isFocusDone ? '关闭闹铃 · 开始休息 5 分钟' : '关闭闹铃 · 开始下一轮专注',
           ),
           const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: timer.dismissAlarm,
-            icon: const Icon(Icons.notifications_off_rounded),
-            label: const Text('仅关闭闹铃'),
+          PaperOutlinedButton(
+            onPressed: () {
+              AppHaptics.dismiss();
+              timer.dismissAlarm();
+            },
+            icon: Icons.notifications_off_rounded,
+            label: '仅关闭闹铃',
           ),
         ],
       );
@@ -298,92 +324,113 @@ class _PrimaryControls extends StatelessWidget {
 
     switch (timer.phase) {
       case FocusPhase.idle:
-        return ElevatedButton.icon(
-          onPressed: timer.startFocus,
-          icon: const Icon(Icons.play_arrow_rounded),
-          label: const Text('开始 45 分钟专注'),
+        return PaperButton(
+          onPressed: _start,
+          loading: _starting,
+          loadingLabel: '正在准备…',
+          icon: Icons.play_arrow_rounded,
+          label: '开始 45 分钟专注',
         );
       case FocusPhase.focusing:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: timer.isPaused ? timer.resume : timer.pause,
-                    icon: Icon(
-                      timer.isPaused
-                          ? Icons.play_arrow_rounded
-                          : Icons.pause_rounded,
-                    ),
-                    label: Text(timer.isPaused ? '继续专注' : '暂停'),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: timer.startBreak,
-                    icon: const Icon(Icons.coffee_rounded),
-                    label: const Text('立即休息'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            TextButton.icon(
-              onPressed: timer.stop,
-              icon: const Icon(Icons.stop_rounded, color: AppColors.error),
-              label: const Text(
-                '结束本轮专注',
-                style: TextStyle(color: AppColors.error),
-              ),
-            ),
-          ],
+        return _runningControls(
+          resumeLabel: '继续专注',
+          secondaryLabel: '立即休息',
+          secondaryIcon: Icons.coffee_rounded,
+          onSecondary: timer.startBreak,
+          stopLabel: '结束本轮专注',
         );
       case FocusPhase.breaking:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: timer.isPaused ? timer.resume : timer.pause,
-                    icon: Icon(
-                      timer.isPaused
-                          ? Icons.play_arrow_rounded
-                          : Icons.pause_rounded,
-                    ),
-                    label: Text(timer.isPaused ? '继续休息' : '暂停'),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: timer.startFocus,
-                    icon: const Icon(Icons.skip_next_rounded),
-                    label: const Text('跳过休息'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            TextButton.icon(
-              onPressed: timer.stop,
-              icon: const Icon(Icons.stop_rounded, color: AppColors.error),
-              label: const Text(
-                '结束专注循环',
-                style: TextStyle(color: AppColors.error),
-              ),
-            ),
-          ],
+        return _runningControls(
+          resumeLabel: '继续休息',
+          secondaryLabel: '跳过休息',
+          secondaryIcon: Icons.skip_next_rounded,
+          onSecondary: timer.startFocus,
+          stopLabel: '结束专注循环',
         );
       case FocusPhase.focusAlarm:
       case FocusPhase.breakAlarm:
         return const SizedBox.shrink();
     }
   }
+
+  Widget _runningControls({
+    required String resumeLabel,
+    required String secondaryLabel,
+    required IconData secondaryIcon,
+    required VoidCallback onSecondary,
+    required String stopLabel,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: PaperButton(
+                onPressed: timer.isPaused ? timer.resume : timer.pause,
+                icon: timer.isPaused
+                    ? Icons.play_arrow_rounded
+                    : Icons.pause_rounded,
+                label: timer.isPaused ? resumeLabel : '暂停',
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: PaperOutlinedButton(
+                onPressed: onSecondary,
+                icon: secondaryIcon,
+                label: secondaryLabel,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        PaperTextButton(
+          onPressed: timer.stop,
+          icon: Icons.stop_rounded,
+          color: AppColors.error,
+          label: stopLabel,
+        ),
+      ],
+    );
+  }
+}
+
+/// 首次开始专注前引导关闭电池优化，避免国产 ROM 后台查杀导致闹铃不响。
+Future<void> _startFocusWithBatteryCheck(
+  BuildContext context,
+  FocusTimerProvider timer,
+) async {
+  if (await timer.needsBatteryOptimizationPrompt()) {
+    if (!context.mounted) return;
+    final bool? goSettings = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('让闹铃锁屏后也准时响'),
+        content: const Text(
+          '为确保专注到点时即使锁屏、退出应用也能准时提醒：\n\n'
+          '1. 点「去设置」后，系统会询问是否允许时途忽略电池优化，请选择允许；\n'
+          '2. 小米 / 华为 / OPPO / vivo 等手机，还请在本机「手机管家」中为时途开启自启动权限。',
+        ),
+        actions: <Widget>[
+          PaperTextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            label: '暂不',
+          ),
+          PaperButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            compact: true,
+            label: '去设置',
+          ),
+        ],
+      ),
+    );
+    await timer.markBatteryPromptShown();
+    if (goSettings == true) {
+      await timer.requestIgnoreBatteryOptimizations();
+    }
+  }
+  await timer.startFocus();
 }
 
 class _CycleAndAlarmCard extends StatelessWidget {
@@ -404,21 +451,40 @@ class _CycleAndAlarmCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '• 每专注 45 分钟，自动拉响持续振动与闹钟铃声提醒，直到你手动关闭或进入休息。\n'
-            '• 休息倒计时固定 5 分钟，结束后同样通过持续振动提醒开启下一轮。',
+            '• 计时期间通知栏常驻倒计时，锁屏、退出应用后到点依然准时响铃，直到你手动关闭或进入休息。\n'
+            '• 休息倒计时固定 5 分钟，结束后同样提醒开启下一轮。',
+            style: AppText.bodySm.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            '闹铃模式',
+            style: AppText.label.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          SegmentedControl<FocusAlarmMode>(
+            segments: const <Segment<FocusAlarmMode>>[
+              Segment(FocusAlarmMode.soundAndVibration, '响铃 + 振动'),
+              Segment(FocusAlarmMode.vibrationOnly, '仅振动'),
+            ],
+            value: timer.alarmMode,
+            onChanged: timer.setAlarmMode,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            timer.alarmMode == FocusAlarmMode.vibrationOnly
+                ? '只振动不响铃，适合会议、课堂、图书馆等安静场合。'
+                : '闹钟铃声加持续振动，提醒效果最强。',
             style: AppText.bodySm.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.md),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
+            child: PaperOutlinedButton(
               onPressed: timer.isAlarming ? null : timer.toggleTestAlarm,
-              icon: Icon(
-                timer.isTestingAlarm
-                    ? Icons.stop_circle_outlined
-                    : Icons.vibration_rounded,
-              ),
-              label: Text(timer.isTestingAlarm ? '停止测试闹铃' : '试听持续振动闹铃'),
+              icon: timer.isTestingAlarm
+                  ? Icons.stop_circle_outlined
+                  : Icons.vibration_rounded,
+              label: timer.isTestingAlarm ? '停止测试闹铃' : '试听持续振动闹铃',
             ),
           ),
         ],

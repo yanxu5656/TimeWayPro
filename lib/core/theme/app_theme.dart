@@ -72,19 +72,25 @@ class AppTheme {
         ),
       ),
 
-      // 主按钮整块陶土（暖白文字），与刊头色带、FAB 同色
+      // 主按钮整块陶土（暖白文字），与刊头色带、FAB 同色。
+      // 涟漪统一走暖色：陶土底上是暖白波纹，纸底上是陶土波纹——
+      // 默认灰波纹在暖纸上显脏（v1.9.0 起与 PaperButton 家族一致）
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
           disabledBackgroundColor: AppColors.inkSubtle,
           elevation: 0,
+          overlayColor: AppColors.textOnPrimary.withValues(alpha: 0.18),
           padding: const EdgeInsets.symmetric(
             horizontal: 28,
             vertical: AppSpacing.md,
           ),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.brLg),
+          // 显式 Roboto：按钮的 DefaultTextStyle 会整体替换环境样式，
+          // family 留空时测试环境回退 Ahem 方块（设备默认本就是 Roboto）
           textStyle: const TextStyle(
+            fontFamily: 'Roboto',
             fontSize: 15,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
@@ -95,12 +101,14 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
+          overlayColor: AppColors.primary.withValues(alpha: 0.10),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
           ),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.brMd),
           textStyle: const TextStyle(
+            fontFamily: 'Roboto',
             fontSize: 14,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
@@ -111,6 +119,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
+          overlayColor: AppColors.primary.withValues(alpha: 0.10),
           padding: const EdgeInsets.symmetric(
             horizontal: 28,
             vertical: AppSpacing.md,
@@ -118,6 +127,7 @@ class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.brLg),
           side: const BorderSide(color: AppColors.primary, width: 1.2),
           textStyle: const TextStyle(
+            fontFamily: 'Roboto',
             fontSize: 15,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,

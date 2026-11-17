@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_way_pro/core/ui/paper.dart';
 
@@ -228,5 +229,124 @@ void main() {
 
     await gesture.up();
     await _releaseAndAdvance(tester);
+  });
+
+  testWidgets('pressOffset：按下时整体向桌面方向下沉，抬起归零', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        const PressableScale(
+          pressOffset: 1.5,
+          child: SizedBox(width: 100, height: 100),
+        ),
+      ),
+    );
+
+    // 下沉是第二层 Transform（translate），缩放是第一层
+    double currentOffset() {
+      final Transform t = tester.widget<Transform>(
+        find
+            .descendant(
+              of: find.byType(PressableScale),
+              matching: find.byType(Transform),
+            )
+            .last,
+      );
+      return t.transform.entry(1, 3);
+    }
+
+    expect(currentOffset(), moreOrLessEquals(0, epsilon: 0.001));
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(PressableScale)),
+    );
+    await _pressAndAdvance(tester);
+    expect(currentOffset(), moreOrLessEquals(1.5, epsilon: 0.01));
+
+    await gesture.up();
+    await _releaseAndAdvance(tester);
+    expect(currentOffset(), moreOrLessEquals(0, epsilon: 0.001));
+  });
+
+  testWidgets('builder 变体拿到 0..1 的按压进度，child 原样传入', (tester) async {
+    final List<double> progress = <double>[];
+    await tester.pumpWidget(
+      _host(
+        PressableScale(
+          builder: (BuildContext context, double press, Widget? child) {
+            progress.add(press);
+            return SizedBox(
+              width: 100,
+              height: 100,
+              child: ColoredBox(
+                color: Color.lerp(Colors.white, Colors.black, press)!,
+                child: child,
+              ),
+            );
+          },
+          child: const Text('内容'),
+        ),
+      ),
+    );
+
+    expect(find.text('内容'), findsOneWidget);
+    expect(progress.last, moreOrLessEquals(0, epsilon: 0.001));
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(PressableScale)),
+    );
+    await _pressAndAdvance(tester);
+    expect(progress.last, moreOrLessEquals(1.0, epsilon: 0.001));
+
+    await gesture.up();
+    await _releaseAndAdvance(tester);
+    expect(progress.last, moreOrLessEquals(0, epsilon: 0.001));
+  });
+
+  testWidgets('系统减弱动效时缩放/位移退化，但触觉保留', (tester) async {
+    final List<MethodCall> haptics = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (
+          MethodCall call,
+        ) async {
+          if (call.method == 'HapticFeedback.vibrate') haptics.add(call);
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    // MediaQuery 必须放在 MaterialApp **里面**：MaterialApp 会用
+    // MediaQuery.fromView 重建外层数据，包在外面会被覆盖掉
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: const Scaffold(
+            body: Center(
+              child: PressableScale(
+                pressOffset: 1.5,
+                child: SizedBox(width: 100, height: 100),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(PressableScale)),
+    );
+    await _pressAndAdvance(tester);
+    expect(
+      _currentScale(tester),
+      moreOrLessEquals(1.0, epsilon: 0.001),
+      reason: '减弱动效下不应有缩放动画',
+    );
+    expect(haptics, isNotEmpty, reason: '触觉反馈不属于动效，应保留');
+
+    await gesture.up();
+    await tester.pump();
   });
 }

@@ -226,7 +226,11 @@ class AppText {
   );
 
   /// 底部导航 label — 未选中
+  ///
+  /// 显式 Roboto：经 AnimatedDefaultTextStyle 整体替换环境样式，
+  /// family 留空时测试环境回退 Ahem 方块（设备默认本就是 Roboto）
   static const TextStyle navLabel = TextStyle(
+    fontFamily: 'Roboto',
     fontSize: 10,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.2,
@@ -234,6 +238,7 @@ class AppText {
 
   /// 底部导航 label — 选中
   static const TextStyle navLabelActive = TextStyle(
+    fontFamily: 'Roboto',
     fontSize: 10,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.2,

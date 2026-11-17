@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:time_way_pro/core/ui/paper.dart';
 import 'package:time_way_pro/features/focus/providers/focus_timer_provider.dart';
+import 'package:time_way_pro/features/focus/services/focus_alarm_service.dart';
 
 import '../../support/app_harness.dart';
 
@@ -56,7 +57,7 @@ void main() {
       await provider.startBreak();
       expect(provider.phase, FocusPhase.breaking);
       expect(provider.isAlarming, isFalse);
-      expect(alarmCalls, contains('stopAlarm'));
+      expect(alarmCalls, contains('startCountdown'));
 
       await Future<void>.delayed(const Duration(milliseconds: 1150));
       await provider.syncWithClock();
@@ -65,7 +66,94 @@ void main() {
 
       await provider.dismissAlarm();
       expect(provider.phase, FocusPhase.idle);
-      expect(alarmCalls.last, 'stopAlarm');
+      expect(alarmCalls, contains('stopAll'));
+    });
+  });
+
+  testWidgets('开始/暂停/恢复/结束会同步原生前台计时服务', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final List<MethodCall> calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(alarmChannel, (MethodCall call) async {
+      calls.add(call);
+      return true;
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(alarmChannel, null);
+    });
+
+    final FocusTimerProvider provider = FocusTimerProvider(
+      focusDurationSeconds: 60,
+      breakDurationSeconds: 60,
+    );
+    addTearDown(provider.dispose);
+
+    await tester.runAsync(() async {
+      await provider.startFocus();
+      final MethodCall countdown = calls.lastWhere(
+        (MethodCall c) => c.method == 'startCountdown',
+      );
+      final Map<dynamic, dynamic> args =
+          countdown.arguments as Map<dynamic, dynamic>;
+      final int endMillis = args['endMillis'] as int;
+      final int expected =
+          DateTime.now().add(const Duration(seconds: 60)).millisecondsSinceEpoch;
+      expect((endMillis - expected).abs(), lessThan(3000));
+      expect(args['isFocus'], true);
+      expect(args['rounds'], 1);
+
+      await provider.pause();
+      expect(calls.last.method, 'pauseCountdown');
+
+      await provider.resume();
+      expect(calls.last.method, 'startCountdown');
+
+      await provider.stop();
+      expect(calls.last.method, 'stopAll');
+    });
+  });
+
+  testWidgets('闹铃模式默认响铃+振动，可切换仅振动并持久化', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final List<MethodCall> calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(alarmChannel, (MethodCall call) async {
+      calls.add(call);
+      return true;
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(alarmChannel, null);
+    });
+
+    final FocusTimerProvider provider = FocusTimerProvider();
+    addTearDown(provider.dispose);
+
+    await tester.runAsync(() async {
+      await provider.restoreState();
+      expect(provider.alarmMode, FocusAlarmMode.soundAndVibration);
+
+      await provider.setAlarmMode(FocusAlarmMode.vibrationOnly);
+      expect(provider.alarmMode, FocusAlarmMode.vibrationOnly);
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('focus_alarm_mode'), 'vibrate');
+
+      await provider.toggleTestAlarm();
+      final MethodCall start = calls.lastWhere(
+        (MethodCall c) => c.method == 'startAlarm',
+      );
+      expect(
+        (start.arguments as Map<dynamic, dynamic>)['mode'],
+        'vibrate',
+      );
+      await provider.stopTestAlarm();
+
+      // 重新加载后模式应恢复
+      final FocusTimerProvider reloaded = FocusTimerProvider();
+      addTearDown(reloaded.dispose);
+      await reloaded.restoreState();
+      expect(reloaded.alarmMode, FocusAlarmMode.vibrationOnly);
     });
   });
 
@@ -144,7 +232,7 @@ void main() {
 
     expect(provider.phase, FocusPhase.breaking);
     expect(find.byKey(const Key('focus_alarm_banner')), findsNothing);
-    expect(alarmCalls.last, 'stopAlarm');
+    expect(alarmCalls, contains('startCountdown'));
 
     await tester.runAsync(() => provider.stop());
   });

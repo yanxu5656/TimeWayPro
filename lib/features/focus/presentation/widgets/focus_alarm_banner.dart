@@ -54,17 +54,10 @@ class FocusAlarmBanner extends StatelessWidget {
                     style: AppText.titleSm.copyWith(color: AppColors.error),
                   ),
                 ),
-                TextButton(
+                PaperTextButton(
                   onPressed: onOpenTimer,
-                  style: TextButton.styleFrom(
-                    minimumSize: Size.zero,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: AppSpacing.xxs,
-                    ),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text('详情'),
+                  compact: true,
+                  label: '详情',
                 ),
               ],
             ),
@@ -73,27 +66,19 @@ class FocusAlarmBanner extends StatelessWidget {
               spacing: AppSpacing.xs,
               runSpacing: AppSpacing.xs,
               children: <Widget>[
-                ElevatedButton(
+                PaperButton(
                   onPressed: isFocusDone ? timer.startBreak : timer.startFocus,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    foregroundColor: AppColors.textOnPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.xs,
-                    ),
-                  ),
-                  child: Text(actionText),
+                  backgroundColor: AppColors.error,
+                  compact: true,
+                  label: actionText,
                 ),
-                OutlinedButton(
-                  onPressed: timer.dismissAlarm,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.xs,
-                    ),
-                  ),
-                  child: const Text('仅关闭闹铃'),
+                PaperOutlinedButton(
+                  onPressed: () {
+                    AppHaptics.dismiss();
+                    timer.dismissAlarm();
+                  },
+                  compact: true,
+                  label: '仅关闭闹铃',
                 ),
               ],
             ),

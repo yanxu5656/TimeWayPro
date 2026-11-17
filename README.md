@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.7.3-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.8.0-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -109,6 +109,14 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.8.0 — 专注闹铃后台准时响铃 + 仅振动模式
+*2026-11-16*
+
+- **修复后台不响铃**：专注计时改由原生前台服务全程保活——计时期间通知栏常驻系统渲染的倒计时，锁屏、切后台、最近任务清理后进程依然存活，到点直接响铃；同时预约系统 `AlarmManager` 闹钟作为唤醒备份，开机后自动恢复计时。
+- **电池优化引导**：首次开始专注时引导加入电池优化白名单，并提示小米 / 华为 / OPPO / vivo 等机型开启自启动，避免国产 ROM 后台查杀。
+- **闹铃模式可选**：专注计时页新增「响铃 + 振动 / 仅振动」切换，仅振动模式适合会议、课堂等安静场合；模式持久化保存，响铃中切换立即生效。
+- **闹铃保护**：无人关闭时最长响 10 分钟自动停止。
 
 ### v1.7.3 — 全局悬浮 45/5 专注计时与持续振动闹铃
 *2026-11-14*
