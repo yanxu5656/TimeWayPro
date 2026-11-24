@@ -1,3 +1,5 @@
+const Object _undefined = Object();
+
 class TaskRecord {
   final String id;
   final String taskId;
@@ -43,17 +45,19 @@ class TaskRecord {
     String? id,
     String? taskId,
     DateTime? startTime,
-    DateTime? endTime,
+    Object? endTime = _undefined,
     int? duration,
-    DateTime? completedAt,
+    Object? completedAt = _undefined,
   }) {
     return TaskRecord(
       id: id ?? this.id,
       taskId: taskId ?? this.taskId,
       startTime: startTime ?? this.startTime,
-      endTime: endTime ?? this.endTime,
+      endTime: endTime == _undefined ? this.endTime : endTime as DateTime?,
       duration: duration ?? this.duration,
-      completedAt: completedAt ?? this.completedAt,
+      completedAt: completedAt == _undefined
+          ? this.completedAt
+          : completedAt as DateTime?,
     );
   }
 

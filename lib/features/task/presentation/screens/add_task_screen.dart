@@ -27,6 +27,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   int _durationSeconds = 0;
   DateTime? _dueDate;
   int? _reminderMinutes;
+  bool _saving = false;
 
   bool get isEditing => widget.task != null;
 
@@ -83,7 +84,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 controller: _titleController,
                 decoration: const InputDecoration(hintText: '输入任务名称'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return '请输入任务名称';
                   }
                   return null;
@@ -160,36 +161,35 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ),
               ),
 
+            if (_timerType == TimerType.countDown &&
+                _durationMinutes * 60 + _durationSeconds == 0)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  '倒计时时长至少为 1 秒',
+                  style: TextStyle(fontSize: 12, color: AppColors.error),
+                ),
+              ),
+
             // 重复类型
             _buildSection(
               title: '重复类型',
-              child: Column(
-                children: [
-                  _buildRadioTile(
-                    title: '不重复（一次性任务）',
-                    value: RepeatType.none,
-                    groupValue: _repeatType,
-                    onChanged: (v) => setState(() => _repeatType = v!),
-                  ),
-                  _buildRadioTile(
-                    title: '每天',
-                    value: RepeatType.daily,
-                    groupValue: _repeatType,
-                    onChanged: (v) => setState(() => _repeatType = v!),
-                  ),
-                  _buildRadioTile(
-                    title: '每周',
-                    value: RepeatType.weekly,
-                    groupValue: _repeatType,
-                    onChanged: (v) => setState(() => _repeatType = v!),
-                  ),
-                  _buildRadioTile(
-                    title: '每月',
-                    value: RepeatType.monthly,
-                    groupValue: _repeatType,
-                    onChanged: (v) => setState(() => _repeatType = v!),
-                  ),
-                ],
+              child: RadioGroup<RepeatType>(
+                groupValue: _repeatType,
+                onChanged: (value) {
+                  if (value != null) setState(() => _repeatType = value);
+                },
+                child: Column(
+                  children: [
+                    _buildRadioTile(
+                      title: '不重复（一次性任务）',
+                      value: RepeatType.none,
+                    ),
+                    _buildRadioTile(title: '每天', value: RepeatType.daily),
+                    _buildRadioTile(title: '每周', value: RepeatType.weekly),
+                    _buildRadioTile(title: '每月', value: RepeatType.monthly),
+                  ],
+                ),
               ),
             ),
 
@@ -256,8 +256,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               _buildSection(
                 title: '提前提醒',
                 child: DropdownButtonFormField<int>(
-                  value: _reminderMinutes,
-                  decoration: const InputDecoration(hintText: '选择提前提醒时间'),
+                  initialValue: _reminderMinutes,
+                  decoration: const InputDecoration(
+                    hintText: '选择提前提醒时间',
+                    helperText: '提醒时间为截止日当天 09:00',
+                    helperMaxLines: 2,
+                  ),
                   items: const [
                     DropdownMenuItem(value: null, child: Text('不提醒')),
                     DropdownMenuItem(value: 5, child: Text('提前5分钟')),
@@ -274,7 +278,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
             // 保存按钮
             PaperButton(
-              onPressed: _saveTask,
+              onPressed: _saving ? null : _saveTask,
+              loading: _saving,
+              loadingLabel: '正在保存',
               label: isEditing ? '保存修改' : '创建任务',
             ),
 
@@ -304,17 +310,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
   }
 
-  Widget _buildRadioTile({
-    required String title,
-    required RepeatType value,
-    required RepeatType groupValue,
-    required ValueChanged<RepeatType?> onChanged,
-  }) {
+  Widget _buildRadioTile({required String title, required RepeatType value}) {
     return RadioListTile<RepeatType>(
       title: Text(title),
       value: value,
-      groupValue: groupValue,
-      onChanged: onChanged,
       activeColor: AppColors.primary,
       contentPadding: EdgeInsets.zero,
       dense: true,
@@ -376,11 +375,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Future<void> _selectDueDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _dueDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2030),
+      initialDate: _dueDate != null && !_dueDate!.isBefore(today)
+          ? _dueDate!
+          : today,
+      firstDate: today,
+      lastDate: DateTime(now.year + 10, 12, 31),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -398,8 +401,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     }
   }
 
-  void _saveTask() {
+  Future<void> _saveTask() async {
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
+    final int duration = _durationMinutes * 60 + _durationSeconds;
+    if (_timerType == TimerType.countDown && duration == 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('倒计时时长至少为 1 秒')));
+      return;
+    }
+    setState(() => _saving = true);
 
     final now = DateTime.now();
     final task = Task(
@@ -409,52 +421,67 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ? null
           : _descController.text.trim(),
       timerType: _timerType,
-      duration: _timerType == TimerType.countDown
-          ? _durationMinutes * 60 + _durationSeconds
-          : null,
+      duration: _timerType == TimerType.countDown ? duration : null,
       repeatType: _repeatType,
       repeatCount: _repeatType != RepeatType.none ? _repeatCount : 1,
       dueDate: _dueDate,
       reminderMinutes: _reminderMinutes,
       isCompleted: widget.task?.isCompleted ?? false,
       completedCount: widget.task?.completedCount ?? 0,
+      lastCompletedDate: widget.task?.lastCompletedDate,
       createdAt: widget.task?.createdAt ?? now,
       updatedAt: now,
     );
 
     final provider = context.read<TaskProvider>();
-    if (isEditing) {
-      provider.updateTask(task);
-    } else {
-      provider.addTask(task);
+    try {
+      if (isEditing) {
+        await provider.updateTask(task);
+      } else {
+        await provider.addTask(task);
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('保存失败：$e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-
-    Navigator.pop(context);
   }
 
-  void _deleteTask() {
-    showDialog(
+  Future<void> _deleteTask() async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除任务'),
         content: Text('确定要删除「${widget.task!.title}」吗？'),
         actions: [
           PaperTextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             label: '取消',
           ),
           PaperTextButton(
-            onPressed: () {
-              AppHaptics.confirm();
-              Navigator.pop(context);
-              context.read<TaskProvider>().deleteTask(widget.task!.id);
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context, true),
             color: AppColors.error,
             label: '删除',
           ),
         ],
       ),
     );
+    if (confirmed != true || !mounted) return;
+    AppHaptics.confirm();
+    try {
+      await context.read<TaskProvider>().deleteTask(widget.task!.id);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('删除失败：$e')));
+      }
+    }
   }
 }

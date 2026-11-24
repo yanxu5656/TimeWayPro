@@ -9,24 +9,18 @@ class DailyRepository {
 
   // 获取指定日期的任务
   Future<List<DailyTask>> getTasksByDate(String dateKey) async {
-    try {
-      final maps = await _dbHelper.queryWhere(
-        'daily_tasks',
-        (map) => map['date_key'] == dateKey,
-      );
-      final tasks = parseRows(maps, DailyTask.fromMap);
-      // 按时间段和排序顺序分组
-      tasks.sort((a, b) {
-        if (a.timePeriod.index != b.timePeriod.index) {
-          return a.timePeriod.index.compareTo(b.timePeriod.index);
-        }
-        return a.sortOrder.compareTo(b.sortOrder);
-      });
-      return tasks;
-    } catch (e) {
-      print('Error getting daily tasks: $e');
-      return [];
-    }
+    final maps = await _dbHelper.queryWhere(
+      'daily_tasks',
+      (map) => map['date_key'] == dateKey,
+    );
+    final tasks = parseRows(maps, DailyTask.fromMap);
+    tasks.sort((a, b) {
+      if (a.timePeriod.index != b.timePeriod.index) {
+        return a.timePeriod.index.compareTo(b.timePeriod.index);
+      }
+      return a.sortOrder.compareTo(b.sortOrder);
+    });
+    return tasks;
   }
 
   // 添加任务

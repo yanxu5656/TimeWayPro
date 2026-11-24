@@ -3,6 +3,7 @@
 // 页面只 import 本文件即可拿到全部组件 + 设计令牌
 // （AppColors / AppRadius / AppSpacing / AppShadows / AppText）。
 export '../theme/app_theme.dart';
+export 'action_feedback.dart';
 export 'app_haptics.dart';
 export 'count_up_text.dart';
 export 'ink_check_circle.dart';

@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import '../../../../core/utils/row_parse.dart';
 import '../../../../shared/database/database_helper.dart';
 import '../models/plan.dart';
 
@@ -8,7 +9,7 @@ class PlanRepository {
 
   Future<List<Plan>> getAllPlans() async {
     final maps = await _dbHelper.query('plans');
-    return maps.map((map) => Plan.fromMap(map)).toList();
+    return parseRows(maps, Plan.fromMap);
   }
 
   Future<List<Plan>> getRootPlans() async {
@@ -16,7 +17,7 @@ class PlanRepository {
       'plans',
       (map) => map['parent_id'] == null,
     );
-    return maps.map((map) => Plan.fromMap(map)).toList();
+    return parseRows(maps, Plan.fromMap);
   }
 
   Future<List<Plan>> getChildPlans(String parentId) async {
@@ -24,13 +25,13 @@ class PlanRepository {
       'plans',
       (map) => map['parent_id'] == parentId,
     );
-    return maps.map((map) => Plan.fromMap(map)).toList();
+    return parseRows(maps, Plan.fromMap);
   }
 
   Future<Plan?> getPlanById(String id) async {
     final maps = await _dbHelper.queryWhere('plans', (map) => map['id'] == id);
     if (maps.isEmpty) return null;
-    return Plan.fromMap(maps.first);
+    return parseRows(maps, Plan.fromMap).firstOrNull;
   }
 
   Future<String> insertPlan(Plan plan) async {
@@ -49,18 +50,33 @@ class PlanRepository {
   }
 
   Future<void> deletePlan(String id) async {
-    // 获取所有子计划并递归删除
-    final children = await getChildPlans(id);
-    for (var child in children) {
-      await deletePlan(child.id);
+    final plans = await getAllPlans();
+    final byParent = <String?, List<Plan>>{};
+    for (final plan in plans) {
+      (byParent[plan.parentId] ??= <Plan>[]).add(plan);
     }
-    await _dbHelper.delete('plans', 'id', id);
+    final ids = <String>{id};
+    final pending = <String>[id];
+    while (pending.isNotEmpty) {
+      final parentId = pending.removeLast();
+      for (final child in byParent[parentId] ?? const <Plan>[]) {
+        if (ids.add(child.id)) pending.add(child.id);
+      }
+    }
+    // 整棵子树一次落盘，避免递归删除中途失败留下父子关系不一致的半成品。
+    await _dbHelper.deleteWhere(
+      'plans',
+      (dynamic row) => row is Map<String, dynamic> && ids.contains(row['id']),
+    );
   }
 
   Future<void> updateProgress(String id, double progress) async {
+    if (!progress.isFinite) return;
     final plan = await getPlanById(id);
     if (plan == null) return;
-    await updatePlan(plan.copyWith(progress: progress));
+    await updatePlan(
+      plan.copyWith(progress: progress.clamp(0.0, 1.0).toDouble()),
+    );
   }
 
   Future<List<Plan>> getPlanTree() async {

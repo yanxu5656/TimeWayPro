@@ -356,7 +356,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: DateTime(DateTime.now().year + 10, 12, 31),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(

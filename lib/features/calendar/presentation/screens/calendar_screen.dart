@@ -18,15 +18,7 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  static const List<String> _weekdays = [
-    '一',
-    '二',
-    '三',
-    '四',
-    '五',
-    '六',
-    '日',
-  ];
+  static const List<String> _weekdays = ['一', '二', '三', '四', '五', '六', '日'];
 
   @override
   void initState() {
@@ -39,8 +31,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   static String _keyOf(DateTime date) => DateFormat('yyyy-MM-dd').format(date);
 
-  static String _weekdayCn(DateTime date) =>
-      '周${_weekdays[date.weekday - 1]}';
+  static String _weekdayCn(DateTime date) => '周${_weekdays[date.weekday - 1]}';
 
   @override
   Widget build(BuildContext context) {
@@ -325,10 +316,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   void _openDaySheet(String dateKey) {
-    showPaperSheet(
-      context,
-      builder: (context) => _DaySheet(dateKey: dateKey),
-    );
+    showPaperSheet(context, builder: (context) => _DaySheet(dateKey: dateKey));
   }
 }
 
@@ -452,6 +440,7 @@ class _DaySheet extends StatefulWidget {
 class _DaySheetState extends State<_DaySheet> {
   final _controller = TextEditingController();
   String? _editingId;
+  bool _saving = false;
 
   bool get _valid => _controller.text.trim().isNotEmpty;
 
@@ -475,21 +464,31 @@ class _DaySheetState extends State<_DaySheet> {
     });
   }
 
-  void _save() {
+  Future<void> _save() async {
+    if (_saving) return;
     final provider = context.read<CalendarProvider>();
     final text = _controller.text.trim();
-    if (_editingId != null) {
-      final notes = provider.notesForDay(widget.dateKey);
-      final note = notes.where((n) => n.id == _editingId).firstOrNull;
-      if (note != null) provider.updateNote(note.copyWith(text: text));
-    } else {
-      provider.addNote(dateKey: widget.dateKey, text: text);
-      AppHaptics.success();
-    }
-    setState(() {
-      _editingId = null;
-      _controller.clear();
+    setState(() => _saving = true);
+    final success = await runPaperAction(context, () async {
+      if (_editingId != null) {
+        final notes = provider.notesForDay(widget.dateKey);
+        final note = notes.where((n) => n.id == _editingId).firstOrNull;
+        if (note != null) {
+          await provider.updateNote(note.copyWith(text: text));
+        }
+      } else {
+        await provider.addNote(dateKey: widget.dateKey, text: text);
+        AppHaptics.success();
+      }
     });
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (success) {
+      setState(() {
+        _editingId = null;
+        _controller.clear();
+      });
+    }
   }
 
   @override
@@ -553,10 +552,15 @@ class _DaySheetState extends State<_DaySheet> {
                           iconSize: 18,
                           color: AppColors.textSecondary,
                           tooltip: '删除标注',
-                          onTap: () {
+                          onTap: () async {
                             AppHaptics.dismiss();
-                            provider.deleteNote(note.id);
-                            if (_editingId == note.id) _cancelEdit();
+                            final success = await runPaperAction(
+                              context,
+                              () => provider.deleteNote(note.id),
+                            );
+                            if (success && mounted && _editingId == note.id) {
+                              _cancelEdit();
+                            }
                           },
                         ),
                       ],
@@ -573,23 +577,19 @@ class _DaySheetState extends State<_DaySheet> {
           maxLines: 2,
           minLines: 1,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            hintText: '如：9-11 高数期末考试 / 抢回家的车票',
-          ),
+          decoration: const InputDecoration(hintText: '如：9-11 高数期末考试 / 抢回家的车票'),
         ),
         if (_editingId != null) ...[
           const SizedBox(height: AppSpacing.xs),
-          PaperTextButton(
-            compact: true,
-            onPressed: _cancelEdit,
-            label: '取消编辑',
-          ),
+          PaperTextButton(compact: true, onPressed: _cancelEdit, label: '取消编辑'),
         ],
         const SizedBox(height: AppSpacing.md),
         SizedBox(
           width: double.infinity,
           child: PaperButton(
-            onPressed: _valid ? _save : null,
+            onPressed: _valid && !_saving ? _save : null,
+            loading: _saving,
+            loadingLabel: '正在保存',
             label: _editingId != null ? '保存修改' : '添加标注',
           ),
         ),

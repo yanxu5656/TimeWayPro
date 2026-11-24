@@ -109,9 +109,9 @@ class TaskProvider extends ChangeNotifier {
       await _checkAndResetDailyCounts();
       // 恢复活跃的计时器
       await _restoreActiveTimers();
+      await _notificationService.syncTaskReminders(_tasks);
     } catch (e) {
       debugPrint('Error loading tasks: $e');
-      _tasks = [];
     } finally {
       _isLoading = false;
       _dataVersion++;
@@ -480,6 +480,7 @@ class TaskProvider extends ChangeNotifier {
     _activeTimers.clear();
     await _clearSavedTimers();
     await _notificationService.removeTimerNotification();
+    await _notificationService.syncTaskReminders(const <Task>[]);
     _notificationService.stopPeriodicUpdate();
     notifyListeners();
   }

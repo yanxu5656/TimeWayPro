@@ -8,13 +8,11 @@ class SettingsProvider extends ChangeNotifier {
   SyncConfig? _syncConfig;
   bool _isSyncing = false;
   String? _syncError;
-  bool _autoSync = true;
 
   SyncConfig? get syncConfig => _syncConfig;
   bool get isSyncing => _isSyncing;
   String? get syncError => _syncError;
   bool get isConfigured => _syncConfig != null;
-  bool get autoSync => _autoSync;
 
   Future<void> loadSyncConfig() async {
     _syncConfig = await _syncRepository.getSyncConfig();
@@ -74,7 +72,7 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> restore() async {
+  Future<bool> restore({Future<void> Function()? beforeImport}) async {
     if (_syncConfig == null) return false;
 
     _isSyncing = true;
@@ -82,7 +80,7 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _syncRepository.restore();
+      await _syncRepository.restore(beforeImport: beforeImport);
       _isSyncing = false;
       notifyListeners();
       return true;
@@ -92,11 +90,6 @@ class SettingsProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-  }
-
-  void setAutoSync(bool value) {
-    _autoSync = value;
-    notifyListeners();
   }
 
   void clearError() {

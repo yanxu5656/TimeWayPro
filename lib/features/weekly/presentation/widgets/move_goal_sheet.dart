@@ -53,7 +53,11 @@ class _MoveGoalSheet extends StatelessWidget {
           _buildWeekOption(
             context,
             index: i + 1,
-            monday: thisMonday.add(Duration(days: 7 * offset)),
+            monday: DateTime(
+              thisMonday.year,
+              thisMonday.month,
+              thisMonday.day + 7 * offset,
+            ),
           ),
         _buildCustomOption(context),
       ],
@@ -85,7 +89,7 @@ class _MoveGoalSheet extends StatelessWidget {
           SizedBox(
             width: 30,
             child: Text(
-              '${index}'.padLeft(2, '0'),
+              index.toString().padLeft(2, '0'),
               style: AppText.serifNum.copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -157,9 +161,13 @@ class _MoveGoalSheet extends StatelessWidget {
     );
   }
 
-  void _move(BuildContext context, String targetWeekKey) {
-    context.read<WeeklyProvider>().moveGoalToWeek(goal, targetWeekKey);
-    Navigator.pop(context);
+  Future<void> _move(BuildContext context, String targetWeekKey) async {
+    final provider = context.read<WeeklyProvider>();
+    final success = await runPaperAction(
+      context,
+      () => provider.moveGoalToWeek(goal, targetWeekKey),
+    );
+    if (success && context.mounted) Navigator.pop(context);
   }
 
   Future<void> _pickWeek(BuildContext context) async {
@@ -167,7 +175,7 @@ class _MoveGoalSheet extends StatelessWidget {
       context: context,
       initialDate: DateTime.parse(goal.weekKey),
       firstDate: DateTime(2020, 1, 6), // 期号锚点周一，往前的周没有 VOL 号
-      lastDate: DateTime(2030),
+      lastDate: DateTime(DateTime.now().year + 10, 12, 31),
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(

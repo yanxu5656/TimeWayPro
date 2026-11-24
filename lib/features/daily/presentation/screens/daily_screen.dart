@@ -18,7 +18,10 @@ class _DailyScreenState extends State<DailyScreen> {
   void initState() {
     super.initState();
     // 延迟加载，避免在build期间调用
-    Future.microtask(() => context.read<DailyProvider>().loadTasks());
+    final provider = context.read<DailyProvider>();
+    Future.microtask(() {
+      if (mounted) provider.loadTasks();
+    });
   }
 
   @override
@@ -381,7 +384,7 @@ class _DailyScreenState extends State<DailyScreen> {
         );
       },
       onDismissed: (direction) {
-        provider.deleteTask(task.id);
+        runPaperAction(context, () => provider.deleteTask(task.id));
       },
       // 列表项卡：暖白底 + 两层暖阴影，完成的行整圈换 success 细描边
       child: PaperCard(
@@ -392,7 +395,9 @@ class _DailyScreenState extends State<DailyScreen> {
         ),
         margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         tint: task.isCompleted ? AppColors.success : null,
-        onTap: () => provider.toggleComplete(task.id),
+        onTap: () {
+          runPaperAction(context, () => provider.toggleComplete(task.id));
+        },
         onLongPress: () => _showEditDialog(context, task, provider),
         child: Row(
           children: [
@@ -400,7 +405,9 @@ class _DailyScreenState extends State<DailyScreen> {
             // （原先这里是 26px，任务页是 28px）
             InkCheckCircle(
               isChecked: task.isCompleted,
-              onTap: () => provider.toggleComplete(task.id),
+              onTap: () {
+                runPaperAction(context, () => provider.toggleComplete(task.id));
+              },
               semanticLabel: task.title,
             ),
             const SizedBox(width: 14),
@@ -465,7 +472,7 @@ class _DailyScreenState extends State<DailyScreen> {
       context: context,
       initialDate: provider.selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: DateTime(DateTime.now().year + 10, 12, 31),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -511,6 +518,7 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   TimePeriod _selectedPeriod = _getCurrentPeriod();
+  bool _saving = false;
 
   static TimePeriod _getCurrentPeriod() {
     final hour = DateTime.now().hour;
@@ -611,24 +619,33 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
         // 添加按钮
         SizedBox(
           width: double.infinity,
-          child: PaperButton(onPressed: _addTask, label: '添加'),
+          child: PaperButton(
+            onPressed: _saving ? null : _addTask,
+            loading: _saving,
+            loadingLabel: '正在添加',
+            label: '添加',
+          ),
         ),
       ],
     );
   }
 
-  void _addTask() {
-    if (_titleController.text.trim().isEmpty) return;
-
-    context.read<DailyProvider>().addTask(
-      title: _titleController.text.trim(),
-      description: _descController.text.trim().isEmpty
-          ? null
-          : _descController.text.trim(),
-      timePeriod: _selectedPeriod,
+  Future<void> _addTask() async {
+    if (_saving || _titleController.text.trim().isEmpty) return;
+    setState(() => _saving = true);
+    final success = await runPaperAction(
+      context,
+      () => context.read<DailyProvider>().addTask(
+        title: _titleController.text.trim(),
+        description: _descController.text.trim().isEmpty
+            ? null
+            : _descController.text.trim(),
+        timePeriod: _selectedPeriod,
+      ),
     );
-
-    Navigator.pop(context);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (success) Navigator.pop(context);
   }
 }
 
@@ -645,6 +662,7 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
   late TextEditingController _titleController;
   late TextEditingController _descController;
   late TimePeriod _selectedPeriod;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -747,25 +765,34 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
         // 保存按钮
         SizedBox(
           width: double.infinity,
-          child: PaperButton(onPressed: _saveTask, label: '保存'),
+          child: PaperButton(
+            onPressed: _saving ? null : _saveTask,
+            loading: _saving,
+            loadingLabel: '正在保存',
+            label: '保存',
+          ),
         ),
       ],
     );
   }
 
-  void _saveTask() {
-    if (_titleController.text.trim().isEmpty) return;
-
-    context.read<DailyProvider>().updateTask(
-      widget.task.copyWith(
-        title: _titleController.text.trim(),
-        description: _descController.text.trim().isEmpty
-            ? null
-            : _descController.text.trim(),
-        timePeriod: _selectedPeriod,
+  Future<void> _saveTask() async {
+    if (_saving || _titleController.text.trim().isEmpty) return;
+    setState(() => _saving = true);
+    final success = await runPaperAction(
+      context,
+      () => context.read<DailyProvider>().updateTask(
+        widget.task.copyWith(
+          title: _titleController.text.trim(),
+          description: _descController.text.trim().isEmpty
+              ? null
+              : _descController.text.trim(),
+          timePeriod: _selectedPeriod,
+        ),
       ),
     );
-
-    Navigator.pop(context);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (success) Navigator.pop(context);
   }
 }

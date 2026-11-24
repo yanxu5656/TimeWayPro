@@ -10,11 +10,15 @@ import '../data/repositories/weekly_goal_repository.dart';
 /// **当前浏览的周**上——「翻到下周再添加」就是提前列下周的计划，
 /// 「翻回旧周」就能回看并继续编辑历史目标。
 class WeeklyProvider extends ChangeNotifier {
-  final WeeklyGoalRepository _repository = WeeklyGoalRepository();
+  final WeeklyGoalRepository _repository;
+
+  WeeklyProvider({WeeklyGoalRepository? repository})
+    : _repository = repository ?? WeeklyGoalRepository();
 
   DateTime _weekAnchor = startOfWeek(DateTime.now());
   List<WeeklyGoal> _goals = [];
   bool _isLoading = false;
+  int _loadGeneration = 0;
 
   DateTime get selectedWeekStart => _weekAnchor;
 
@@ -55,17 +59,23 @@ class WeeklyProvider extends ChangeNotifier {
   // ── 加载 ──
 
   Future<void> loadGoals() async {
+    final generation = ++_loadGeneration;
+    final key = selectedWeekKey;
     _isLoading = true;
     notifyListeners();
 
     try {
-      _goals = await _repository.getByWeek(selectedWeekKey);
+      final goals = await _repository.getByWeek(key);
+      if (generation != _loadGeneration) return;
+      _goals = goals;
     } catch (e) {
+      if (generation != _loadGeneration) return;
       debugPrint('Error loading weekly goals: $e');
-      _goals = [];
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (generation == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -95,10 +105,17 @@ class WeeklyProvider extends ChangeNotifier {
     // 乐观删除：Dismissible 的滑动动画结束后行已经从视觉上消失，
     // 这里先同步更新状态让 UI 立即一致，再走持久化。
     // （onDismissed 在动画播完才触发，时序上晚于用户手势。）
+    final previousGoals = _goals;
     _goals = _goals.where((WeeklyGoal g) => g.id != id).toList();
     notifyListeners();
-    await _repository.delete(id);
-    await loadGoals();
+    try {
+      await _repository.delete(id);
+      await loadGoals();
+    } catch (_) {
+      _goals = previousGoals;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> toggleGoal(String id) async {
@@ -119,12 +136,19 @@ class WeeklyProvider extends ChangeNotifier {
     final List<WeeklyGoal> reordered = List<WeeklyGoal>.from(_goals);
     final WeeklyGoal moved = reordered.removeAt(oldIndex);
     reordered.insert(newIndex, moved);
+    final previousGoals = _goals;
     _goals = <WeeklyGoal>[
       for (final (int i, WeeklyGoal g) in reordered.indexed)
         g.copyWith(sortOrder: i),
     ];
     notifyListeners();
-    await _repository.reorder(_goals);
+    try {
+      await _repository.reorder(_goals);
+    } catch (_) {
+      _goals = previousGoals;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   int get _maxSortOrder => _goals.fold<int>(

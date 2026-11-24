@@ -133,6 +133,132 @@ void main() {
     });
   });
 
+  group('事务与故障回滚', () {
+    void blockDocumentsDirectory() {
+      final File blocker = File('${tempDir.path}/blocked');
+      blocker.writeAsStringSync('not a directory');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/path_provider'),
+            (MethodCall call) async => blocker.path,
+          );
+    }
+
+    test('导入校验拒绝缺失表和错误行形状且不覆盖现有数据', () async {
+      await db.importAll(dataset(tasks: <Map<String, dynamic>>[fakeTask('a')]));
+
+      await expectLater(
+        db.importAll(<String, dynamic>{'tasks': <dynamic>[]}),
+        throwsException,
+      );
+      await expectLater(
+        db.importAll(<String, dynamic>{
+          'tasks': <dynamic>[
+            <String, dynamic>{'id': 'bad'},
+          ],
+          'task_records': <String, dynamic>{},
+          'plans': <dynamic>[],
+        }),
+        throwsA(isA<FormatException>()),
+      );
+      await expectLater(
+        db.importAll(<String, dynamic>{
+          'tasks': <dynamic>['not an object'],
+          'task_records': <dynamic>[],
+          'plans': <dynamic>[],
+        }),
+        throwsA(isA<FormatException>()),
+      );
+
+      expect((await db.query('tasks')).single['id'], 'a');
+      expect((await db.query('tasks')), hasLength(1));
+    });
+
+    test('写盘失败时增删改和导入都回滚内存并保留磁盘数据', () async {
+      await db.importAll(dataset(tasks: <Map<String, dynamic>>[fakeTask('a')]));
+      final String before = liveFile.readAsStringSync();
+      blockDocumentsDirectory();
+
+      await expectLater(
+        db.insert('tasks', fakeTask('b')),
+        throwsA(isA<FileSystemException>()),
+      );
+      await expectLater(
+        db.update('tasks', <String, dynamic>{
+          ...fakeTask('a'),
+          'title': 'changed',
+        }, 'id'),
+        throwsA(isA<FileSystemException>()),
+      );
+      await expectLater(
+        db.delete('tasks', 'id', 'a'),
+        throwsA(isA<FileSystemException>()),
+      );
+      await expectLater(
+        db.importAll(dataset(tasks: <Map<String, dynamic>>[fakeTask('new')])),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      expect((await db.query('tasks')).single['id'], 'a');
+      expect(liveFile.readAsStringSync(), before);
+    });
+
+    test('前一次失败不会回滚队列中的后一次成功写入', () async {
+      await db.importAll(dataset(tasks: <Map<String, dynamic>>[fakeTask('a')]));
+      final File blocker = File('${tempDir.path}/blocked');
+      blocker.writeAsStringSync('not a directory');
+      int pathCalls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/path_provider'),
+            (MethodCall call) async =>
+                pathCalls++ < 2 ? blocker.path : tempDir.path,
+          );
+
+      await expectLater(
+        db.insert('tasks', fakeTask('b')),
+        throwsA(isA<FileSystemException>()),
+      );
+      await db.insert('tasks', fakeTask('c'));
+
+      expect(
+        (await db.query('tasks')).map((row) => row['id']),
+        orderedEquals(<String>['a', 'c']),
+      );
+      final Map<String, dynamic> onDisk =
+          jsonDecode(liveFile.readAsStringSync()) as Map<String, dynamic>;
+      expect(
+        (onDisk['tasks'] as List).map((row) => row['id']),
+        orderedEquals(<String>['a', 'c']),
+      );
+    });
+
+    test('删除任务在一次事务中同时移除任务和关联记录', () async {
+      await db.importAll(<String, dynamic>{
+        'tasks': <Map<String, dynamic>>[fakeTask('a'), fakeTask('b')],
+        'task_records': <Map<String, dynamic>>[
+          <String, dynamic>{'id': 'r1', 'task_id': 'a'},
+          <String, dynamic>{'id': 'r2', 'task_id': 'b'},
+        ],
+        'plans': <dynamic>[],
+      });
+
+      await db.deleteTaskCascade('a');
+
+      expect(
+        (await db.query('tasks')).map((row) => row['id']),
+        orderedEquals(<String>['b']),
+      );
+      expect(
+        (await db.query('task_records')).map((row) => row['id']),
+        orderedEquals(<String>['r2']),
+      );
+      final Map<String, dynamic> onDisk =
+          jsonDecode(liveFile.readAsStringSync()) as Map<String, dynamic>;
+      expect((onDisk['task_records'] as List).single['id'], 'r2');
+    });
+  });
+
   group('加载回退', () {
     test('正式文件缺失但 .bak 在 → 从备份恢复', () async {
       await db.importAll(dataset(tasks: <Map<String, dynamic>>[fakeTask('a')]));
@@ -155,6 +281,24 @@ void main() {
 
       // 模拟写到一半被杀进程：正式文件是半截 JSON
       liveFile.writeAsStringSync('{"tasks": [{"id": "a"');
+
+      db.resetForTesting();
+      final List<Map<String, dynamic>> restored = await db.query('tasks');
+
+      expect(restored, hasLength(1));
+      expect(restored.first['id'], 'a');
+    });
+
+    test('正式文件表结构损坏但 .bak 好 → 从备份恢复', () async {
+      await db.importAll(dataset(tasks: <Map<String, dynamic>>[fakeTask('a')]));
+      await db.insert('tasks', fakeTask('b'));
+      liveFile.writeAsStringSync(
+        jsonEncode(<String, dynamic>{
+          'tasks': <Map<String, dynamic>>[fakeTask('broken')],
+          'task_records': <String, dynamic>{},
+          'plans': <dynamic>[],
+        }),
+      );
 
       db.resetForTesting();
       final List<Map<String, dynamic>> restored = await db.query('tasks');
@@ -200,21 +344,4 @@ void main() {
       expect(parsed['tasks'], hasLength(500));
     });
   });
-
-  // ─────────────────────────────────────────────────────────────
-  // 关于「原子性」本身：这里**没有**对应的测试，这是有意为之。
-  //
-  // 原子写入要保证的是「进程在写到一半时被杀，正式文件不会变成半截 JSON」。
-  // 在同一个进程里 await 完写入再读，永远读到完整文件——无论实现是
-  // rename 还是直接覆盖，所以那种断言是恒真的废测试（试过：把 _saveData
-  // 换回旧的「直接覆盖」写法，它照样通过）。
-  //
-  // 要真正验证需要故障注入（在写入中途杀死进程，或让 rename 失败），
-  // 那超出了 flutter test 的能力范围。所以这条属性目前**靠代码结构**保证：
-  // 正式文件永远只通过「同目录内的 rename」被替换，而 rename 在文件系统
-  // 层面是原子的。
-  //
-  // 与之配套、且**可以**测的是上面「加载回退」那一组——原子替换的序列里
-  // 有一小段正式文件不存在的窗口，那组测试守的正是这个窗口被正确处理。
-  // ─────────────────────────────────────────────────────────────
 }

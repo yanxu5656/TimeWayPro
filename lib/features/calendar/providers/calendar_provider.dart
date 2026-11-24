@@ -4,11 +4,15 @@ import '../data/models/calendar_note.dart';
 import '../data/repositories/calendar_repository.dart';
 
 class CalendarProvider extends ChangeNotifier {
-  final CalendarRepository _repository = CalendarRepository();
+  final CalendarRepository _repository;
+
+  CalendarProvider({CalendarRepository? repository})
+    : _repository = repository ?? CalendarRepository();
 
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
   List<CalendarNote> _notes = [];
   bool _isLoading = false;
+  int _loadGeneration = 0;
 
   DateTime get selectedMonth => _selectedMonth;
   List<CalendarNote> get notes => _notes;
@@ -28,15 +32,14 @@ class CalendarProvider extends ChangeNotifier {
     return map;
   }
 
-  void previousMonth() => _setMonth(
-    DateTime(_selectedMonth.year, _selectedMonth.month - 1),
-  );
+  void previousMonth() =>
+      _setMonth(DateTime(_selectedMonth.year, _selectedMonth.month - 1));
 
-  void nextMonth() => _setMonth(
-    DateTime(_selectedMonth.year, _selectedMonth.month + 1),
-  );
+  void nextMonth() =>
+      _setMonth(DateTime(_selectedMonth.year, _selectedMonth.month + 1));
 
-  void goToToday() => _setMonth(DateTime(DateTime.now().year, DateTime.now().month));
+  void goToToday() =>
+      _setMonth(DateTime(DateTime.now().year, DateTime.now().month));
 
   void _setMonth(DateTime month) {
     _selectedMonth = month;
@@ -44,16 +47,22 @@ class CalendarProvider extends ChangeNotifier {
   }
 
   Future<void> loadMonth() async {
+    final generation = ++_loadGeneration;
+    final key = monthKey;
     _isLoading = true;
     notifyListeners();
     try {
-      _notes = await _repository.getByMonth(monthKey);
+      final notes = await _repository.getByMonth(key);
+      if (generation != _loadGeneration) return;
+      _notes = notes;
     } catch (e) {
+      if (generation != _loadGeneration) return;
       debugPrint('Error loading calendar notes: $e');
-      _notes = [];
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (generation == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -63,7 +72,12 @@ class CalendarProvider extends ChangeNotifier {
         id: '',
         dateKey: dateKey,
         text: text,
-        sortOrder: notesForDay(dateKey).length,
+        sortOrder:
+            notesForDay(dateKey).fold<int>(
+              -1,
+              (max, note) => note.sortOrder > max ? note.sortOrder : max,
+            ) +
+            1,
         createdAt: DateTime.now(),
       ),
     );

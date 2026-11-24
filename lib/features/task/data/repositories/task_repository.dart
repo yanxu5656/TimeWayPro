@@ -45,9 +45,7 @@ class TaskRepository {
   }
 
   Future<void> deleteTask(String id) async {
-    await _dbHelper.delete('tasks', 'id', id);
-    // 删除相关记录
-    await _dbHelper.deleteWhere('task_records', (map) => map['task_id'] == id);
+    await _dbHelper.deleteTaskCascade(id);
   }
 
   Future<void> completeTask(String taskId) async {
@@ -191,5 +189,9 @@ class TaskRepository {
 
   Future<void> importAllData(Map<String, dynamic> data) async {
     await _dbHelper.importAll(data);
+  }
+
+  void validateAllData(Map<String, dynamic> data) {
+    DatabaseHelper.validateImportData(data);
   }
 }

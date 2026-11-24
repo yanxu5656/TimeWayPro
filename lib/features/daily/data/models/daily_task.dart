@@ -1,3 +1,5 @@
+const Object _undefined = Object();
+
 // 时间段
 enum TimePeriod {
   morning, // 上午
@@ -44,7 +46,11 @@ class DailyTask {
       id: map['id'],
       title: map['title'],
       description: map['description'],
-      timePeriod: TimePeriod.values[map['time_period'] ?? 0],
+      timePeriod:
+          TimePeriod.values[(map['time_period'] as int? ?? 0).clamp(
+            0,
+            TimePeriod.values.length - 1,
+          )],
       isCompleted: map['is_completed'] == 1,
       dateKey: map['date_key'],
       sortOrder: map['sort_order'] ?? 0,
@@ -55,7 +61,7 @@ class DailyTask {
   DailyTask copyWith({
     String? id,
     String? title,
-    String? description,
+    Object? description = _undefined,
     TimePeriod? timePeriod,
     bool? isCompleted,
     String? dateKey,
@@ -65,7 +71,9 @@ class DailyTask {
     return DailyTask(
       id: id ?? this.id,
       title: title ?? this.title,
-      description: description ?? this.description,
+      description: description == _undefined
+          ? this.description
+          : description as String?,
       timePeriod: timePeriod ?? this.timePeriod,
       isCompleted: isCompleted ?? this.isCompleted,
       dateKey: dateKey ?? this.dateKey,

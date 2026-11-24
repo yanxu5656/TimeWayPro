@@ -6,11 +6,14 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../../../../core/ui/paper.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../shared/services/notification_service.dart';
 import '../../../task/data/repositories/task_repository.dart';
 import '../../../task/providers/task_provider.dart';
 import '../../../planning/providers/plan_provider.dart';
 import '../../../daily/providers/daily_provider.dart';
 import '../../../weekly/providers/weekly_provider.dart';
+import '../../../leisure/providers/leisure_provider.dart';
+import '../../../calendar/providers/calendar_provider.dart';
 import '../../models/sync_config.dart';
 import '../../providers/settings_provider.dart';
 
@@ -145,7 +148,7 @@ class SettingsScreen extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  '${index}'.padLeft(2, '0'),
+                  index.toString().padLeft(2, '0'),
                   style: AppText.serifNum.copyWith(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -358,33 +361,42 @@ class SettingsScreen extends StatelessWidget {
     );
 
     if (confirmed == true) {
-      // 先停表：恢复会整体替换数据，在途会话的记录随旧数据一起消失，
-      // 不停表的话 recordId 会指向新数据集里不存在的记录
-      await context.read<TaskProvider>().stopAllTimersForDataReset();
+      if (!context.mounted) return;
+      final taskProvider = context.read<TaskProvider>();
+      // 下载与解析成功后才停表；网络失败不应打断用户正在进行的计时。
+      final success = await provider.restore(
+        beforeImport: taskProvider.stopAllTimersForDataReset,
+      );
+      if (!context.mounted) return;
+      if (success) {
+        await _reloadDataProviders(context);
+      } else {
+        await NotificationService().syncTaskReminders(taskProvider.tasks);
+      }
 
-      final success = await provider.restore();
       if (context.mounted) {
-        // 四个数据 provider 全部重载（原先只刷了任务/规划——
-        // IndexedStack 保活页面，待办/每周页会继续显示旧数据）
-        await Future.wait(<Future<void>>[
-          context.read<TaskProvider>().loadTasks(),
-          context.read<PlanProvider>().loadPlans(),
-          context.read<DailyProvider>().loadTasks(),
-          context.read<WeeklyProvider>().loadGoals(),
-        ]);
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                success ? '恢复成功，数据已全部刷新' : '恢复失败: ${provider.syncError}',
-              ),
-              backgroundColor: success ? AppColors.success : AppColors.error,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? '恢复成功，数据已全部刷新' : '恢复失败: ${provider.syncError}',
             ),
-          );
-        }
+            backgroundColor: success ? AppColors.success : AppColors.error,
+          ),
+        );
       }
     }
+  }
+
+  Future<void> _reloadDataProviders(BuildContext context) async {
+    await Future.wait(<Future<void>>[
+      context.read<TaskProvider>().loadTasks(),
+      context.read<PlanProvider>().loadPlans(),
+      context.read<DailyProvider>().loadTasks(),
+      context.read<WeeklyProvider>().loadGoals(),
+      context.read<LeisureProvider>().loadItems(),
+      context.read<CalendarProvider>().loadMonth(),
+      context.read<SettingsProvider>().loadSyncConfig(),
+    ]);
   }
 
   Future<void> _disconnect(
@@ -477,6 +489,8 @@ class SettingsScreen extends StatelessWidget {
 
     if (confirmed != true) return;
 
+    TaskProvider? resetProvider;
+    bool imported = false;
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -489,17 +503,16 @@ class SettingsScreen extends StatelessWidget {
         final data = jsonDecode(jsonStr) as Map<String, dynamic>;
 
         final repo = TaskRepository();
+        repo.validateAllData(data);
+        if (!context.mounted) return;
+        // 必须先停表再替换数据，避免在途计时把旧会话写进刚导入的新数据集。
+        resetProvider = context.read<TaskProvider>();
+        await resetProvider.stopAllTimersForDataReset();
         await repo.importAllData(data);
+        imported = true;
 
         if (context.mounted) {
-          // 与恢复同路径：停表 + 四个 provider 全部重载
-          await context.read<TaskProvider>().stopAllTimersForDataReset();
-          await Future.wait(<Future<void>>[
-            context.read<TaskProvider>().loadTasks(),
-            context.read<PlanProvider>().loadPlans(),
-            context.read<DailyProvider>().loadTasks(),
-            context.read<WeeklyProvider>().loadGoals(),
-          ]);
+          await _reloadDataProviders(context);
 
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -512,6 +525,9 @@ class SettingsScreen extends StatelessWidget {
         }
       }
     } catch (e) {
+      if (resetProvider != null && !imported) {
+        await NotificationService().syncTaskReminders(resetProvider.tasks);
+      }
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('导入失败: $e'), backgroundColor: AppColors.error),

@@ -1,3 +1,5 @@
+const Object _undefined = Object();
+
 /// 闲时清单条目：不紧急但想做的事（打一款新游戏、看某部片子…）。
 class LeisureItem {
   final String id;
@@ -41,7 +43,7 @@ class LeisureItem {
   LeisureItem copyWith({
     String? id,
     String? title,
-    String? note,
+    Object? note = _undefined,
     bool? isDone,
     int? sortOrder,
     DateTime? createdAt,
@@ -49,7 +51,7 @@ class LeisureItem {
     return LeisureItem(
       id: id ?? this.id,
       title: title ?? this.title,
-      note: note ?? this.note,
+      note: note == _undefined ? this.note : note as String?,
       isDone: isDone ?? this.isDone,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,

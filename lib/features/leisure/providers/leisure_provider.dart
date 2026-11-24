@@ -37,7 +37,6 @@ class LeisureProvider extends ChangeNotifier {
       _items = await _repository.getAll();
     } catch (e) {
       debugPrint('Error loading leisure items: $e');
-      _items = [];
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -50,7 +49,12 @@ class LeisureProvider extends ChangeNotifier {
         id: '',
         title: title,
         note: note,
-        sortOrder: _items.length,
+        sortOrder:
+            _items.fold<int>(
+              -1,
+              (max, item) => item.sortOrder > max ? item.sortOrder : max,
+            ) +
+            1,
         createdAt: DateTime.now(),
       ),
     );
@@ -65,10 +69,17 @@ class LeisureProvider extends ChangeNotifier {
   Future<void> deleteItem(String id) async {
     // 乐观删除：Dismissible 动画播完才触发 onDismissed，先同步更新
     // 状态让 UI 立即一致，再走持久化（与每周目标同一时序约定）
+    final previousItems = _items;
     _items = _items.where((i) => i.id != id).toList();
     notifyListeners();
-    await _repository.deleteItem(id);
-    await loadItems();
+    try {
+      await _repository.deleteItem(id);
+      await loadItems();
+    } catch (_) {
+      _items = previousItems;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> toggleDone(String id) async {

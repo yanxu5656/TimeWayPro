@@ -10,6 +10,8 @@ enum RepeatType {
   monthly, // 每月
 }
 
+const Object _undefined = Object();
+
 class Task {
   final String id;
   final String title;
@@ -65,14 +67,20 @@ class Task {
   factory Task.fromMap(Map<String, dynamic> map) {
     // 安全的枚举值解析
     TimerType parseTimerType(dynamic value) {
-      if (value == null || value is! int || value >= TimerType.values.length) {
+      if (value == null ||
+          value is! int ||
+          value < 0 ||
+          value >= TimerType.values.length) {
         return TimerType.countUp;
       }
       return TimerType.values[value];
     }
 
     RepeatType parseRepeatType(dynamic value) {
-      if (value == null || value is! int || value >= RepeatType.values.length) {
+      if (value == null ||
+          value is! int ||
+          value < 0 ||
+          value >= RepeatType.values.length) {
         return RepeatType.none;
       }
       return RepeatType.values[value];
@@ -101,32 +109,38 @@ class Task {
   Task copyWith({
     String? id,
     String? title,
-    String? description,
+    Object? description = _undefined,
     TimerType? timerType,
-    int? duration,
+    Object? duration = _undefined,
     RepeatType? repeatType,
     int? repeatCount,
-    DateTime? dueDate,
-    int? reminderMinutes,
+    Object? dueDate = _undefined,
+    Object? reminderMinutes = _undefined,
     bool? isCompleted,
     int? completedCount,
-    DateTime? lastCompletedDate,
+    Object? lastCompletedDate = _undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return Task(
       id: id ?? this.id,
       title: title ?? this.title,
-      description: description ?? this.description,
+      description: description == _undefined
+          ? this.description
+          : description as String?,
       timerType: timerType ?? this.timerType,
-      duration: duration ?? this.duration,
+      duration: duration == _undefined ? this.duration : duration as int?,
       repeatType: repeatType ?? this.repeatType,
       repeatCount: repeatCount ?? this.repeatCount,
-      dueDate: dueDate ?? this.dueDate,
-      reminderMinutes: reminderMinutes ?? this.reminderMinutes,
+      dueDate: dueDate == _undefined ? this.dueDate : dueDate as DateTime?,
+      reminderMinutes: reminderMinutes == _undefined
+          ? this.reminderMinutes
+          : reminderMinutes as int?,
       isCompleted: isCompleted ?? this.isCompleted,
       completedCount: completedCount ?? this.completedCount,
-      lastCompletedDate: lastCompletedDate ?? this.lastCompletedDate,
+      lastCompletedDate: lastCompletedDate == _undefined
+          ? this.lastCompletedDate
+          : lastCompletedDate as DateTime?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

@@ -263,9 +263,12 @@ class _PlanningScreenState extends State<PlanningScreen> {
       context,
       builder: (context) => _PlanDetailSheet(
         plan: plan,
-        onUpdate: (updatedPlan) {
-          provider.updatePlan(updatedPlan);
-          Navigator.pop(context);
+        onUpdate: (updatedPlan) async {
+          final success = await runPaperAction(
+            context,
+            () => provider.updatePlan(updatedPlan),
+          );
+          if (success && context.mounted) Navigator.pop(context);
         },
         onAddChild: () {
           Navigator.pop(context);
@@ -323,9 +326,12 @@ class _PlanningScreenState extends State<PlanningScreen> {
       context,
       builder: (context) => _AddPlanSheet(
         parentId: parentId,
-        onAdd: (plan) {
-          context.read<PlanProvider>().addPlan(plan);
-          Navigator.pop(context);
+        onAdd: (plan) async {
+          final success = await runPaperAction(
+            context,
+            () => context.read<PlanProvider>().addPlan(plan),
+          );
+          if (success && context.mounted) Navigator.pop(context);
         },
       ),
     );
@@ -338,15 +344,15 @@ class _PlanningScreenState extends State<PlanningScreen> {
         title: const Text('删除目标'),
         content: Text('确定要删除「${plan.title}」吗？子目标也会被删除。'),
         actions: [
+          PaperTextButton(onPressed: () => Navigator.pop(context), label: '取消'),
           PaperTextButton(
-            onPressed: () => Navigator.pop(context),
-            label: '取消',
-          ),
-          PaperTextButton(
-            onPressed: () {
+            onPressed: () async {
               AppHaptics.confirm();
               Navigator.pop(context);
-              provider.deletePlan(plan.id);
+              await runPaperAction(
+                this.context,
+                () => provider.deletePlan(plan.id),
+              );
             },
             color: AppColors.error,
             label: '删除',
@@ -359,7 +365,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
 
 class _PlanDetailSheet extends StatefulWidget {
   final Plan plan;
-  final Function(Plan) onUpdate;
+  final Future<void> Function(Plan) onUpdate;
   final VoidCallback onAddChild;
 
   const _PlanDetailSheet({
@@ -376,6 +382,7 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
   late double _progress;
   late TextEditingController _titleController;
   late TextEditingController _descController;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -487,17 +494,9 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
             const SizedBox(width: 12),
             Expanded(
               child: PaperButton(
-                onPressed: () {
-                  widget.onUpdate(
-                    widget.plan.copyWith(
-                      title: _titleController.text.trim(),
-                      description: _descController.text.trim().isEmpty
-                          ? null
-                          : _descController.text.trim(),
-                      progress: _progress,
-                    ),
-                  );
-                },
+                onPressed: _saving ? null : _save,
+                loading: _saving,
+                loadingLabel: '正在保存',
                 label: '保存',
               ),
             ),
@@ -506,11 +505,29 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
       ],
     );
   }
+
+  Future<void> _save() async {
+    if (_saving || _titleController.text.trim().isEmpty) return;
+    setState(() => _saving = true);
+    await runPaperAction(
+      context,
+      () => widget.onUpdate(
+        widget.plan.copyWith(
+          title: _titleController.text.trim(),
+          description: _descController.text.trim().isEmpty
+              ? null
+              : _descController.text.trim(),
+          progress: _progress,
+        ),
+      ),
+    );
+    if (mounted) setState(() => _saving = false);
+  }
 }
 
 class _AddPlanSheet extends StatefulWidget {
   final String? parentId;
-  final Function(Plan) onAdd;
+  final Future<void> Function(Plan) onAdd;
 
   const _AddPlanSheet({required this.parentId, required this.onAdd});
 
@@ -521,6 +538,7 @@ class _AddPlanSheet extends StatefulWidget {
 class _AddPlanSheetState extends State<_AddPlanSheet> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -577,26 +595,35 @@ class _AddPlanSheetState extends State<_AddPlanSheet> {
         SizedBox(
           width: double.infinity,
           child: PaperButton(
-            onPressed: () {
-              if (_titleController.text.trim().isEmpty) return;
-              final now = DateTime.now();
-              widget.onAdd(
-                Plan(
-                  id: const Uuid().v4(),
-                  title: _titleController.text.trim(),
-                  description: _descController.text.trim().isEmpty
-                      ? null
-                      : _descController.text.trim(),
-                  parentId: widget.parentId,
-                  createdAt: now,
-                  updatedAt: now,
-                ),
-              );
-            },
+            onPressed: _saving ? null : _save,
+            loading: _saving,
+            loadingLabel: '正在创建',
             label: '创建',
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _save() async {
+    if (_saving || _titleController.text.trim().isEmpty) return;
+    setState(() => _saving = true);
+    final now = DateTime.now();
+    await runPaperAction(
+      context,
+      () => widget.onAdd(
+        Plan(
+          id: const Uuid().v4(),
+          title: _titleController.text.trim(),
+          description: _descController.text.trim().isEmpty
+              ? null
+              : _descController.text.trim(),
+          parentId: widget.parentId,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ),
+    );
+    if (mounted) setState(() => _saving = false);
   }
 }

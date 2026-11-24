@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
 import '../../../shared/database/database_helper.dart';
 import '../../../features/task/data/repositories/task_repository.dart';
@@ -52,7 +53,7 @@ class SyncRepository {
       await client.ping();
       return true;
     } catch (e) {
-      print('Connection test failed: $e');
+      debugPrint('Connection test failed: $e');
       return false;
     }
   }
@@ -71,21 +72,21 @@ class SyncRepository {
     try {
       await client.write('backup.json', bytes);
     } catch (e) {
-      print('Write to root failed: $e');
+      debugPrint('Write to root failed: $e');
       // 尝试创建目录后写入
       try {
         await client.mkdir('TimeWayPro');
         await client.write('TimeWayPro/backup.json', bytes);
       } catch (e2) {
-        print('Write to subfolder failed: $e2');
+        debugPrint('Write to subfolder failed: $e2');
         throw Exception('备份失败，请检查网络连接和坚果云配置');
       }
     }
 
-    await saveSyncConfig(config.copyWith(lastSyncTime: DateTime.now()));
+    await _saveLastSyncTime(config);
   }
 
-  Future<void> restore() async {
+  Future<void> restore({Future<void> Function()? beforeImport}) async {
     final config = await getSyncConfig();
     if (config == null) throw Exception('未配置同步信息');
 
@@ -97,14 +98,14 @@ class SyncRepository {
     try {
       bytes = await client.read('backup.json');
     } catch (e) {
-      print('Read from root failed: $e');
+      debugPrint('Read from root failed: $e');
     }
 
     if (bytes == null) {
       try {
         bytes = await client.read('TimeWayPro/backup.json');
       } catch (e) {
-        print('Read from subfolder failed: $e');
+        debugPrint('Read from subfolder failed: $e');
       }
     }
 
@@ -115,12 +116,22 @@ class SyncRepository {
     try {
       final jsonStr = utf8.decode(bytes);
       final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+      _taskRepository.validateAllData(data);
+      if (beforeImport != null) await beforeImport();
       await _taskRepository.importAllData(data);
     } catch (e) {
-      print('Parse or import failed: $e');
+      debugPrint('Parse or import failed: $e');
       throw Exception('备份文件格式错误或数据损坏');
     }
 
-    await saveSyncConfig(config.copyWith(lastSyncTime: DateTime.now()));
+    await _saveLastSyncTime(config);
+  }
+
+  Future<void> _saveLastSyncTime(SyncConfig config) async {
+    try {
+      await saveSyncConfig(config.copyWith(lastSyncTime: DateTime.now()));
+    } catch (e) {
+      debugPrint('Failed to save sync timestamp: $e');
+    }
   }
 }

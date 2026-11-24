@@ -36,7 +36,17 @@ class DatabaseHelper {
   /// 这里统一补成空列表，后续 `query` / `insert` 就不必各写各的兜底。
   static void _ensureTables(Map<String, dynamic> data) {
     for (final String table in _tables) {
-      data[table] ??= <dynamic>[];
+      final dynamic rows = data[table];
+      if (rows == null) {
+        data[table] = <dynamic>[];
+        continue;
+      }
+      if (rows is! List) {
+        throw FormatException('表 $table 必须是数组');
+      }
+      if (rows.any((dynamic row) => row is! Map<String, dynamic>)) {
+        throw FormatException('表 $table 的每一行必须是对象');
+      }
     }
   }
 
@@ -51,7 +61,7 @@ class DatabaseHelper {
   /// 两次 rename），两条写链一旦交错：共享同一个固定 `.tmp` 路径会撞
   /// Windows 的文件占用（errno 32）；更坏的序列是 A 把 tmp rename 走后
   /// B 的 rename 找不到 tmp 抛异常——被吞掉后正式文件处于缺失状态。
-  /// 所有写入口都经由 [_enqueueSave] 排队，一条链跑完才轮到下一条。
+  /// 所有写入口都经由 [_enqueueMutation] 排队，一条链跑完才轮到下一条。
   Future<void> _writeQueue = Future<void>.value();
 
   /// 自增序号，让每次写入用独立的 tmp 文件，彻底消除共享路径
@@ -101,11 +111,11 @@ class DatabaseHelper {
           _ensureTables(_data);
           return;
         } catch (e) {
-          print('Error loading data: $e');
+          debugPrint('Error loading data: $e');
           // 读坏了，落到下面走备份
         }
       } else {
-        print('Data file missing, trying backup');
+        debugPrint('Data file missing, trying backup');
       }
 
       final File backupFile = await _backupFile;
@@ -113,10 +123,10 @@ class DatabaseHelper {
         try {
           _data = jsonDecode(await backupFile.readAsString());
           _ensureTables(_data);
-          print('Restored from backup');
+          debugPrint('Restored from backup');
           return;
         } catch (e) {
-          print('Error loading backup: $e');
+          debugPrint('Error loading backup: $e');
         }
       }
 
@@ -124,26 +134,35 @@ class DatabaseHelper {
       _data = _emptyData();
     } catch (e) {
       // 连路径都拿不到（比如 path_provider 不可用）
-      print('Error loading data: $e');
+      debugPrint('Error loading data: $e');
       _data = _emptyData();
     }
   }
 
-  /// 把一次落盘排进写队列。
+  /// 把「修改内存 + 落盘」作为同一事务排进写队列。
   ///
-  /// 异常**向上传播**而不是在这里吞掉：恢复/导入的落盘失败必须让调用方
-  /// 知道（原先 catch{print} 会让「恢复成功」的提示与磁盘实际状态不符）。
-  /// 队列本身吞掉前一链的异常，保证后续写不被卡死。
-  Future<void> _enqueueSave() {
-    // 队列视角：前一条链失败不堵死后续（catchError 吞掉历史错误），
-    // 但本次调用方拿到的是自己的 task——成败如实传播
-    final Future<void> task = _writeQueue
-        .catchError((Object _) {})
-        .then((_) => _doSave());
-    _writeQueue = task.then(
-      (_) {},
-      onError: (Object _) {}, // 队列视角：成败都算"跑完了"
-    );
+  /// 快照在真正执行时创建，避免在队列等待期间把其它写入回滚掉。
+  Future<void> _enqueueMutation(void Function() mutate) {
+    final Future<void> task = _writeQueue.catchError((Object _) {}).then((
+      _,
+    ) async {
+      await _ensureInitialized();
+      final Map<String, dynamic> previousData = _data;
+      _data = <String, dynamic>{
+        for (final MapEntry<String, dynamic> entry in _data.entries)
+          entry.key: entry.value is List
+              ? List<dynamic>.from(entry.value)
+              : entry.value,
+      };
+      try {
+        mutate();
+        await _doSave();
+      } catch (_) {
+        _data = previousData;
+        rethrow;
+      }
+    });
+    _writeQueue = task.then((_) {}, onError: (Object _) {});
     return task;
   }
 
@@ -171,7 +190,7 @@ class DatabaseHelper {
         }
         await file.rename(backupFile.path);
       } catch (e) {
-        print('Warning: skip backup rotation: $e');
+        debugPrint('Warning: skip backup rotation: $e');
       }
     }
 
@@ -182,10 +201,16 @@ class DatabaseHelper {
     try {
       await _renameWithRetry(tmpFile, file.path);
     } catch (e) {
-      // rename 彻底失败时清理 tmp，避免残留占位；异常向上传播
+      // rename 彻底失败时清理 tmp，并尽可能把被移走的旧正式文件还原，
+      // 避免磁盘上只剩备份、下一次冷启动被迫回退一个版本。
       try {
         await tmpFile.delete();
       } catch (_) {}
+      if (!await file.exists() && await backupFile.exists()) {
+        try {
+          await _renameWithRetry(backupFile, file.path);
+        } catch (_) {}
+      }
       rethrow;
     }
   }
@@ -227,12 +252,11 @@ class DatabaseHelper {
   }
 
   Future<void> insert(String table, Map<String, dynamic> record) async {
-    await _ensureInitialized();
-    if (_data[table] == null) {
-      _data[table] = [];
-    }
-    (_data[table] as List).add(record);
-    await _enqueueSave();
+    await _enqueueMutation(() {
+      final List<dynamic> list = _data[table] as List? ?? <dynamic>[];
+      _data[table] = list;
+      list.add(record);
+    });
   }
 
   Future<void> update(
@@ -240,17 +264,18 @@ class DatabaseHelper {
     Map<String, dynamic> record,
     String idField,
   ) async {
-    await _ensureInitialized();
-    final list = _data[table] as List? ?? [];
-    final index = list.indexWhere((r) => r[idField] == record[idField]);
-    if (index != -1) {
-      list[index] = record;
-      await _enqueueSave();
-    } else {
-      print(
-        'Warning: Record not found for update in $table with $idField=${record[idField]}',
-      );
-    }
+    await _enqueueMutation(() {
+      final list = _data[table] as List? ?? [];
+      final index = list.indexWhere((r) => r[idField] == record[idField]);
+      if (index != -1) {
+        list[index] = record;
+      } else {
+        debugPrint(
+          'Warning: Record not found for update in $table with '
+          '$idField=${record[idField]}',
+        );
+      }
+    });
   }
 
   /// 批量更新同一表的多行，**只落盘一次**。
@@ -263,29 +288,38 @@ class DatabaseHelper {
     List<Map<String, dynamic>> records,
     String idField,
   ) async {
-    await _ensureInitialized();
-    final list = _data[table] as List? ?? [];
-    for (final Map<String, dynamic> record in records) {
-      final index = list.indexWhere((r) => r[idField] == record[idField]);
-      if (index != -1) {
-        list[index] = record;
+    await _enqueueMutation(() {
+      final list = _data[table] as List? ?? [];
+      for (final Map<String, dynamic> record in records) {
+        final index = list.indexWhere((r) => r[idField] == record[idField]);
+        if (index != -1) {
+          list[index] = record;
+        }
       }
-    }
-    await _enqueueSave();
+    });
   }
 
   Future<void> delete(String table, String idField, String id) async {
-    await _ensureInitialized();
-    final list = _data[table] as List? ?? [];
-    list.removeWhere((r) => r[idField] == id);
-    await _enqueueSave();
+    await _enqueueMutation(() {
+      final list = _data[table] as List? ?? [];
+      list.removeWhere((r) => r[idField] == id);
+    });
   }
 
   Future<void> deleteWhere(String table, bool Function(dynamic) test) async {
-    await _ensureInitialized();
-    final list = _data[table] as List? ?? [];
-    list.removeWhere(test);
-    await _enqueueSave();
+    await _enqueueMutation(() {
+      final list = _data[table] as List? ?? [];
+      list.removeWhere(test);
+    });
+  }
+
+  Future<void> deleteTaskCascade(String taskId) async {
+    await _enqueueMutation(() {
+      final tasks = _data['tasks'] as List? ?? [];
+      final records = _data['task_records'] as List? ?? [];
+      tasks.removeWhere((dynamic row) => row['id'] == taskId);
+      records.removeWhere((dynamic row) => row['task_id'] == taskId);
+    });
   }
 
   // ==================== 导入导出 ====================
@@ -308,33 +342,26 @@ class DatabaseHelper {
     return out;
   }
 
-  Future<void> importAll(Map<String, dynamic> data) async {
-    // 验证数据格式
+  static void validateImportData(Map<String, dynamic> data) {
     if (!data.containsKey('tasks') ||
         !data.containsKey('task_records') ||
         !data.containsKey('plans')) {
       throw Exception('Invalid data format: missing required fields');
     }
+    _ensureTables(Map<String, dynamic>.from(data));
+  }
 
-    if (data['tasks'] is! List ||
-        data['task_records'] is! List ||
-        data['plans'] is! List) {
-      throw Exception('Invalid data format: fields must be lists');
-    }
+  Future<void> importAll(Map<String, dynamic> data) async {
+    validateImportData(data);
 
     // 先等在途的磁盘读取落地再覆盖：冷启动后立刻导入时，_loadData
     // 完成后会把 _data 整体写回旧磁盘数据，导入被静默回滚。
     await _ensureInitialized();
 
-    _data = data;
-    // 导入的是旧版本备份时，新加的表不在里面——补成空列表。
-    // 原先这里直接赋值、不跑兜底，于是导入后新表的 key 是 null；
-    // 访问器虽然都对 null 容错不会崩，但数据形状不一致。
-    _ensureTables(_data);
-    _initialized = true;
-    // 落盘失败会抛出（_enqueueSave 不吞错）——恢复/导入方必须如实
-    // 知道磁盘没写上，而不是内存新、磁盘旧、下次冷启动打回原形。
-    await _enqueueSave();
+    await _enqueueMutation(() {
+      _data = Map<String, dynamic>.from(data);
+      _ensureTables(_data);
+    });
   }
 
   Future<void> close() async {

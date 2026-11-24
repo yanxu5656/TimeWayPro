@@ -25,7 +25,10 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
   void initState() {
     super.initState();
     // 延迟加载，避免在 build 期间调用（与其它 Tab 页一致）
-    Future.microtask(() => context.read<WeeklyProvider>().loadGoals());
+    final provider = context.read<WeeklyProvider>();
+    Future.microtask(() {
+      if (mounted) provider.loadGoals();
+    });
   }
 
   @override
@@ -299,7 +302,12 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         buildDefaultDragHandles: false,
         itemCount: provider.goals.length,
         // onReorderItem 给的已经是「移除后」的落点，不用再自己减 1
-        onReorderItem: provider.reorderGoals,
+        onReorderItem: (int oldIndex, int newIndex) {
+          runPaperAction(
+            context,
+            () => provider.reorderGoals(oldIndex, newIndex),
+          );
+        },
         // 错峰入场的序号直接用列表下标：builder 是懒构建，累加计数器
         // 会随构建顺序漂移，拿不到稳定的视觉次序
         itemBuilder: (BuildContext context, int i) {
@@ -356,7 +364,9 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
       ),
       confirmDismiss: (_) => _confirmDelete(context, goal),
-      onDismissed: (_) => provider.deleteGoal(goal.id),
+      onDismissed: (_) {
+        runPaperAction(context, () => provider.deleteGoal(goal.id));
+      },
       child: PaperCard(
         tone: PaperTone.row,
         padding: const EdgeInsets.symmetric(
@@ -383,7 +393,9 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
             ),
             InkCheckCircle(
               isChecked: goal.isCompleted,
-              onTap: () => provider.toggleGoal(goal.id),
+              onTap: () {
+                runPaperAction(context, () => provider.toggleGoal(goal.id));
+              },
               size: 21,
               semanticLabel: goal.title,
             ),
@@ -487,7 +499,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       context: context,
       initialDate: provider.selectedWeekStart,
       firstDate: DateTime(2020, 1, 6), // 期号锚点周一，往前的周没有 VOL 号
-      lastDate: DateTime(2030),
+      lastDate: DateTime(DateTime.now().year + 10, 12, 31),
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -514,14 +526,16 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       showHandle: false,
       builder: (BuildContext sheetContext) => _WeeklyGoalSheet(
         initial: goal,
-        onSubmit: (String title) {
+        onSubmit: (String title) async {
           final WeeklyProvider provider = sheetContext.read<WeeklyProvider>();
-          if (goal == null) {
-            provider.addGoal(title);
-          } else {
-            provider.updateGoal(goal.copyWith(title: title));
-          }
-          Navigator.pop(sheetContext);
+          final success = await runPaperAction(sheetContext, () async {
+            if (goal == null) {
+              await provider.addGoal(title);
+            } else {
+              await provider.updateGoal(goal.copyWith(title: title));
+            }
+          });
+          if (success && sheetContext.mounted) Navigator.pop(sheetContext);
         },
       ),
     );
@@ -534,7 +548,7 @@ class _WeeklyGoalSheet extends StatefulWidget {
   const _WeeklyGoalSheet({required this.initial, required this.onSubmit});
 
   final WeeklyGoal? initial;
-  final ValueChanged<String> onSubmit;
+  final Future<void> Function(String) onSubmit;
 
   @override
   State<_WeeklyGoalSheet> createState() => _WeeklyGoalSheetState();
@@ -544,6 +558,7 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
   late final TextEditingController _controller = TextEditingController(
     text: widget.initial?.title ?? '',
   );
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -594,7 +609,9 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
         SizedBox(
           width: double.infinity,
           child: PaperButton(
-            onPressed: _submit,
+            onPressed: _saving ? null : _submit,
+            loading: _saving,
+            loadingLabel: '正在保存',
             label: isEditing ? '保存' : '添加',
           ),
         ),
@@ -610,9 +627,12 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
     return short != null ? '$short（$range）' : range;
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_saving) return;
     final String title = _controller.text.trim();
     if (title.isEmpty) return;
-    widget.onSubmit(title);
+    setState(() => _saving = true);
+    await runPaperAction(context, () => widget.onSubmit(title));
+    if (mounted) setState(() => _saving = false);
   }
 }

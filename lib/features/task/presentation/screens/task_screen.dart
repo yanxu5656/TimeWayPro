@@ -459,7 +459,7 @@ class _TaskScreenState extends State<TaskScreen> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: DateTime(DateTime.now().year + 10, 12, 31),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -527,10 +527,7 @@ class _TaskScreenState extends State<TaskScreen> {
         title: const Text('删除任务'),
         content: Text('确定要删除「${task.title}」吗？此操作不可撤销。'),
         actions: [
-          PaperTextButton(
-            onPressed: () => Navigator.pop(context),
-            label: '取消',
-          ),
+          PaperTextButton(onPressed: () => Navigator.pop(context), label: '取消'),
           PaperTextButton(
             onPressed: () {
               AppHaptics.confirm();

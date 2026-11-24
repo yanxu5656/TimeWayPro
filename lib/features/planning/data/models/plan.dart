@@ -1,3 +1,5 @@
+const Object _undefined = Object();
+
 class Plan {
   final String id;
   final String title;
@@ -33,13 +35,14 @@ class Plan {
   }
 
   factory Plan.fromMap(Map<String, dynamic> map) {
+    final double progress = (map['progress'] as num?)?.toDouble() ?? 0;
     return Plan(
       id: map['id'],
       title: map['title'],
       description: map['description'],
       parentId: map['parent_id'],
-      progress: (map['progress'] as num).toDouble(),
-      sortOrder: map['sort_order'],
+      progress: progress.isFinite ? progress.clamp(0.0, 1.0).toDouble() : 0,
+      sortOrder: map['sort_order'] ?? 0,
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),
     );
@@ -48,8 +51,8 @@ class Plan {
   Plan copyWith({
     String? id,
     String? title,
-    String? description,
-    String? parentId,
+    Object? description = _undefined,
+    Object? parentId = _undefined,
     double? progress,
     int? sortOrder,
     DateTime? createdAt,
@@ -58,8 +61,10 @@ class Plan {
     return Plan(
       id: id ?? this.id,
       title: title ?? this.title,
-      description: description ?? this.description,
-      parentId: parentId ?? this.parentId,
+      description: description == _undefined
+          ? this.description
+          : description as String?,
+      parentId: parentId == _undefined ? this.parentId : parentId as String?,
       progress: progress ?? this.progress,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,

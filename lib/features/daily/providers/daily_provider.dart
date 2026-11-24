@@ -5,13 +5,17 @@ import '../data/models/daily_task.dart';
 import '../data/repositories/daily_repository.dart';
 
 class DailyProvider extends ChangeNotifier {
-  final DailyRepository _repository = DailyRepository();
+  final DailyRepository _repository;
+
+  DailyProvider({DailyRepository? repository})
+    : _repository = repository ?? DailyRepository();
 
   // 归一到当天 00:00：`DateTime.now()` 带时分，在 00:00-00:59 之间
   // 用 ±24h 跨夏令时会掉到前前一天（中国无 DST，但逻辑上应正确）
   DateTime _selectedDate = startOfDay(DateTime.now());
   List<DailyTask> _tasks = [];
   bool _isLoading = false;
+  int _loadGeneration = 0;
 
   DateTime get selectedDate => _selectedDate;
   List<DailyTask> get tasks => _tasks;
@@ -58,17 +62,23 @@ class DailyProvider extends ChangeNotifier {
 
   // 加载任务
   Future<void> loadTasks() async {
+    final generation = ++_loadGeneration;
+    final key = dateKey;
     _isLoading = true;
     notifyListeners();
 
     try {
-      _tasks = await _repository.getTasksByDate(dateKey);
+      final tasks = await _repository.getTasksByDate(key);
+      if (generation != _loadGeneration) return;
+      _tasks = tasks;
     } catch (e) {
+      if (generation != _loadGeneration) return;
       debugPrint('Error loading daily tasks: $e');
-      _tasks = [];
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (generation == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -99,8 +109,17 @@ class DailyProvider extends ChangeNotifier {
 
   // 删除任务
   Future<void> deleteTask(String id) async {
-    await _repository.deleteTask(id);
-    await loadTasks();
+    final previousTasks = _tasks;
+    _tasks = _tasks.where((task) => task.id != id).toList();
+    notifyListeners();
+    try {
+      await _repository.deleteTask(id);
+      await loadTasks();
+    } catch (_) {
+      _tasks = previousTasks;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   // 切换完成状态

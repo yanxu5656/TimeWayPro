@@ -25,7 +25,6 @@ class PlanProvider extends ChangeNotifier {
       _allPlans = await _repository.getAllPlans();
     } catch (e) {
       debugPrint('Error loading plans: $e');
-      _allPlans = [];
     } finally {
       _isLoading = false;
       notifyListeners();

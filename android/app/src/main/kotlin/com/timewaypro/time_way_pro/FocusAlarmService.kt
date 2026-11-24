@@ -144,6 +144,9 @@ class FocusAlarmService : Service() {
                 val newMode = intent.getStringExtra("mode") ?: "sound"
                 alarmTitle = intent.getStringExtra("title") ?: alarmTitle
                 alarmBody = intent.getStringExtra("body") ?: alarmBody
+                // 响铃阶段不再保留旧截止时间，否则停止试听/闹铃后会重新
+                // 调度一个已经过期的闹钟，造成停止后再次响起。
+                endMillis = 0L
                 // 已在按同一模式响铃时忽略重复触发（Dart 与系统闹钟可能先后到达）
                 if (alarming && newMode == mode && mediaPlayer != null) {
                     return START_STICKY

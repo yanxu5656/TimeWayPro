@@ -17,18 +17,13 @@ class WeeklyGoalRepository {
 
   /// 取某一周的目标，按 sortOrder 排序
   Future<List<WeeklyGoal>> getByWeek(String weekKey) async {
-    try {
-      final maps = await _dbHelper.queryWhere(
-        _table,
-        (map) => map['week_key'] == weekKey,
-      );
-      final goals = parseRows(maps, WeeklyGoal.fromMap);
-      goals.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-      return goals;
-    } catch (e) {
-      print('Error getting weekly goals: $e');
-      return [];
-    }
+    final maps = await _dbHelper.queryWhere(
+      _table,
+      (map) => map['week_key'] == weekKey,
+    );
+    final goals = parseRows(maps, WeeklyGoal.fromMap);
+    goals.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return goals;
   }
 
   Future<String> add(WeeklyGoal goal) async {

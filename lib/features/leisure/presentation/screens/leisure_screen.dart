@@ -77,8 +77,7 @@ class _LeisureScreenState extends State<LeisureScreen> {
                         PaperChip(
                           label: '全部',
                           selected: provider.filter == LeisureFilter.all,
-                          onTap: () =>
-                              provider.setFilter(LeisureFilter.all),
+                          onTap: () => provider.setFilter(LeisureFilter.all),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         PaperChip(
@@ -93,8 +92,7 @@ class _LeisureScreenState extends State<LeisureScreen> {
                           label: '试过了',
                           icon: Icons.check_circle_outline_rounded,
                           selected: provider.filter == LeisureFilter.done,
-                          onTap: () =>
-                              provider.setFilter(LeisureFilter.done),
+                          onTap: () => provider.setFilter(LeisureFilter.done),
                         ),
                       ],
                     ),
@@ -228,7 +226,9 @@ class _LeisureScreenState extends State<LeisureScreen> {
           ),
         );
       },
-      onDismissed: (direction) => provider.deleteItem(item.id),
+      onDismissed: (direction) {
+        runPaperAction(context, () => provider.deleteItem(item.id));
+      },
       child: PaperCard(
         tone: PaperTone.row,
         padding: const EdgeInsets.symmetric(
@@ -245,7 +245,9 @@ class _LeisureScreenState extends State<LeisureScreen> {
           children: [
             InkCheckCircle(
               isChecked: item.isDone,
-              onTap: () => provider.toggleDone(item.id),
+              onTap: () {
+                runPaperAction(context, () => provider.toggleDone(item.id));
+              },
               semanticLabel: item.title,
             ),
             const SizedBox(width: 14),
@@ -308,6 +310,7 @@ class _LeisureSheet extends StatefulWidget {
 class _LeisureSheetState extends State<_LeisureSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _noteController;
+  bool _saving = false;
 
   bool get _isEditing => widget.item != null;
   bool get _valid => _titleController.text.trim().isNotEmpty;
@@ -380,7 +383,9 @@ class _LeisureSheetState extends State<_LeisureSheet> {
         SizedBox(
           width: double.infinity,
           child: PaperButton(
-            onPressed: _valid ? _save : null,
+            onPressed: _valid && !_saving ? _save : null,
+            loading: _saving,
+            loadingLabel: '正在保存',
             label: _isEditing ? '保存' : '添加',
           ),
         ),
@@ -411,32 +416,33 @@ class _LeisureSheetState extends State<_LeisureSheet> {
       ),
     );
     if (ok == true && mounted) {
-      await context.read<LeisureProvider>().deleteItem(widget.item!.id);
-      if (mounted) Navigator.pop(context);
+      final success = await runPaperAction(
+        context,
+        () => context.read<LeisureProvider>().deleteItem(widget.item!.id),
+      );
+      if (success && mounted) Navigator.pop(context);
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
+    if (_saving) return;
     final provider = context.read<LeisureProvider>();
     final title = _titleController.text.trim();
     final note = _noteController.text.trim().isEmpty
         ? null
         : _noteController.text.trim();
-    if (_isEditing) {
-      // 不走 copyWith：note 传 null 表示「清空备注」，copyWith 会保留旧值
-      provider.updateItem(
-        LeisureItem(
-          id: widget.item!.id,
-          title: title,
-          note: note,
-          isDone: widget.item!.isDone,
-          sortOrder: widget.item!.sortOrder,
-          createdAt: widget.item!.createdAt,
-        ),
-      );
-    } else {
-      provider.addItem(title: title, note: note);
-    }
-    Navigator.pop(context);
+    setState(() => _saving = true);
+    final success = await runPaperAction(context, () async {
+      if (_isEditing) {
+        await provider.updateItem(
+          widget.item!.copyWith(title: title, note: note),
+        );
+      } else {
+        await provider.addItem(title: title, note: note);
+      }
+    });
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (success) Navigator.pop(context);
   }
 }
