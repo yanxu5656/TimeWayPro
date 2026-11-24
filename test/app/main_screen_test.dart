@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_way_pro/core/ui/paper.dart';
 
@@ -169,9 +170,16 @@ void main() {
     }
   });
 
-  testWidgets('窄屏（320dp）下两行导航 8 项不溢出', (WidgetTester tester) async {
+  testWidgets('窄屏（320dp）单行导航可横向滚动且每项略宽于四格', (WidgetTester tester) async {
     await pumpSeededApp(tester, size: const Size(320, 640));
 
+    final SingleChildScrollView scroll = tester.widget<SingleChildScrollView>(
+      find.descendant(
+        of: find.byType(PaperNavBar),
+        matching: find.byType(SingleChildScrollView),
+      ),
+    );
+    expect(scroll.scrollDirection, Axis.horizontal);
     expect(tester.takeException(), isNull);
     for (final String label in const <String>[
       '待办',
@@ -183,7 +191,60 @@ void main() {
       '月历',
       '设置',
     ]) {
-      expect(find.text(label), findsOneWidget);
+      final Finder navLabel = find.descendant(
+        of: find.byType(PaperNavBar),
+        matching: find.text(label),
+      );
+      expect(navLabel, findsOneWidget);
+      final Finder item = find.ancestor(
+        of: navLabel,
+        matching: find.byType(PressableScale),
+      );
+      expect(tester.getSize(item).width, greaterThan(320 / 4));
     }
+  });
+
+  testWidgets('切换导航不触发振动触感', (WidgetTester tester) async {
+    final List<String> platformCalls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (
+          MethodCall call,
+        ) async {
+          platformCalls.add(call.method);
+          return null;
+        });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+    await pumpSeededApp(tester);
+    platformCalls.clear();
+
+    await switchToTab(tester, '每周');
+
+    expect(
+      platformCalls.where(
+        (String method) =>
+            method == 'HapticFeedback.vibrate' ||
+            method == 'HapticFeedback.selectionClick',
+      ),
+      isEmpty,
+    );
+  });
+
+  testWidgets('程序化切换后选中项自动滚入可见区域', (WidgetTester tester) async {
+    await pumpSeededApp(tester);
+    tester.widget<PaperNavBar>(find.byType(PaperNavBar)).onChanged(7);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final Rect navRect = tester.getRect(find.byType(PaperNavBar));
+    final Rect settingsRect = tester.getRect(
+      find.descendant(of: find.byType(PaperNavBar), matching: find.text('设置')),
+    );
+    expect(settingsRect.left, greaterThanOrEqualTo(navRect.left));
+    expect(settingsRect.right, lessThanOrEqualTo(navRect.right));
+    expect(find.text('设置'), findsWidgets);
   });
 }

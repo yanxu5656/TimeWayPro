@@ -28,7 +28,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// 页面侧的 `StaggerScope(slotIndex:)` 依赖这个顺序。
   int _currentIndex = 0;
 
-  /// 用来实测玻璃导航栏的高度，供页面侧的 FAB 避让。
+  /// 用来实测底部导航栏的高度，供页面侧的 FAB 避让。
   /// 详见 [NavBarInset] 的文档。
   final GlobalKey _navBarKey = GlobalKey();
   double _navBarHeight = 0;
@@ -72,11 +72,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   void _openFocusTimer() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const FocusTimerScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const FocusTimerScreen()));
   }
 
   void _measureNavBar(Duration _) {
@@ -105,7 +103,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           body: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
               final double baseBottom =
-                  (_navBarHeight > 0 ? _navBarHeight : 100) + 16;
+                  (_navBarHeight > 0 ? _navBarHeight : 76) + 16;
               final double minBottom = baseBottom - 8;
               final double maxBottom = math.max(
                 minBottom,
@@ -115,10 +113,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                 AppSpacing.xs,
                 constraints.maxWidth - 132,
               );
-              final double left = (AppSpacing.screenH + _focusFabShift.dx).clamp(
-                AppSpacing.xs,
-                maxLeft,
-              );
+              final double left = (AppSpacing.screenH + _focusFabShift.dx)
+                  .clamp(AppSpacing.xs, maxLeft);
               final double bottom = (baseBottom - _focusFabShift.dy).clamp(
                 minBottom,
                 maxBottom,
@@ -127,7 +123,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               return Stack(
                 children: <Widget>[
                   RepaintBoundary(
-                    child: IndexedStack(index: _currentIndex, children: _screens),
+                    child: IndexedStack(
+                      index: _currentIndex,
+                      children: _screens,
+                    ),
                   ),
                   Positioned(
                     top: MediaQuery.paddingOf(context).top + AppSpacing.xs,
@@ -143,11 +142,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       onDragDelta: (Offset delta) {
                         setState(() {
                           final double nextLeft =
-                              (AppSpacing.screenH + _focusFabShift.dx + delta.dx)
+                              (AppSpacing.screenH +
+                                      _focusFabShift.dx +
+                                      delta.dx)
                                   .clamp(AppSpacing.xs, maxLeft);
                           final double nextBottom =
-                              (baseBottom - _focusFabShift.dy - delta.dy)
-                                  .clamp(minBottom, maxBottom);
+                              (baseBottom - _focusFabShift.dy - delta.dy).clamp(
+                                minBottom,
+                                maxBottom,
+                              );
                           _focusFabShift = Offset(
                             nextLeft - AppSpacing.screenH,
                             baseBottom - nextBottom,

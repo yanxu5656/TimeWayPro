@@ -34,19 +34,8 @@ class _NavItemData {
   final String label;
 }
 
-/// 暖白底部导航，v1.10.0 起**两行 4×2** 共八个入口。
-///
-/// 一行六格时再加两格会把每格挤到 48dp 以下、标签放不下；两行让每格
-/// 保持 ~85dp 宽与 ≥44dp 的触控高度，代价是导航本身高约 35dp——
-/// 同期刊头瘦身省下的 ~48dp 补回来还有余。
-///
-/// 导航是暖白卡面而不是纸面：它要和浮起的列表项区分开，同时比纸底
-/// 亮一档，托住整页。选中态不靠底色块，靠**陶土图标文字 + 陶土圆点**
-/// ——像目录页上当前条目旁的点标记。两行之间一条发丝线分栏。
-///
-/// 未选中项用 [AppColors.textSecondary]（5.5:1）而不是 textHint：
-/// 导航标签是 10px 的语义文字，hint 档（2.8:1）在这个字号下读不清。
-class PaperNavBar extends StatelessWidget {
+/// 单行横向导航：八项按固定宽度排列，分隔线明确，选中项用陶土浅底标记。
+class PaperNavBar extends StatefulWidget {
   const PaperNavBar({super.key, required this.index, required this.onChanged});
 
   final int index;
@@ -61,11 +50,7 @@ class PaperNavBar extends StatelessWidget {
       '任务',
     ),
     _NavItemData(Icons.bar_chart_rounded, Icons.bar_chart_rounded, '统计'),
-    _NavItemData(
-      Icons.account_tree_outlined,
-      Icons.account_tree_rounded,
-      '规划',
-    ),
+    _NavItemData(Icons.account_tree_outlined, Icons.account_tree_rounded, '规划'),
     _NavItemData(
       Icons.sports_esports_outlined,
       Icons.sports_esports_rounded,
@@ -80,45 +65,95 @@ class PaperNavBar extends StatelessWidget {
   ];
 
   @override
+  State<PaperNavBar> createState() => _PaperNavBarState();
+}
+
+class _PaperNavBarState extends State<PaperNavBar> {
+  final ScrollController _controller = ScrollController();
+  double _itemExtent = 0;
+
+  @override
+  void didUpdateWidget(covariant PaperNavBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index != widget.index) _revealSelected();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _revealSelected() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_controller.hasClients || _itemExtent <= 0) return;
+      final ScrollPosition position = _controller.position;
+      final double target =
+          (widget.index * _itemExtent -
+                  (position.viewportDimension - _itemExtent) / 2)
+              .clamp(position.minScrollExtent, position.maxScrollExtent);
+      if ((target - position.pixels).abs() < 0.5) return;
+      _controller.animateTo(
+        target,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.divider)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 4, bottom: 2),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              _buildRow(0),
-              Container(
-                height: 1,
-                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                color: AppColors.divider,
-              ),
-              _buildRow(4),
-            ],
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.sm,
+          AppSpacing.xs,
+          AppSpacing.sm,
+          AppSpacing.xs,
+        ),
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppRadius.brLg,
+            border: Border.all(color: AppColors.dividerStrong),
+            boxShadow: AppShadows.e1,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final double itemExtent = (constraints.maxWidth / 4 + 8).clamp(
+                88.0,
+                120.0,
+              );
+              if ((itemExtent - _itemExtent).abs() > 0.5) {
+                _itemExtent = itemExtent;
+                _revealSelected();
+              }
+              return SingleChildScrollView(
+                controller: _controller,
+                scrollDirection: Axis.horizontal,
+                physics: const ClampingScrollPhysics(),
+                child: Row(
+                  children: <Widget>[
+                    for (int i = 0; i < PaperNavBar._items.length; i++)
+                      SizedBox(
+                        width: itemExtent,
+                        child: _NavItem(
+                          data: PaperNavBar._items[i],
+                          selected: i == widget.index,
+                          showDivider: i != PaperNavBar._items.length - 1,
+                          onTap: () => widget.onChanged(i),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildRow(int start) {
-    return Row(
-      children: <Widget>[
-        for (int i = start; i < start + 4; i++)
-          Expanded(
-            child: _NavItem(
-              data: _items[i],
-              selected: i == index,
-              onTap: () => onChanged(i),
-            ),
-          ),
-      ],
     );
   }
 }
@@ -127,48 +162,69 @@ class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.data,
     required this.selected,
+    required this.showDivider,
     required this.onTap,
   });
 
   final _NavItemData data;
   final bool selected;
+  final bool showDivider;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final Color fg = selected ? AppColors.primary : AppColors.textSecondary;
 
-    return PressableScale(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Padding(
-          // 两行导航每行仍要 ≥44dp 触控高度
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(selected ? data.activeIcon : data.icon, size: 20, color: fg),
-              const SizedBox(height: 2),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                style: (selected ? AppText.navLabelActive : AppText.navLabel)
-                    .copyWith(color: fg),
-                child: Text(data.label),
-              ),
-              const SizedBox(height: 2),
-              // 当前条目的「点标记」。高度恒定避免切换时导航栏跳动
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 3,
-                height: 3,
+    return Semantics(
+      label: data.label,
+      button: true,
+      selected: selected,
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: showDivider
+                ? const Border(
+                    right: BorderSide(color: AppColors.dividerStrong),
+                  )
+                : const Border(),
+          ),
+          child: PressableScale(
+            haptic: false,
+            child: GestureDetector(
+              onTap: onTap,
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                margin: const EdgeInsets.all(AppSpacing.xxs),
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.primary : Colors.transparent,
-                  shape: BoxShape.circle,
+                  color: selected
+                      ? AppColors.primary.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                  borderRadius: AppRadius.brMd,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      selected ? data.activeIcon : data.icon,
+                      size: 21,
+                      color: fg,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      style:
+                          (selected ? AppText.navLabelActive : AppText.navLabel)
+                              .copyWith(color: fg),
+                      child: Text(data.label),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

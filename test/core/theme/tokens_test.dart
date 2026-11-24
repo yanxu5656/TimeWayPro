@@ -192,8 +192,8 @@ void main() {
     });
 
     test('navInset 足够容纳纸面底部导航', () {
-      // 导航实测高度约 70 + SafeArea，留出余量
-      expect(AppSpacing.navInset, greaterThanOrEqualTo(100));
+      // 单行导航实测高度约 62 + SafeArea，留出余量
+      expect(AppSpacing.navInset, greaterThanOrEqualTo(88));
     });
   });
 }

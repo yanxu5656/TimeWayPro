@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -331,16 +332,44 @@ Future<void> tapAndFlush(WidgetTester tester, Finder finder) async {
   await tester.pump(const Duration(milliseconds: 600));
 }
 
+/// 把横向导航中的指定入口滚到可见区域，供测试直接点击。
+Future<void> revealNavItem(WidgetTester tester, String label) async {
+  final Finder target = find.descendant(
+    of: find.byType(PaperNavBar),
+    matching: find.text(label),
+  );
+  final Finder scrollFinder = find.descendant(
+    of: find.byType(PaperNavBar),
+    matching: find.byType(SingleChildScrollView),
+  );
+  final ScrollableState scrollable = tester.state<ScrollableState>(
+    find.descendant(
+      of: find.byType(PaperNavBar),
+      matching: find.byType(Scrollable),
+    ),
+  );
+  final Rect viewport = tester.getRect(scrollFinder);
+  final Rect targetRect = tester.getRect(target);
+  final double delta = targetRect.center.dx - viewport.center.dx;
+  if (delta.abs() > 0.5) {
+    scrollable.position.jumpTo(
+      (scrollable.position.pixels + delta).clamp(
+        scrollable.position.minScrollExtent,
+        scrollable.position.maxScrollExtent,
+      ),
+    );
+    await tester.pump();
+  }
+}
+
 /// 切到指定 Tab 并等动画落定。
 ///
 /// 限定在导航栏内找 label：月历页的刊头标题与导航 label 同名，
 /// 全树 find.text 会命中两处导致 tap 歧义。
 Future<void> switchToTab(WidgetTester tester, String label) async {
+  await revealNavItem(tester, label);
   await tester.tap(
-    find.descendant(
-      of: find.byType(PaperNavBar),
-      matching: find.text(label),
-    ),
+    find.descendant(of: find.byType(PaperNavBar), matching: find.text(label)),
   );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 600));

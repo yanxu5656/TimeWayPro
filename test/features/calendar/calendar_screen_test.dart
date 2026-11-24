@@ -39,7 +39,7 @@ void main() {
   }
 
   // 首位运行：直接 pumpSeededApp 走真实 IO，避开写队列尾巴（同每周页）
-  testWidgets('窄屏（320dp）下月网格与两行导航不溢出', (tester) async {
+  testWidgets('窄屏（320dp）下月网格与单行导航不溢出', (tester) async {
     await pumpSeededApp(tester, size: const Size(320, 640));
     await switchToTab(tester, '月历');
 

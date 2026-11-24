@@ -30,7 +30,7 @@ void main() {
   }
 
   // 首位运行：直接 pumpSeededApp 走真实 IO，避开写队列尾巴（同每周页）
-  testWidgets('窄屏（320dp）下页面与两行导航不溢出', (tester) async {
+  testWidgets('窄屏（320dp）下页面与单行导航不溢出', (tester) async {
     await pumpSeededApp(tester, size: const Size(320, 640));
     await switchToTab(tester, '闲时');
 
@@ -96,10 +96,7 @@ void main() {
     final items = providerOf(tester).items;
     expect(items.first.isDone, isFalse, reason: '没试过的仍在前面');
     expect(items.last.isDone, isTrue, reason: '试过的整组沉底');
-    expect(
-      items.firstWhere((i) => i.title == '打一款新游戏').isDone,
-      isTrue,
-    );
+    expect(items.firstWhere((i) => i.title == '打一款新游戏').isDone, isTrue);
   });
 
   testWidgets('点卡片编辑：改标题、清空备注都生效', (tester) async {

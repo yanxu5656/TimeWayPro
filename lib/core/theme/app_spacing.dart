@@ -35,7 +35,7 @@ class AppSpacing {
 
   /// 滚动内容的底部避让高度。
   ///
-  /// `MainScreen` 使用 `extendBody: true` 后，两行纸面底部导航会浮在
+  /// `MainScreen` 使用 `extendBody: true` 后，单行纸面底部导航会浮在
   /// 内容之上，列表必须留出这段空间，否则最后一项会被遮住。
-  static const double navInset = 140;
+  static const double navInset = 96;
 }

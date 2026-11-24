@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.10.1-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.10.2-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -128,6 +128,14 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.10.2 — 单行横滑导航与安静触感
+*2026-11-24*
+
+- **底部导航改为单行横向滚动**：八个入口固定为略宽于原四格的按钮，保留图标与文字，竖向分隔线明确划分每个入口；选中项使用陶土浅底，切换后自动滚入可见区域
+- **导航点击不再振动**：关闭导航项的 `HapticFeedback.vibrate` 与 `selectionClick`，保留按压缩放和选中过渡，不改变页面内按钮的既有触感
+- **释放首屏空间**：导航实测高度同步收紧，各页底部留白 `navInset` 从 140 调到 96，320dp 窄屏仍可完整横滑
+- 新增横向布局、窄屏项宽、无振动与自动滚动回归测试，默认套件 258 → **260**，`flutter analyze` 无告警
 
 ### v1.10.1 — 数据一致性与提醒可靠性审查
 *2026-11-24*
@@ -520,7 +528,7 @@ lib/
 ├── main.dart                          应用入口：初始化通知与视觉效果档位
 ├── app/
 │   ├── app.dart                       全局 Provider 注册与主题装配
-│   └── main_screen.dart               主界面：八 Tab + 两行纸面底部导航
+│   └── main_screen.dart               主界面：八 Tab + 单行横滑纸面底部导航
 ├── core/
 │   ├── theme/                         设计令牌：颜色 / 圆角 / 间距 / 阴影 / 文字
 │   │   └── app_theme.dart             装配层，重新导出全部令牌
@@ -582,7 +590,7 @@ flutter build apk --release
 
 ```bash
 flutter analyze          # 当前基线：0 error / 0 warning
-flutter test             # 258 个测试
+flutter test             # 260 个测试
 ```
 
 另有三类不在默认 test run 里的 golden（文件名不以 `_test.dart` 结尾，避免像素跨平台漂移影响别人的机器）：

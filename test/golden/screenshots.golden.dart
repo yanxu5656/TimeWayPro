@@ -180,12 +180,12 @@ void main() {
     for (int i = 0; i < shots.length; i++) {
       if (i > 0) {
         // 限定导航栏内：月历刊头标题与导航 label 同名
-        await tester.tap(
-          find.descendant(
-            of: find.byType(PaperNavBar),
-            matching: find.text(shots[i].$1),
-          ),
+        final Finder target = find.descendant(
+          of: find.byType(PaperNavBar),
+          matching: find.text(shots[i].$1),
         );
+        await revealNavItem(tester, shots[i].$1);
+        await tester.tap(target);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 700));
       }
@@ -248,12 +248,12 @@ void main() {
     }
 
     // 每周页第一条目标的挪周按钮
-    await tester.tap(
-      find.descendant(
-        of: find.byType(PaperNavBar),
-        matching: find.text('每周'),
-      ),
+    final Finder weeklyTab = find.descendant(
+      of: find.byType(PaperNavBar),
+      matching: find.text('每周'),
     );
+    await revealNavItem(tester, '每周');
+    await tester.tap(weeklyTab);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     await tester.tap(find.byIcon(Icons.event_repeat_outlined).first);
@@ -286,12 +286,12 @@ void main() {
     }
 
     // 月历页点今天，打开当天标注面板
-    await tester.tap(
-      find.descendant(
-        of: find.byType(PaperNavBar),
-        matching: find.text('月历'),
-      ),
+    final Finder calendarTab = find.descendant(
+      of: find.byType(PaperNavBar),
+      matching: find.text('月历'),
     );
+    await revealNavItem(tester, '月历');
+    await tester.tap(calendarTab);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     final DateTime now = DateTime.now();

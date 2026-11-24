@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:time_way_pro/app/app.dart';
 import 'package:time_way_pro/core/ui/paper.dart';
 
+import '../support/app_harness.dart';
+
 /// 纸面设计系统（静白志）的视觉探针。
 ///
 /// 这个项目的改动价值几乎全在视觉上，而**文字对比度、衬线混排、
@@ -401,12 +403,12 @@ void main() {
     for (int i = 0; i < labels.length; i++) {
       if (i > 0) {
         // 限定导航栏内：月历刊头标题与导航 label 同名
-        await tester.tap(
-          find.descendant(
-            of: find.byType(PaperNavBar),
-            matching: find.text(labels[i]),
-          ),
+        final Finder target = find.descendant(
+          of: find.byType(PaperNavBar),
+          matching: find.text(labels[i]),
         );
+        await revealNavItem(tester, labels[i]);
+        await tester.tap(target);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 600));
       }
