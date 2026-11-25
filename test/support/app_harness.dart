@@ -25,7 +25,7 @@ import 'package:time_way_pro/shared/database/database_helper.dart';
 /// 之后 provider 的读取只走内存缓存 + 微任务，而微任务在 FakeAsync 里正常推进。
 
 /// 一份覆盖各页的最小种子数据
-Map<String, dynamic> seedData() {
+Map<String, dynamic> seedData({bool showcaseWeeklyProgress = false}) {
   final DateTime now = DateTime.now();
   final String nowIso = now.toIso8601String();
   final String today =
@@ -177,6 +177,18 @@ Map<String, dynamic> seedData() {
           'week_key': weekKeyOf(now),
           'sort_order': i,
           'created_at': nowIso,
+          if (showcaseWeeklyProgress && i == 1) ...<String, dynamic>{
+            'progress_mode': 'count',
+            'milestones': <Map<String, dynamic>>[
+              for (int point = 0; point < 3; point++)
+                <String, dynamic>{
+                  'id': 'w1-point-$point',
+                  'title': '第 ${point + 1} 次',
+                  'is_completed': point == 0 ? 1 : 0,
+                  'sort_order': point,
+                },
+            ],
+          },
         },
       // 上一周的目标：每周页翻到上周时要能看到它（不再是"只显示本周"）
       <String, dynamic>{

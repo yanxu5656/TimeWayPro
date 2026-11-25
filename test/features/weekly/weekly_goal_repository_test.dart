@@ -162,6 +162,158 @@ void main() {
     });
   });
 
+  group('分段进度', () {
+    test('阶段打卡点序列化后顺序与完成状态保持一致', () {
+      final WeeklyGoal goal = WeeklyGoal(
+        id: 'x1',
+        title: '写完论文',
+        weekKey: '2026-09-14',
+        createdAt: DateTime(2026, 9, 14),
+        progressMode: WeeklyProgressMode.stages,
+        milestones: const <WeeklyMilestone>[
+          WeeklyMilestone(id: 'm2', title: '阶段 2', sortOrder: 1),
+          WeeklyMilestone(
+            id: 'm1',
+            title: '阶段 1',
+            isCompleted: true,
+            sortOrder: 0,
+          ),
+        ],
+      );
+
+      final WeeklyGoal back = WeeklyGoal.fromMap(goal.toMap());
+
+      expect(back.progressMode, WeeklyProgressMode.stages);
+      expect(back.milestones.map((WeeklyMilestone m) => m.id), <String>[
+        'm1',
+        'm2',
+      ]);
+      expect(back.completedMilestones, 1);
+      expect(back.progress, 0.5);
+      expect(back.isCompleted, isFalse);
+    });
+
+    test('旧数据没有打卡点时仍按普通目标读取', () {
+      final WeeklyGoal goal = WeeklyGoal.fromMap(<String, dynamic>{
+        'id': 'x1',
+        'title': '旧目标',
+        'is_completed': 1,
+        'week_key': '2026-09-14',
+        'created_at': DateTime(2026, 9, 14).toIso8601String(),
+      });
+
+      expect(goal.hasMilestones, isFalse);
+      expect(goal.progressMode, isNull);
+      expect(goal.isCompleted, isTrue);
+      expect(goal.progress, 1);
+    });
+
+    test('坏打卡点跳过，缺 id 的合法打卡点使用稳定兜底', () {
+      final WeeklyGoal goal = WeeklyGoal.fromMap(<String, dynamic>{
+        'id': 'x1',
+        'title': '容错目标',
+        'week_key': '2026-09-14',
+        'created_at': DateTime(2026, 9, 14).toIso8601String(),
+        'milestones': <dynamic>[
+          <String, dynamic>{'title': '缺 id'},
+          <String, dynamic>{'id': 'bad'},
+          'not a map',
+        ],
+      });
+
+      expect(goal.milestones, hasLength(1));
+      expect(goal.milestones.single.id, 'x1_milestone_0');
+      expect(goal.milestones.single.title, '缺 id');
+    });
+
+    test('单项打卡会落库，全部完成后目标自动完成', () async {
+      final String id = await repo.add(
+        WeeklyGoal(
+          id: '',
+          title: '跑步',
+          weekKey: thisWeek,
+          createdAt: DateTime.now(),
+          progressMode: WeeklyProgressMode.count,
+          milestones: const <WeeklyMilestone>[
+            WeeklyMilestone(id: 'run-1', title: '第 1 次'),
+            WeeklyMilestone(id: 'run-2', title: '第 2 次', sortOrder: 1),
+          ],
+        ),
+      );
+      WeeklyGoal goal = (await repo.getByWeek(
+        thisWeek,
+      )).singleWhere((WeeklyGoal goal) => goal.id == id);
+
+      await repo.update(goal.toggleMilestone('run-1'));
+      goal = (await repo.getByWeek(
+        thisWeek,
+      )).singleWhere((WeeklyGoal goal) => goal.id == id);
+      expect(goal.completedMilestones, 1);
+      expect(goal.isCompleted, isFalse);
+
+      await repo.update(goal.toggleMilestone('run-2'));
+      goal = (await repo.getByWeek(
+        thisWeek,
+      )).singleWhere((WeeklyGoal goal) => goal.id == id);
+      expect(goal.completedMilestones, 2);
+      expect(goal.isCompleted, isTrue);
+    });
+
+    test('切换整个目标会同步全部打卡点', () async {
+      final String id = await repo.add(
+        WeeklyGoal(
+          id: '',
+          title: '读书',
+          weekKey: thisWeek,
+          createdAt: DateTime.now(),
+          milestones: const <WeeklyMilestone>[
+            WeeklyMilestone(id: 'read-1', title: '阶段 1'),
+            WeeklyMilestone(id: 'read-2', title: '阶段 2', sortOrder: 1),
+          ],
+        ),
+      );
+
+      await repo.toggleComplete(id);
+      WeeklyGoal goal = (await repo.getByWeek(
+        thisWeek,
+      )).singleWhere((WeeklyGoal goal) => goal.id == id);
+      expect(
+        goal.milestones.every((WeeklyMilestone m) => m.isCompleted),
+        isTrue,
+      );
+
+      await repo.toggleComplete(id);
+      goal = (await repo.getByWeek(
+        thisWeek,
+      )).singleWhere((WeeklyGoal goal) => goal.id == id);
+      expect(
+        goal.milestones.every((WeeklyMilestone m) => !m.isCompleted),
+        isTrue,
+      );
+      expect(goal.isCompleted, isFalse);
+    });
+
+    test('清空打卡点后恢复普通目标且不残留进度模式', () {
+      final WeeklyGoal goal = WeeklyGoal(
+        id: 'x1',
+        title: '普通目标',
+        weekKey: '2026-09-14',
+        createdAt: DateTime(2026, 9, 14),
+        progressMode: WeeklyProgressMode.count,
+        milestones: const <WeeklyMilestone>[
+          WeeklyMilestone(id: 'm1', title: '第 1 次'),
+        ],
+      );
+
+      final WeeklyGoal plain = goal.copyWith(
+        milestones: const <WeeklyMilestone>[],
+      );
+      expect(plain.hasMilestones, isFalse);
+      expect(plain.progressMode, isNull);
+      expect(plain.toMap()['milestones'], isEmpty);
+    });
+  });
+
   group('序列化', () {
     test('toMap / fromMap 往返一致', () {
       final WeeklyGoal goal = WeeklyGoal(

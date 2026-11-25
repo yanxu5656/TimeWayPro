@@ -32,8 +32,20 @@ class WeeklyProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   int get total => _goals.length;
-  int get completed => _goals.where((g) => g.isCompleted).length;
-  double get progress => total > 0 ? completed / total : 0;
+  int get completed => _goals.where((WeeklyGoal g) => g.isCompleted).length;
+
+  double get progress {
+    if (_goals.isEmpty) return 0;
+    int completedUnits = 0;
+    int totalUnits = 0;
+    for (final WeeklyGoal goal in _goals) {
+      totalUnits += goal.hasMilestones ? goal.milestones.length : 1;
+      completedUnits += goal.hasMilestones
+          ? goal.completedMilestones
+          : (goal.isCompleted ? 1 : 0);
+    }
+    return completedUnits / totalUnits;
+  }
 
   // ── 周导航 ──
 
@@ -81,7 +93,11 @@ class WeeklyProvider extends ChangeNotifier {
 
   // ── 增删改（都落在当前浏览的周）──
 
-  Future<void> addGoal(String title) async {
+  Future<void> addGoal(
+    String title, {
+    List<WeeklyMilestone> milestones = const <WeeklyMilestone>[],
+    WeeklyProgressMode? progressMode,
+  }) async {
     await _repository.add(
       WeeklyGoal(
         id: '',
@@ -91,6 +107,8 @@ class WeeklyProvider extends ChangeNotifier {
         // sortOrder 重复，非稳定排序下条目顺序每次加载可能变化
         sortOrder: _maxSortOrder + 1,
         createdAt: DateTime.now(),
+        progressMode: progressMode,
+        milestones: milestones,
       ),
     );
     await loadGoals();
@@ -119,8 +137,36 @@ class WeeklyProvider extends ChangeNotifier {
   }
 
   Future<void> toggleGoal(String id) async {
-    await _repository.toggleComplete(id);
-    await loadGoals();
+    final WeeklyGoal goal = _goals.firstWhere(
+      (WeeklyGoal goal) => goal.id == id,
+    );
+    await _updateGoalState(goal.setAllCompleted(!goal.isCompleted));
+  }
+
+  Future<void> toggleMilestone(String goalId, String milestoneId) async {
+    final WeeklyGoal goal = _goals.firstWhere(
+      (WeeklyGoal goal) => goal.id == goalId,
+    );
+    await _updateGoalState(goal.toggleMilestone(milestoneId));
+  }
+
+  Future<void> _updateGoalState(WeeklyGoal updated) async {
+    final int index = _goals.indexWhere(
+      (WeeklyGoal goal) => goal.id == updated.id,
+    );
+    if (index < 0 || identical(_goals[index], updated)) return;
+    final List<WeeklyGoal> previousGoals = _goals;
+    final List<WeeklyGoal> nextGoals = _goals.toList();
+    nextGoals[index] = updated;
+    _goals = nextGoals;
+    notifyListeners();
+    try {
+      await _repository.update(updated);
+    } catch (_) {
+      _goals = previousGoals;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   /// 拖拽排序：把 [oldIndex] 的条目移到 [newIndex]（移除后的最终下标，

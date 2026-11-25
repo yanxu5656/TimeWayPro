@@ -56,6 +56,6 @@ class WeeklyGoalRepository {
     final maps = await _dbHelper.queryWhere(_table, (map) => map['id'] == id);
     if (maps.isEmpty) return;
     final goal = WeeklyGoal.fromMap(maps.first);
-    await update(goal.copyWith(isCompleted: !goal.isCompleted));
+    await update(goal.setAllCompleted(!goal.isCompleted));
   }
 }

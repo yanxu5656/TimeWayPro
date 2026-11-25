@@ -159,7 +159,9 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.runAsync(() => DatabaseHelper().importAll(seedData()));
+    await tester.runAsync(
+      () => DatabaseHelper().importAll(seedData(showcaseWeeklyProgress: true)),
+    );
 
     await tester.binding.setSurfaceSize(const Size(390, 844));
     await tester.pumpWidget(_appWithRealFont());
@@ -228,6 +230,46 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('../../build/readme_screenshots/sheet_add.png'),
+    );
+    debugDisableShadows = true;
+  });
+
+  testWidgets('每周分段目标表单截图', (WidgetTester tester) async {
+    UiEffects.resetForTesting();
+    UiEffects.tier.value = UiEffectTier.reduced;
+    debugDisableShadows = false;
+
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.runAsync(
+      () => DatabaseHelper().importAll(seedData(showcaseWeeklyProgress: true)),
+    );
+
+    await tester.pumpWidget(_appWithRealFont());
+    for (int i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    await revealNavItem(tester, '每周');
+    await tester.tap(
+      find.descendant(of: find.byType(PaperNavBar), matching: find.text('每周')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.tap(find.byType(PaperFab));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.tap(find.byKey(const Key('weekly_progress_switch')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile(
+        '../../build/readme_screenshots/sheet_weekly_progress.png',
+      ),
     );
     debugDisableShadows = true;
   });

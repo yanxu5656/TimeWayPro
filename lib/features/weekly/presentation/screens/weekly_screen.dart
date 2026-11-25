@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../core/ui/paper.dart';
 import '../../../../core/utils/week.dart';
@@ -377,48 +379,172 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         tint: goal.isCompleted ? AppColors.success : null,
         // 点击整行进编辑；勾选与挪周是行内的独立按钮
         onTap: () => _showEditSheet(context, goal),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            SizedBox(
-              width: 26,
-              child: Text(
-                no,
-                style: AppText.serifNum.copyWith(
-                  fontSize: 13,
-                  color: goal.isCompleted
-                      ? AppColors.primary
-                      : AppColors.textHint,
+            Row(
+              children: <Widget>[
+                SizedBox(
+                  width: 26,
+                  child: Text(
+                    no,
+                    style: AppText.serifNum.copyWith(
+                      fontSize: 13,
+                      color: goal.isCompleted
+                          ? AppColors.primary
+                          : AppColors.textHint,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            InkCheckCircle(
-              isChecked: goal.isCompleted,
-              onTap: () {
-                runPaperAction(context, () => provider.toggleGoal(goal.id));
-              },
-              size: 21,
-              semanticLabel: goal.title,
-            ),
-            const SizedBox(width: AppSpacing.sm + 2),
-            Expanded(
-              child: Text(
-                goal.title,
-                style: AppText.bodySerif.copyWith(
-                  color: goal.isCompleted
-                      ? AppColors.textHint
-                      : AppColors.textPrimary,
-                  decoration: goal.isCompleted
-                      ? TextDecoration.lineThrough
-                      : null,
+                InkCheckCircle(
+                  isChecked: goal.isCompleted,
+                  onTap: () {
+                    runPaperAction(context, () => provider.toggleGoal(goal.id));
+                  },
+                  size: 21,
+                  semanticLabel: goal.title,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+                const SizedBox(width: AppSpacing.sm + 2),
+                Expanded(
+                  child: Text(
+                    goal.title,
+                    style: AppText.bodySerif.copyWith(
+                      color: goal.isCompleted
+                          ? AppColors.textHint
+                          : AppColors.textPrimary,
+                      decoration: goal.isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                _buildMoveButton(context, goal),
+                _buildDragHandle(index),
+              ],
             ),
-            const SizedBox(width: AppSpacing.xs),
-            _buildMoveButton(context, goal),
-            _buildDragHandle(index),
+            if (goal.hasMilestones)
+              _buildMilestoneSection(context, goal, provider),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMilestoneSection(
+    BuildContext context,
+    WeeklyGoal goal,
+    WeeklyProvider provider,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Divider(height: 1, color: AppColors.divider),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: <Widget>[
+              Text(
+                goal.progressMode == WeeklyProgressMode.count ? '打卡进度' : '阶段进度',
+                style: AppText.label.copyWith(color: AppColors.textSecondary),
+              ),
+              const Spacer(),
+              Text(
+                '${goal.completedMilestones}/${goal.milestones.length}',
+                style: AppText.serifNum.copyWith(
+                  fontSize: 18,
+                  color: goal.isCompleted
+                      ? AppColors.success
+                      : AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          LinearProgressIndicator(
+            value: goal.progress,
+            backgroundColor: AppColors.surfaceVariant,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              goal.isCompleted ? AppColors.success : AppColors.primary,
+            ),
+            minHeight: 4,
+            borderRadius: AppRadius.brFull,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xxs,
+            children: <Widget>[
+              for (final WeeklyMilestone milestone in goal.milestones)
+                _buildMilestoneChip(context, goal, milestone, provider),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMilestoneChip(
+    BuildContext context,
+    WeeklyGoal goal,
+    WeeklyMilestone milestone,
+    WeeklyProvider provider,
+  ) {
+    return Semantics(
+      button: true,
+      checked: milestone.isCompleted,
+      label: '${milestone.title}，${milestone.isCompleted ? '已完成' : '未完成'}',
+      onTap: () {
+        runPaperAction(
+          context,
+          () => provider.toggleMilestone(goal.id, milestone.id),
+        );
+      },
+      child: ExcludeSemantics(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              runPaperAction(
+                context,
+                () => provider.toggleMilestone(goal.id, milestone.id),
+              );
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                InkCheckCircle(
+                  isChecked: milestone.isCompleted,
+                  onTap: () {
+                    runPaperAction(
+                      context,
+                      () => provider.toggleMilestone(goal.id, milestone.id),
+                    );
+                  },
+                  size: 18,
+                  color: goal.isCompleted
+                      ? AppColors.success
+                      : AppColors.primary,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  milestone.title,
+                  style: AppText.caption.copyWith(
+                    color: milestone.isCompleted
+                        ? AppColors.textHint
+                        : AppColors.textPrimary,
+                    decoration: milestone.isCompleted
+                        ? TextDecoration.lineThrough
+                        : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -526,44 +652,138 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       showHandle: false,
       builder: (BuildContext sheetContext) => _WeeklyGoalSheet(
         initial: goal,
-        onSubmit: (String title) async {
-          final WeeklyProvider provider = sheetContext.read<WeeklyProvider>();
-          final success = await runPaperAction(sheetContext, () async {
-            if (goal == null) {
-              await provider.addGoal(title);
-            } else {
-              await provider.updateGoal(goal.copyWith(title: title));
-            }
-          });
-          if (success && sheetContext.mounted) Navigator.pop(sheetContext);
-        },
+        onSubmit:
+            (
+              String title,
+              List<WeeklyMilestone> milestones,
+              WeeklyProgressMode? progressMode,
+            ) async {
+              final WeeklyProvider provider = sheetContext
+                  .read<WeeklyProvider>();
+              final success = await runPaperAction(sheetContext, () async {
+                if (goal == null) {
+                  await provider.addGoal(
+                    title,
+                    milestones: milestones,
+                    progressMode: progressMode,
+                  );
+                } else {
+                  await provider.updateGoal(
+                    goal.copyWith(
+                      title: title,
+                      milestones: milestones,
+                      progressMode: progressMode,
+                    ),
+                  );
+                }
+              });
+              if (success && sheetContext.mounted) Navigator.pop(sheetContext);
+            },
       ),
     );
   }
 }
 
-/// 新增 / 编辑目标的表单。只有一个输入框，所以不带拖拽把手
-/// （沿用待办页添加弹窗的既有取舍）。
+/// 新增 / 编辑目标的表单，支持普通目标与可勾选的分段目标。
 class _WeeklyGoalSheet extends StatefulWidget {
   const _WeeklyGoalSheet({required this.initial, required this.onSubmit});
 
   final WeeklyGoal? initial;
-  final Future<void> Function(String) onSubmit;
+  final Future<void> Function(
+    String title,
+    List<WeeklyMilestone> milestones,
+    WeeklyProgressMode? progressMode,
+  )
+  onSubmit;
 
   @override
   State<_WeeklyGoalSheet> createState() => _WeeklyGoalSheetState();
 }
 
 class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
+  static const int _maxMilestones = 30;
+  final Uuid _uuid = const Uuid();
+
   late final TextEditingController _controller = TextEditingController(
     text: widget.initial?.title ?? '',
   );
+  late final TextEditingController _countController;
+  late bool _progressEnabled;
+  late WeeklyProgressMode _mode;
+  late List<WeeklyMilestone> _milestones;
+  String? _countError;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final WeeklyGoal? initial = widget.initial;
+    _progressEnabled = initial?.hasMilestones ?? false;
+    _mode = initial?.progressMode ?? WeeklyProgressMode.stages;
+    _milestones = List<WeeklyMilestone>.of(
+      initial?.milestones ?? const <WeeklyMilestone>[],
+    );
+    _countController = TextEditingController(
+      text: '${_milestones.isEmpty ? 3 : _milestones.length}',
+    );
+  }
 
   @override
   void dispose() {
     _controller.dispose();
+    _countController.dispose();
     super.dispose();
+  }
+
+  void _refreshMilestones({bool resetCompletion = false}) {
+    final int? count = _parsedCount;
+    if (count == null) {
+      _countError = '请输入 1–$_maxMilestones';
+      return;
+    }
+    _countError = null;
+    final List<WeeklyMilestone> previous = _milestones;
+    _milestones = <WeeklyMilestone>[
+      for (int i = 0; i < count; i++)
+        if (!resetCompletion && i < previous.length)
+          previous[i].copyWith(title: _milestoneTitle(i), sortOrder: i)
+        else
+          WeeklyMilestone(
+            id: _uuid.v4(),
+            title: _milestoneTitle(i),
+            sortOrder: i,
+          ),
+    ];
+  }
+
+  int? get _parsedCount {
+    final int? count = int.tryParse(_countController.text.trim());
+    if (count == null || count < 1 || count > _maxMilestones) return null;
+    return count;
+  }
+
+  String _milestoneTitle(int index) => _mode == WeeklyProgressMode.stages
+      ? '阶段 ${index + 1}'
+      : '第 ${index + 1} 次';
+
+  void _setProgressEnabled(bool value) {
+    setState(() {
+      _progressEnabled = value;
+      if (value) {
+        _refreshMilestones(resetCompletion: true);
+      } else {
+        _milestones = <WeeklyMilestone>[];
+        _countError = null;
+      }
+    });
+  }
+
+  void _changeMode(WeeklyProgressMode mode) {
+    if (mode == _mode) return;
+    setState(() {
+      _mode = mode;
+      _refreshMilestones(resetCompletion: true);
+    });
   }
 
   @override
@@ -584,12 +804,72 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
         ),
         const SizedBox(height: AppSpacing.md),
         TextField(
+          key: const Key('weekly_goal_title'),
           controller: _controller,
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _submit(),
           decoration: const InputDecoration(hintText: '这周想完成什么'),
         ),
+        const SizedBox(height: AppSpacing.md),
+        PaperCard(
+          tone: PaperTone.raised,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          child: Material(
+            type: MaterialType.transparency,
+            child: SwitchListTile(
+              key: const Key('weekly_progress_switch'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('分段完成'),
+              subtitle: const Text('拆成阶段，或按次数逐点打卡'),
+              value: _progressEnabled,
+              activeThumbColor: AppColors.primary,
+              onChanged: _saving ? null : _setProgressEnabled,
+            ),
+          ),
+        ),
+        if (_progressEnabled) ...<Widget>[
+          const SizedBox(height: AppSpacing.md),
+          SegmentedControl<WeeklyProgressMode>(
+            segments: const <Segment<WeeklyProgressMode>>[
+              Segment<WeeklyProgressMode>(WeeklyProgressMode.stages, '按阶段'),
+              Segment<WeeklyProgressMode>(WeeklyProgressMode.count, '按次数'),
+            ],
+            value: _mode,
+            onChanged: _saving ? (_) {} : _changeMode,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            key: const Key('weekly_milestone_count'),
+            controller: _countController,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            maxLength: 2,
+            onChanged: (_) => setState(() => _refreshMilestones()),
+            onSubmitted: (_) => _submit(),
+            decoration: InputDecoration(
+              labelText: _mode == WeeklyProgressMode.stages ? '阶段数量' : '打卡次数',
+              hintText: '1–$_maxMilestones',
+              suffixText: _mode == WeeklyProgressMode.stages ? '个' : '次',
+              errorText: _countError,
+            ),
+          ),
+          if (_parsedCount != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            _buildPreview(),
+          ],
+          if (isEditing && (widget.initial?.hasMilestones ?? false))
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(
+                '调整数量会保留对应序号的完成状态；切换类型会重新开始。',
+                style: AppText.caption.copyWith(color: AppColors.textSecondary),
+              ),
+            ),
+        ],
         const SizedBox(height: AppSpacing.sm),
         Row(
           children: <Widget>[
@@ -599,9 +879,11 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
               color: AppColors.textSecondary,
             ),
             const SizedBox(width: 6),
-            Text(
-              '${isEditing ? '所在周' : '将添加到'}：${_weekHint(weekKey)}',
-              style: AppText.caption.copyWith(color: AppColors.textSecondary),
+            Expanded(
+              child: Text(
+                '${isEditing ? '所在周' : '将添加到'}：${_weekHint(weekKey)}',
+                style: AppText.caption.copyWith(color: AppColors.textSecondary),
+              ),
             ),
           ],
         ),
@@ -619,6 +901,37 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
     );
   }
 
+  Widget _buildPreview() {
+    final List<WeeklyMilestone> preview = _milestones.take(6).toList();
+    return Wrap(
+      spacing: AppSpacing.xs,
+      runSpacing: AppSpacing.xs,
+      children: <Widget>[
+        for (final WeeklyMilestone milestone in preview)
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: AppRadius.brSm,
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Text(
+              milestone.title,
+              style: AppText.caption.copyWith(color: AppColors.textSecondary),
+            ),
+          ),
+        if (_milestones.length > preview.length)
+          Text(
+            '等 ${_milestones.length} 个打卡点',
+            style: AppText.caption.copyWith(color: AppColors.textSecondary),
+          ),
+      ],
+    );
+  }
+
   /// 「本周（10/20 - 10/26）」；更远的周只有日期区间
   String _weekHint(String weekKey) {
     final DateTime monday = DateTime.parse(weekKey);
@@ -631,8 +944,20 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
     if (_saving) return;
     final String title = _controller.text.trim();
     if (title.isEmpty) return;
+    if (_progressEnabled && _parsedCount == null) {
+      setState(() => _countError = '请输入 1–$_maxMilestones');
+      return;
+    }
+    if (_progressEnabled) _refreshMilestones();
     setState(() => _saving = true);
-    await runPaperAction(context, () => widget.onSubmit(title));
+    await runPaperAction(
+      context,
+      () => widget.onSubmit(
+        title,
+        _progressEnabled ? _milestones : const <WeeklyMilestone>[],
+        _progressEnabled ? _mode : null,
+      ),
+    );
     if (mounted) setState(() => _saving = false);
   }
 }

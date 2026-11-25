@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.10.2-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.10.3-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -98,6 +98,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 - **快捷挪周** —— 每条目标行尾的挪动按钮打开快捷面板：上周 / 本周 / 下周 / 下下周（各带日期区间）一键挪，更远的周走日期选择器；挪动排在目标周队尾，不动它原有的顺序
 - **拖拽排序** —— 按住每条行尾的把手上下拖动即可改顺序，顺序立即落盘；点击编辑与左滑删除不受影响
 - **勾选进度** —— 逐条勾选，概览进度条实时显示完成度，满额变绿
+- **可选分段完成** —— 开启后可选择「按阶段」生成阶段 1 / 2 / 3，或「按次数」生成第 1 次 / 2 次 / 3 次（1–30 个）；每个打卡点单独勾选，全部完成自动完成整目标，取消任一点会重新打开；顶部周完成度按打卡点加权
 
 ### 🎮 闲时清单
 
@@ -128,6 +129,15 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.10.3 — 每周目标分段打卡
+*2026-11-25*
+
+- **普通 / 进度双模式**：创建或编辑每周目标时可开启「分段完成」，普通目标保持原有勾选方式
+- **两种生成方式**：按阶段生成「阶段 1 / 2 / 3」，按次数生成「第 1 次 / 第 2 次 / 第 3 次」；数量限制 1–30，修改数量保留对应序号的状态，切换类型重新开始
+- **逐点记录与自动完成**：行内展示进度条、完成数和独立打卡点；全部完成自动完成目标，取消任一点重新打开；整目标勾选会同步所有打卡点
+- **加权周完成度**：普通目标计 1 个单位，分段目标按打卡点数量计单位，避免一个 10 次目标与一次普通任务等权
+- **向后兼容与可靠写入**：打卡点内嵌保存，旧备份无需迁移；逐点勾选乐观更新、失败回滚且不触发列表 loading；新增 15 个测试，默认套件 260 → **275**，`flutter analyze` 无告警
 
 ### v1.10.2 — 单行横滑导航与安静触感
 *2026-11-24*

@@ -184,6 +184,21 @@ Map<String, dynamic> _seed() {
         'week_key': weekKeyOf(now),
         'sort_order': 1,
         'created_at': nowIso,
+        'progress_mode': 'count',
+        'milestones': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'w2-m1',
+            'title': '第 1 次',
+            'is_completed': 1,
+            'sort_order': 0,
+          },
+          <String, dynamic>{
+            'id': 'w2-m2',
+            'title': '第 2 次',
+            'is_completed': 0,
+            'sort_order': 1,
+          },
+        ],
       },
       <String, dynamic>{
         'id': 'w3',
@@ -192,6 +207,16 @@ Map<String, dynamic> _seed() {
         'week_key': weekKeyOf(now),
         'sort_order': 2,
         'created_at': nowIso,
+        'progress_mode': 'stages',
+        'milestones': <Map<String, dynamic>>[
+          for (int i = 0; i < 3; i++)
+            <String, dynamic>{
+              'id': 'w3-m$i',
+              'title': '阶段 ${i + 1}',
+              'is_completed': i == 0 ? 1 : 0,
+              'sort_order': i,
+            },
+        ],
       },
     ],
     'leisure_items': <Map<String, dynamic>>[
