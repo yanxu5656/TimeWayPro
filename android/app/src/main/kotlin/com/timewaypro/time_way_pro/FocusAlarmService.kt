@@ -19,6 +19,9 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import org.json.JSONObject
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
  * 专注计时前台服务：整个 45/5 循环期间常驻。
@@ -110,7 +113,10 @@ class FocusAlarmService : Service() {
     private var mediaPlayer: MediaPlayer? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private val handler = Handler(Looper.getMainLooper())
-    private val timeoutRunnable = Runnable { stopSelf() }
+    private val timeoutRunnable = Runnable {
+        expirePersistedAlarm()
+        stopSelf()
+    }
 
     private var alarming = false
     private var paused = false
@@ -250,6 +256,18 @@ class FocusAlarmService : Service() {
             startRingtone()
         }
         handler.postDelayed(timeoutRunnable, TIMEOUT_MS)
+    }
+
+    private fun expirePersistedAlarm() {
+        try {
+            val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            val raw = prefs.getString("flutter.focus_timer_state", null) ?: return
+            val data = JSONObject(raw)
+            if (data.optInt("phase", 0) != 2 && data.optInt("phase", 0) != 4) return
+            data.put("alarmAt", LocalDateTime.now(ZoneId.systemDefault()).minusMinutes(10).toString())
+            prefs.edit().putString("flutter.focus_timer_state", data.toString()).apply()
+        } catch (_: Exception) {
+        }
     }
 
     private fun notificationManager(): NotificationManager? =

@@ -399,14 +399,24 @@ class SettingsScreen extends StatelessWidget {
     if (confirmed == true) {
       if (!context.mounted) return;
       final taskProvider = context.read<TaskProvider>();
+      List<TimerState>? suspendedTimers;
       // 下载与解析成功后才停表；网络失败不应打断用户正在进行的计时。
       final success = await provider.restore(
-        beforeImport: taskProvider.stopAllTimersForDataReset,
+        beforeImport: () async {
+          final List<TimerState> stopped = await taskProvider
+              .stopAllTimersForDataReset();
+          suspendedTimers = stopped;
+          return stopped;
+        },
       );
       if (!context.mounted) return;
       if (success) {
         await _reloadDataProviders(context);
       } else {
+        final List<TimerState>? stopped = suspendedTimers;
+        if (stopped != null) {
+          await taskProvider.restoreTimersAfterFailedDataReset(stopped);
+        }
         await NotificationService().syncTaskReminders(taskProvider.tasks);
       }
 
@@ -531,6 +541,7 @@ class SettingsScreen extends StatelessWidget {
     if (confirmed != true) return;
 
     TaskProvider? resetProvider;
+    List<TimerState>? suspendedTimers;
     bool imported = false;
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -548,7 +559,7 @@ class SettingsScreen extends StatelessWidget {
         if (!context.mounted) return;
         // 必须先停表再替换数据，避免在途计时把旧会话写进刚导入的新数据集。
         resetProvider = context.read<TaskProvider>();
-        await resetProvider.stopAllTimersForDataReset();
+        suspendedTimers = await resetProvider.stopAllTimersForDataReset();
         await repo.importAllData(data);
         imported = true;
 
@@ -567,6 +578,10 @@ class SettingsScreen extends StatelessWidget {
       }
     } catch (e) {
       if (resetProvider != null && !imported) {
+        final List<TimerState>? stopped = suspendedTimers;
+        if (stopped != null) {
+          await resetProvider.restoreTimersAfterFailedDataReset(stopped);
+        }
         await NotificationService().syncTaskReminders(resetProvider.tasks);
       }
       if (context.mounted) {

@@ -10,16 +10,17 @@ import java.time.ZoneId
 /**
  * 系统闹钟到点广播：通知前台闹铃服务切换响铃。
  *
- * 正常情况下服务在倒计时阶段一直存活，这里只是到点触发器；
- * 若进程已被回收，则重新拉起服务。闹铃模式与阶段文案从 Flutter
- * 持久化的 SharedPreferences 读取，无需 Flutter 引擎存活。
- * 开机后也会根据持久化状态恢复倒计时 / 闹铃。
+ * 所有迟到广播都先校验 Flutter 持久化状态；停止后没有状态直接忽略，
+ * 新阶段尚未到点时只恢复倒计时，不能按旧广播提前响铃。
  */
 class FocusAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
-            FocusAlarmScheduler.ACTION_FIRE -> fireAlarm(context)
-            Intent.ACTION_BOOT_COMPLETED -> restoreAfterBoot(context)
+            FocusAlarmScheduler.ACTION_FIRE,
+            Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED,
+            -> restoreState(context)
         }
     }
 
@@ -28,31 +29,7 @@ class FocusAlarmReceiver : BroadcastReceiver() {
         Context.MODE_PRIVATE,
     )
 
-    private fun fireAlarm(context: Context) {
-        val p = prefs(context)
-        val mode = p.getString("flutter.focus_alarm_mode", "sound") ?: "sound"
-        var finishedFocus = true
-        try {
-            val raw = p.getString("flutter.focus_timer_state", null)
-            if (raw != null) {
-                val phase = JSONObject(raw).optInt("phase", 1)
-                finishedFocus = phase != 3 && phase != 4
-            }
-        } catch (_: Exception) {
-        }
-        FocusAlarmService.alarm(
-            context,
-            mode,
-            if (finishedFocus) "⏰ 45 分钟专注时间到" else "🔔 5 分钟休息结束",
-            if (finishedFocus) {
-                "请放下手头工作，点击关闭闹铃并休息 5 分钟"
-            } else {
-                "休息结束，点击关闭闹铃并开始下一轮 45 分钟专注"
-            },
-        )
-    }
-
-    private fun restoreAfterBoot(context: Context) {
+    private fun restoreState(context: Context) {
         try {
             val p = prefs(context)
             val raw = p.getString("flutter.focus_timer_state", null) ?: return
@@ -62,49 +39,46 @@ class FocusAlarmReceiver : BroadcastReceiver() {
             val mode = p.getString("flutter.focus_alarm_mode", "sound") ?: "sound"
             val rounds = data.optInt("completedRounds", 0) + 1
             val isFocus = phase == 1 || phase == 2
+            val now = System.currentTimeMillis()
 
-            when {
-                // 关机前正在闹铃：开机立即补响
-                phase == 2 || phase == 4 -> FocusAlarmService.alarm(
+            if (phase == 2 || phase == 4) {
+                val alarmAt = parseIsoLocalMillis(data.optString("alarmAt", "")) ?: return
+                // 与原生服务 10 分钟自动停铃保持一致，防止下次开 App 或系统广播重放。
+                if (now >= alarmAt + 10 * 60 * 1000L) return
+                startAlarm(context, mode, isFocus)
+                return
+            }
+
+            if (phase != 1 && phase != 3) return
+            if (isPaused) {
+                FocusAlarmService.pause(
                     context,
-                    mode,
-                    if (isFocus) "⏰ 45 分钟专注时间到" else "🔔 5 分钟休息结束",
-                    if (isFocus) {
-                        "请放下手头工作，点击关闭闹铃并休息 5 分钟"
-                    } else {
-                        "休息结束，点击关闭闹铃并开始下一轮 45 分钟专注"
-                    },
+                    data.optInt("pausedRemaining", 0),
+                    isFocus,
                 )
-                phase == 1 || phase == 3 -> {
-                    if (isPaused) {
-                        FocusAlarmService.pause(
-                            context,
-                            data.optInt("pausedRemaining", 0),
-                            isFocus,
-                        )
-                        return
-                    }
-                    val endIso = data.optString("phaseEndTime", "")
-                    if (endIso.isEmpty()) return
-                    val endMillis = parseIsoLocalMillis(endIso) ?: return
-                    if (endMillis <= System.currentTimeMillis()) {
-                        FocusAlarmService.alarm(
-                            context,
-                            mode,
-                            if (isFocus) "⏰ 45 分钟专注时间到" else "🔔 5 分钟休息结束",
-                            if (isFocus) {
-                                "请放下手头工作，点击关闭闹铃并休息 5 分钟"
-                            } else {
-                                "休息结束，点击关闭闹铃并开始下一轮 45 分钟专注"
-                            },
-                        )
-                    } else {
-                        FocusAlarmService.countdown(context, endMillis, isFocus, rounds)
-                    }
-                }
+                return
+            }
+            val endMillis = parseIsoLocalMillis(data.optString("phaseEndTime", "")) ?: return
+            if (endMillis <= now) {
+                startAlarm(context, mode, isFocus)
+            } else {
+                FocusAlarmService.countdown(context, endMillis, isFocus, rounds)
             }
         } catch (_: Exception) {
         }
+    }
+
+    private fun startAlarm(context: Context, mode: String, isFocus: Boolean) {
+        FocusAlarmService.alarm(
+            context,
+            mode,
+            if (isFocus) "⏰ 45 分钟专注时间到" else "🔔 5 分钟休息结束",
+            if (isFocus) {
+                "请放下手头工作，点击关闭闹铃并休息 5 分钟"
+            } else {
+                "休息结束，点击关闭闹铃并开始下一轮 45 分钟专注"
+            },
+        )
     }
 
     private fun parseIsoLocalMillis(iso: String): Long? {

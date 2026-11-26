@@ -298,7 +298,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         return DateFormat('yyyy年MM月dd日').format(_selectedDate);
       case 1: // 周
         final weekStart = startOfWeek(_selectedDate);
-        final weekEnd = weekStart.add(const Duration(days: 6));
+        final weekEnd = DateTime(
+          weekStart.year,
+          weekStart.month,
+          weekStart.day + 6,
+        );
         if (_isCurrentPeriod()) return '本周';
         return '${DateFormat('MM/dd').format(weekStart)} - ${DateFormat('MM/dd').format(weekEnd)}';
       case 2: // 月
@@ -313,10 +317,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     setState(() {
       switch (_selectedPeriod) {
         case 0: // 日
-          _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+          _selectedDate = DateTime(
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day - 1,
+          );
           break;
         case 1: // 周
-          _selectedDate = _selectedDate.subtract(const Duration(days: 7));
+          _selectedDate = DateTime(
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day - 7,
+          );
           break;
         case 2: // 月
           _selectedDate = DateTime(
@@ -334,10 +346,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     setState(() {
       switch (_selectedPeriod) {
         case 0: // 日
-          _selectedDate = _selectedDate.add(const Duration(days: 1));
+          _selectedDate = DateTime(
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day + 1,
+          );
           break;
         case 1: // 周
-          _selectedDate = _selectedDate.add(const Duration(days: 7));
+          _selectedDate = DateTime(
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day + 7,
+          );
           break;
         case 2: // 月
           _selectedDate = DateTime(
@@ -357,18 +377,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(DateTime.now().year + 10, 12, 31),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: context.colors.primary,
-              onPrimary: context.colors.textOnPrimary,
-              surface: context.colors.surface,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() {
@@ -478,7 +486,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     // 找到最大值用于计算颜色深度
     int maxDuration = 1;
     for (int i = 0; i < days; i++) {
-      final date = startDate.add(Duration(days: i));
+      final date = DateTime(startDate.year, startDate.month, startDate.day + i);
       final key = DateFormat('yyyy-MM-dd').format(date);
       final duration = dailyMap[key] ?? 0;
       if (duration > maxDuration) maxDuration = duration;
@@ -490,7 +498,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: List.generate(7, (i) {
-          final date = startDate.add(Duration(days: i));
+          final date = DateTime(
+            startDate.year,
+            startDate.month,
+            startDate.day + i,
+          );
           final key = DateFormat('yyyy-MM-dd').format(date);
           final duration = dailyMap[key] ?? 0;
           final level = _heatLevel(duration, maxDuration);
@@ -544,7 +556,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       spacing: 4,
       runSpacing: 4,
       children: List.generate(days, (i) {
-        final date = startDate.add(Duration(days: i));
+        final date = DateTime(
+          startDate.year,
+          startDate.month,
+          startDate.day + i,
+        );
         final key = DateFormat('yyyy-MM-dd').format(date);
         final duration = dailyMap[key] ?? 0;
         final level = _heatLevel(duration, maxDuration);
@@ -846,9 +862,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       case 1: // 周
         return DateTimeRange(
           start: startOfWeek(_selectedDate),
-          end: nextDayStart(
-            startOfWeek(_selectedDate).add(const Duration(days: 6)),
-          ),
+          end: nextDayStart(endOfWeek(_selectedDate)),
         );
       case 2: // 月
         return DateTimeRange(

@@ -68,7 +68,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             icon: Icons.delete_outline,
             color: context.colors.error,
             size: PaperIconButton.sizeChrome,
-            onTap: _deleteTask,
+            onTap: _saving ? null : _deleteTask,
             tooltip: '删除任务',
           ),
       ],
@@ -384,19 +384,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           : today,
       firstDate: today,
       lastDate: DateTime(now.year + 10, 12, 31),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: context.colors.primary,
-              onPrimary: context.colors.textOnPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => _dueDate = picked);
     }
   }
@@ -453,6 +442,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Future<void> _deleteTask() async {
+    if (_saving) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(

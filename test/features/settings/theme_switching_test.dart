@@ -154,6 +154,32 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('科技深色主题的日期选择器保持深色表面', (WidgetTester tester) async {
+    await pumpSeededApp(tester);
+    final BuildContext navContext = tester.element(find.byType(PaperNavBar));
+    final ThemeProvider provider = navContext.read<ThemeProvider>();
+    await provider.selectTheme('tech_deepspace');
+    await tester.pumpAndSettle();
+
+    await revealNavItem(tester, '任务');
+    await tester.tap(
+      find.descendant(of: find.byType(PaperNavBar), matching: find.text('任务')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('今天'));
+    await tester.pumpAndSettle();
+
+    final ColorScheme scheme = Theme.of(
+      tester.element(find.byType(DatePickerDialog)),
+    ).colorScheme;
+    final AppPalette palette = provider.option.design.palette;
+    expect(scheme.brightness, Brightness.dark);
+    expect(scheme.primary, palette.primary);
+    expect(scheme.onPrimary, palette.textOnPrimary);
+    expect(scheme.surface, palette.surface);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('完整应用内切换不重置当前 Tab', (WidgetTester tester) async {
     await pumpSeededApp(tester);
     await revealNavItem(tester, '设置');

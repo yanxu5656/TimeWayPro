@@ -86,7 +86,7 @@ class SyncRepository {
     await _saveLastSyncTime(config);
   }
 
-  Future<void> restore({Future<void> Function()? beforeImport}) async {
+  Future<void> restore({Future<Object?> Function()? beforeImport}) async {
     final config = await getSyncConfig();
     if (config == null) throw Exception('未配置同步信息');
 

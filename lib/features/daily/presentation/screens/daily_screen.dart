@@ -477,18 +477,6 @@ class _DailyScreenState extends State<DailyScreen> {
       initialDate: provider.selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(DateTime.now().year + 10, 12, 31),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: context.colors.primary,
-              onPrimary: context.colors.textOnPrimary,
-              surface: context.colors.surface,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       provider.setDate(picked);

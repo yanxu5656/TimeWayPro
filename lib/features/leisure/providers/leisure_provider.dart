@@ -5,7 +5,12 @@ import '../data/repositories/leisure_repository.dart';
 enum LeisureFilter { all, pending, done }
 
 class LeisureProvider extends ChangeNotifier {
-  final LeisureRepository _repository = LeisureRepository();
+  LeisureProvider({LeisureRepository? repository})
+    : _repository = repository ?? LeisureRepository();
+
+  final LeisureRepository _repository;
+  int _loadGeneration = 0;
+  bool _disposed = false;
 
   List<LeisureItem> _items = [];
   bool _isLoading = false;
@@ -31,15 +36,22 @@ class LeisureProvider extends ChangeNotifier {
   }
 
   Future<void> loadItems() async {
+    final int generation = ++_loadGeneration;
     _isLoading = true;
     notifyListeners();
     try {
-      _items = await _repository.getAll();
+      final List<LeisureItem> items = await _repository.getAll();
+      if (_disposed || generation != _loadGeneration) return;
+      _items = items;
     } catch (e) {
-      debugPrint('Error loading leisure items: $e');
+      if (!_disposed && generation == _loadGeneration) {
+        debugPrint('Error loading leisure items: $e');
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (!_disposed && generation == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -85,5 +97,12 @@ class LeisureProvider extends ChangeNotifier {
   Future<void> toggleDone(String id) async {
     await _repository.toggleDone(id);
     await loadItems();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _loadGeneration++;
+    super.dispose();
   }
 }

@@ -52,14 +52,15 @@ class _TaskScreenState extends State<TaskScreen> {
       return;
     }
     _isLoadingDurations = true;
+    final DateTime requestedDate = _selectedDate;
 
     try {
       final provider = context.read<TaskProvider>();
       // 传入选中的日期——「今天」不再写死在 provider 里
       final durations = await provider.getAllTaskDailyDurations(
-        day: _selectedDate,
+        day: requestedDate,
       );
-      if (mounted) {
+      if (mounted && requestedDate == _selectedDate) {
         setState(() {
           _dailyDurations = durations;
         });
@@ -181,7 +182,11 @@ class _TaskScreenState extends State<TaskScreen> {
               _buildDateButton(
                 icon: Icons.chevron_left_rounded,
                 onTap: () => _changeDate(
-                  _selectedDate.subtract(const Duration(days: 1)),
+                  DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day - 1,
+                  ),
                 ),
               ),
               Expanded(
@@ -217,8 +222,13 @@ class _TaskScreenState extends State<TaskScreen> {
               ),
               _buildDateButton(
                 icon: Icons.chevron_right_rounded,
-                onTap: () =>
-                    _changeDate(_selectedDate.add(const Duration(days: 1))),
+                onTap: () => _changeDate(
+                  DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day + 1,
+                  ),
+                ),
               ),
             ],
           ),
@@ -466,18 +476,6 @@ class _TaskScreenState extends State<TaskScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(DateTime.now().year + 10, 12, 31),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: context.colors.primary,
-              onPrimary: context.colors.textOnPrimary,
-              surface: context.colors.surface,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       _changeDate(picked);
@@ -498,12 +496,27 @@ class _TaskScreenState extends State<TaskScreen> {
     ).then((_) => _loadDailyDurations());
   }
 
+  void _showTaskError(String action, Object error) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('$action失败：$error'),
+          backgroundColor: context.colors.error,
+        ),
+      );
+  }
+
   Future<void> _completeTask(Task task) async {
     final provider = context.read<TaskProvider>();
-    await provider.completeTask(task.id);
-
-    // 重新加载每日时长
-    await _loadDailyDurations();
+    try {
+      await provider.completeTask(task.id);
+      await _loadDailyDurations();
+    } catch (e) {
+      _showTaskError('完成任务', e);
+      return;
+    }
 
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -526,19 +539,21 @@ class _TaskScreenState extends State<TaskScreen> {
       );
   }
 
-  void _deleteTask(Task task) {
-    showDialog(
+  Future<void> _deleteTask(Task task) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除任务'),
         content: Text('确定要删除「${task.title}」吗？此操作不可撤销。'),
         actions: [
-          PaperTextButton(onPressed: () => Navigator.pop(context), label: '取消'),
+          PaperTextButton(
+            onPressed: () => Navigator.pop(context, false),
+            label: '取消',
+          ),
           PaperTextButton(
             onPressed: () {
               AppHaptics.confirm();
-              Navigator.pop(context);
-              context.read<TaskProvider>().deleteTask(task.id);
+              Navigator.pop(context, true);
             },
             color: context.colors.error,
             label: '删除',
@@ -546,11 +561,23 @@ class _TaskScreenState extends State<TaskScreen> {
         ],
       ),
     );
+    if (confirmed != true || !mounted) return;
+    try {
+      await context.read<TaskProvider>().deleteTask(task.id);
+    } catch (e) {
+      _showTaskError('删除任务', e);
+    }
   }
 
-  void _startTask(Task task) {
+  Future<void> _startTask(Task task) async {
     final provider = context.read<TaskProvider>();
-    provider.startTimer(task.id);
+    try {
+      await provider.startTimer(task.id);
+    } catch (e) {
+      _showTaskError('开始计时', e);
+      return;
+    }
+    if (!mounted || !provider.isTaskRunning(task.id)) return;
 
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
@@ -582,9 +609,13 @@ class _TaskScreenState extends State<TaskScreen> {
   /// 原先 stopTimer 未 await 就 _loadDailyDurations：记录更新还挂在
   /// 微任务链上，时长查询先读了旧数据，本次会话不进「今日 X分钟」。
   Future<void> _stopTaskAndRefresh(Task task, bool isCountUp) async {
-    await context.read<TaskProvider>().stopTimer(task.id);
-
-    await _loadDailyDurations();
+    try {
+      await context.read<TaskProvider>().stopTimer(task.id);
+      await _loadDailyDurations();
+    } catch (e) {
+      _showTaskError('结束计时', e);
+      return;
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context)

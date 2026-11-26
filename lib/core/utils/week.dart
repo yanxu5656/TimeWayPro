@@ -11,7 +11,11 @@ library;
 
 /// 本周周一 00:00
 DateTime startOfWeek(DateTime date) {
-  final DateTime monday = date.subtract(Duration(days: date.weekday - 1));
+  final DateTime monday = DateTime(
+    date.year,
+    date.month,
+    date.day - date.weekday + 1,
+  );
   return DateTime(monday.year, monday.month, monday.day);
 }
 
@@ -56,8 +60,13 @@ String weekRangeLabel(DateTime date) {
 int isoWeekNumber(DateTime date) {
   final DateTime monday = startOfWeek(date);
   final DateTime thursday = DateTime(monday.year, monday.month, monday.day + 3);
-  final DateTime jan1 = DateTime(thursday.year, 1, 1);
-  final int dayOfYear = thursday.difference(jan1).inDays + 1;
+  final int dayOfYear =
+      DateTime.utc(
+        thursday.year,
+        thursday.month,
+        thursday.day,
+      ).difference(DateTime.utc(thursday.year, 1, 1)).inDays +
+      1;
   return (dayOfYear - 1) ~/ 7 + 1;
 }
 

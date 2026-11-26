@@ -213,16 +213,11 @@ class NotificationService {
 
       final details = NotificationDetails(android: androidDetails);
 
-      try {
-        await _plugin.show(
-          _timerNotificationId,
-          '⏱️ $taskTitle',
-          body,
-          details,
-        );
-      } on MissingPluginException catch (e) {
-        debugPrint('NotificationService show skipped: $e');
-      }
+      await _safePluginCall(
+        'show',
+        () =>
+            _plugin.show(_timerNotificationId, '⏱️ $taskTitle', body, details),
+      );
     });
   }
 
@@ -248,13 +243,10 @@ class NotificationService {
     // 必须先同步停掉周期更新并递增代次，再排队取消通知，
     // 防止在途的定时刷新在 cancel 之后把通知重新贴回来。
     stopPeriodicUpdate();
-    return _enqueueOp(() async {
-      try {
-        await _plugin.cancel(_timerNotificationId);
-      } on MissingPluginException catch (e) {
-        debugPrint('NotificationService cancel skipped: $e');
-      }
-    });
+    return _enqueueOp(
+      () =>
+          _safePluginCall('cancel', () => _plugin.cancel(_timerNotificationId)),
+    );
   }
 
   // 启动定时更新通知
@@ -263,6 +255,8 @@ class NotificationService {
     required int Function() getElapsedSeconds,
     required bool isCountDown,
     int? Function()? getTotalDuration,
+    String Function()? getTaskTitle,
+    bool Function()? getIsCountDown,
   }) {
     _updateTimer?.cancel();
     final int epoch = ++_notificationEpoch;
@@ -274,9 +268,9 @@ class NotificationService {
       final elapsed = getElapsedSeconds();
       final total = getTotalDuration?.call();
       updateTimerNotification(
-        taskTitle: taskTitle,
+        taskTitle: getTaskTitle?.call() ?? taskTitle,
         elapsedSeconds: elapsed,
-        isCountDown: isCountDown,
+        isCountDown: getIsCountDown?.call() ?? isCountDown,
         totalDuration: total,
         expectedEpoch: epoch,
       );

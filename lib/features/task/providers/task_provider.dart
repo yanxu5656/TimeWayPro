@@ -28,7 +28,8 @@ class TimerState {
   // 根据实际时间计算已过秒数
   int get currentElapsedSeconds {
     if (isPaused) return elapsedSeconds;
-    return DateTime.now().difference(startTime).inSeconds;
+    final int elapsed = DateTime.now().difference(startTime).inSeconds;
+    return elapsed < 0 ? 0 : elapsed;
   }
 
   // 转换为Map用于持久化
@@ -55,12 +56,22 @@ class TimerState {
 }
 
 class TaskProvider extends ChangeNotifier {
-  final TaskRepository _repository = TaskRepository();
-  final NotificationService _notificationService = NotificationService();
+  TaskProvider({
+    TaskRepository? repository,
+    NotificationService? notificationService,
+  }) : _repository = repository ?? TaskRepository(),
+       _notificationService = notificationService ?? NotificationService();
+
+  final TaskRepository _repository;
+  final NotificationService _notificationService;
 
   List<Task> _tasks = [];
   List<TaskRecord> _records = [];
   bool _isLoading = false;
+  int _loadGeneration = 0;
+  int _recordsGeneration = 0;
+  int _timerResetGeneration = 0;
+  bool _disposed = false;
 
   // 计时状态管理
   final Map<String, TimerState> _activeTimers = {};
@@ -100,29 +111,38 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> loadTasks() async {
+    if (_disposed) return;
+    final int generation = ++_loadGeneration;
     _isLoading = true;
     notifyListeners();
 
     try {
-      _tasks = await _repository.getAllTasks();
-      // 检查并重置每日完成次数
+      final List<Task> tasks = await _repository.getAllTasks();
+      if (_disposed || generation != _loadGeneration) return;
+      _tasks = tasks;
       await _checkAndResetDailyCounts();
-      // 恢复活跃的计时器
-      await _restoreActiveTimers();
+      if (_disposed || generation != _loadGeneration) return;
+      await _restoreActiveTimers(generation);
+      if (_disposed || generation != _loadGeneration) return;
       await _notificationService.syncTaskReminders(_tasks);
     } catch (e) {
-      debugPrint('Error loading tasks: $e');
+      if (!_disposed && generation == _loadGeneration) {
+        debugPrint('Error loading tasks: $e');
+      }
     } finally {
-      _isLoading = false;
-      _dataVersion++;
-      notifyListeners();
+      if (!_disposed && generation == _loadGeneration) {
+        _isLoading = false;
+        _dataVersion++;
+        notifyListeners();
+      }
     }
   }
 
   // 恢复活跃的计时器
-  Future<void> _restoreActiveTimers() async {
+  Future<void> _restoreActiveTimers(int generation) async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (_disposed || generation != _loadGeneration) return;
       final activeTimersJson = prefs.getString('active_timers');
 
       if (activeTimersJson != null) {
@@ -138,6 +158,7 @@ class TaskProvider extends ChangeNotifier {
 
           // 检查任务是否还存在
           final task = await _repository.getTaskById(taskId);
+          if (_disposed || generation != _loadGeneration) return;
           if (task == null) continue;
 
           // 恢复计时状态
@@ -147,6 +168,7 @@ class TaskProvider extends ChangeNotifier {
           if (timerState.currentElapsedSeconds > 86400) {
             // 自动停止并保存记录
             await _autoStopTimer(taskId, timerState);
+            if (_disposed || generation != _loadGeneration) return;
             continue;
           }
 
@@ -160,6 +182,7 @@ class TaskProvider extends ChangeNotifier {
         }
 
         // 清除已恢复的状态（已暂停的保留）
+        if (_disposed || generation != _loadGeneration) return;
         if (_activeTimers.isEmpty) {
           await _clearSavedTimers();
           await _notificationService.removeTimerNotification();
@@ -169,6 +192,7 @@ class TaskProvider extends ChangeNotifier {
           // 恢复通知
           final firstEntry = _activeTimers.entries.first;
           final task = await _repository.getTaskById(firstEntry.key);
+          if (_disposed || generation != _loadGeneration) return;
           if (task != null) {
             await _notificationService.showTimerNotification(
               taskTitle: task.title,
@@ -183,14 +207,20 @@ class TaskProvider extends ChangeNotifier {
               getElapsedSeconds: () => firstEntry.value.currentElapsedSeconds,
               isCountDown: task.timerType == TimerType.countDown,
               getTotalDuration: () => _taskById(firstEntry.key)?.duration,
+              getTaskTitle: () =>
+                  _taskById(firstEntry.key)?.title ?? task.title,
+              getIsCountDown: () =>
+                  _taskById(firstEntry.key)?.timerType == TimerType.countDown,
             );
           }
         }
 
-        notifyListeners();
+        if (!_disposed && generation == _loadGeneration) notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error restoring timers: $e');
+      if (!_disposed && generation == _loadGeneration) {
+        debugPrint('Error restoring timers: $e');
+      }
     }
   }
 
@@ -221,7 +251,13 @@ class TaskProvider extends ChangeNotifier {
   // tick 里按 taskId 现查任务而不是捕获启动时的快照：
   // 计时中把倒计时时长从 25 分钟改成 50 分钟，到点判定要跟着新值走。
   void _startTimerForState(String taskId, TimerState timerState) {
+    if (_disposed) return;
+    timerState.timer?.cancel();
     timerState.timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_disposed) {
+        timer.cancel();
+        return;
+      }
       notifyListeners();
 
       // 倒计时模式检查（任务被删则跳过，deleteTask 会先停表）
@@ -230,7 +266,9 @@ class TaskProvider extends ChangeNotifier {
           task.timerType == TimerType.countDown &&
           task.duration != null &&
           timerState.currentElapsedSeconds >= task.duration!) {
-        stopTimer(taskId);
+        stopTimer(taskId).catchError((Object e) {
+          debugPrint('Error auto-completing timer: $e');
+        });
       }
     });
   }
@@ -268,9 +306,10 @@ class TaskProvider extends ChangeNotifier {
   Future<void> _checkAndResetDailyCounts() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-
+    final List<Task> currentTasks = _tasks;
     bool needsUpdate = false;
-    for (var task in _tasks) {
+
+    for (var task in currentTasks) {
       if (task.isRepeatable && task.lastCompletedDate != null) {
         final lastDate = task.lastCompletedDate!;
         final lastDay = DateTime(lastDate.year, lastDate.month, lastDate.day);
@@ -287,8 +326,9 @@ class TaskProvider extends ChangeNotifier {
       }
     }
 
-    if (needsUpdate) {
-      _tasks = await _repository.getAllTasks();
+    if (needsUpdate && identical(_tasks, currentTasks)) {
+      final List<Task> refreshed = await _repository.getAllTasks();
+      if (identical(_tasks, currentTasks)) _tasks = refreshed;
     }
   }
 
@@ -303,6 +343,7 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> deleteTask(String id) async {
+    _timerResetGeneration++;
     // 如果正在计时，先停止
     if (_activeTimers.containsKey(id)) {
       await stopTimer(id);
@@ -312,6 +353,7 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> completeTask(String taskId) async {
+    _timerResetGeneration++;
     final task = _taskById(taskId) ?? await _repository.getTaskById(taskId);
     // 一次性任务完成时会移出活跃列表并隐藏停止按钮，若仍在计时必须先结束计时并清理通知。
     if (task != null &&
@@ -333,8 +375,10 @@ class TaskProvider extends ChangeNotifier {
       return;
     }
     _startingTimers.add(taskId);
+    final int resetGeneration = _timerResetGeneration;
     try {
       final task = await _repository.getTaskById(taskId);
+      if (_disposed || resetGeneration != _timerResetGeneration) return;
       if (task == null) return;
 
       final now = DateTime.now();
@@ -342,6 +386,10 @@ class TaskProvider extends ChangeNotifier {
       // 创建记录
       final record = TaskRecord(id: '', taskId: taskId, startTime: now);
       final recordId = await _repository.insertRecord(record);
+      if (_disposed || resetGeneration != _timerResetGeneration) {
+        await _repository.deleteRecord(recordId);
+        return;
+      }
 
       // 创建计时状态
       final timerState = TimerState(
@@ -363,6 +411,10 @@ class TaskProvider extends ChangeNotifier {
         totalDuration: task.duration,
       );
 
+      if (_disposed || resetGeneration != _timerResetGeneration) {
+        await _repository.deleteRecord(recordId);
+        return;
+      }
       if (!_activeTimers.containsKey(taskId) ||
           _stoppingTimers.contains(taskId)) {
         return;
@@ -375,12 +427,15 @@ class TaskProvider extends ChangeNotifier {
         getElapsedSeconds: () => timerState.currentElapsedSeconds,
         isCountDown: task.timerType == TimerType.countDown,
         getTotalDuration: () => _taskById(taskId)?.duration,
+        getTaskTitle: () => _taskById(taskId)?.title ?? task.title,
+        getIsCountDown: () =>
+            _taskById(taskId)?.timerType == TimerType.countDown,
       );
 
       // 保存计时器状态
       await _saveActiveTimers();
 
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     } finally {
       _startingTimers.remove(taskId);
     }
@@ -455,14 +510,24 @@ class TaskProvider extends ChangeNotifier {
             getElapsedSeconds: () => nextEntry.value.currentElapsedSeconds,
             isCountDown: nextTask.timerType == TimerType.countDown,
             getTotalDuration: () => _taskById(nextEntry.key)?.duration,
+            getTaskTitle: () =>
+                _taskById(nextEntry.key)?.title ?? nextTask.title,
+            getIsCountDown: () =>
+                _taskById(nextEntry.key)?.timerType == TimerType.countDown,
           );
         }
       }
 
       _dataVersion++;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
 
       await loadTasks();
+    } catch (e) {
+      if (_activeTimers[taskId] == timerState) {
+        timerState.timer?.cancel();
+        if (!timerState.isPaused) _startTimerForState(taskId, timerState);
+      }
+      rethrow;
     } finally {
       _stoppingTimers.remove(taskId);
     }
@@ -473,8 +538,11 @@ class TaskProvider extends ChangeNotifier {
   /// 活跃数据即将被整体替换：在途会话的记录随旧数据一起消失，
   /// 所以不做记录回写、不自动完成任务，只负责把表和通知清干净。
   /// 不先停表的话，恢复后 recordId 都指向新数据集里不存在的记录。
-  Future<void> stopAllTimersForDataReset() async {
-    for (final timerState in _activeTimers.values) {
+  Future<List<TimerState>> stopAllTimersForDataReset() async {
+    final List<TimerState> suspended = _activeTimers.values.toList();
+    _loadGeneration++;
+    _timerResetGeneration++;
+    for (final timerState in suspended) {
       timerState.timer?.cancel();
     }
     _activeTimers.clear();
@@ -482,7 +550,47 @@ class TaskProvider extends ChangeNotifier {
     await _notificationService.removeTimerNotification();
     await _notificationService.syncTaskReminders(const <Task>[]);
     _notificationService.stopPeriodicUpdate();
-    notifyListeners();
+    if (!_disposed) notifyListeners();
+    return suspended;
+  }
+
+  Future<void> restoreTimersAfterFailedDataReset(
+    List<TimerState> suspended,
+  ) async {
+    if (_disposed || suspended.isEmpty) return;
+    _loadGeneration++;
+    for (final TimerState timerState in suspended) {
+      if (_activeTimers.containsKey(timerState.taskId)) continue;
+      if (await _repository.getTaskById(timerState.taskId) == null) continue;
+      if (!timerState.isPaused) {
+        _startTimerForState(timerState.taskId, timerState);
+      }
+      _activeTimers[timerState.taskId] = timerState;
+    }
+    await _saveActiveTimers();
+    final MapEntry<String, TimerState>? first =
+        _activeTimers.entries.firstOrNull;
+    final Task? task = first == null
+        ? null
+        : await _repository.getTaskById(first.key);
+    if (task != null && first != null) {
+      await _notificationService.showTimerNotification(
+        taskTitle: task.title,
+        elapsedSeconds: first.value.currentElapsedSeconds,
+        isCountDown: task.timerType == TimerType.countDown,
+        totalDuration: task.duration,
+      );
+      _notificationService.startPeriodicUpdate(
+        taskTitle: task.title,
+        getElapsedSeconds: () => first.value.currentElapsedSeconds,
+        isCountDown: task.timerType == TimerType.countDown,
+        getTotalDuration: () => _taskById(first.key)?.duration,
+        getTaskTitle: () => _taskById(first.key)?.title ?? task.title,
+        getIsCountDown: () =>
+            _taskById(first.key)?.timerType == TimerType.countDown,
+      );
+    }
+    if (!_disposed) notifyListeners();
   }
 
   Future<void> pauseTimer(String taskId) async {
@@ -494,13 +602,14 @@ class TaskProvider extends ChangeNotifier {
     timerState.timer = null;
 
     // 记录当前已过秒数
-    timerState.elapsedSeconds = timerState.currentElapsedSeconds;
+    final int elapsed = timerState.currentElapsedSeconds;
+    timerState.elapsedSeconds = elapsed < 0 ? 0 : elapsed;
     timerState.isPaused = true;
 
     // 保存状态
     await _saveActiveTimers();
 
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   Future<void> resumeTimer(String taskId) async {
@@ -512,8 +621,14 @@ class TaskProvider extends ChangeNotifier {
       return;
     }
     _startingTimers.add(taskId);
+    final int resetGeneration = _timerResetGeneration;
     try {
       final task = await _repository.getTaskById(taskId);
+      if (_disposed ||
+          resetGeneration != _timerResetGeneration ||
+          _stoppingTimers.contains(taskId)) {
+        return;
+      }
       if (task == null) return;
 
       // 创建新的 TimerState，重新设置开始时间
@@ -557,9 +672,12 @@ class TaskProvider extends ChangeNotifier {
         },
         isCountDown: task.timerType == TimerType.countDown,
         getTotalDuration: () => _taskById(taskId)?.duration,
+        getTaskTitle: () => _taskById(taskId)?.title ?? task.title,
+        getIsCountDown: () =>
+            _taskById(taskId)?.timerType == TimerType.countDown,
       );
 
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     } finally {
       _startingTimers.remove(taskId);
     }
@@ -567,8 +685,19 @@ class TaskProvider extends ChangeNotifier {
 
   // 任务记录相关
   Future<void> loadRecords(String taskId) async {
-    _records = await _repository.getRecordsByTaskId(taskId);
-    notifyListeners();
+    final int generation = ++_recordsGeneration;
+    try {
+      final List<TaskRecord> records = await _repository.getRecordsByTaskId(
+        taskId,
+      );
+      if (_disposed || generation != _recordsGeneration) return;
+      _records = records;
+      notifyListeners();
+    } catch (e) {
+      if (!_disposed && generation == _recordsGeneration) {
+        debugPrint('Error loading records: $e');
+      }
+    }
   }
 
   Future<List<TaskRecord>> getRecordsByDateRange(
@@ -642,6 +771,10 @@ class TaskProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _loadGeneration++;
+    _recordsGeneration++;
+    _timerResetGeneration++;
     // 取消所有定时器
     for (var timerState in _activeTimers.values) {
       timerState.timer?.cancel();

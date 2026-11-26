@@ -3,7 +3,12 @@ import '../data/models/plan.dart';
 import '../data/repositories/plan_repository.dart';
 
 class PlanProvider extends ChangeNotifier {
-  final PlanRepository _repository = PlanRepository();
+  PlanProvider({PlanRepository? repository})
+    : _repository = repository ?? PlanRepository();
+
+  final PlanRepository _repository;
+  int _loadGeneration = 0;
+  bool _disposed = false;
 
   List<Plan> _allPlans = [];
   bool _isLoading = false;
@@ -18,16 +23,23 @@ class PlanProvider extends ChangeNotifier {
       _allPlans.where((p) => p.parentId == parentId).toList();
 
   Future<void> loadPlans() async {
+    final int generation = ++_loadGeneration;
     _isLoading = true;
     notifyListeners();
 
     try {
-      _allPlans = await _repository.getAllPlans();
+      final List<Plan> plans = await _repository.getAllPlans();
+      if (_disposed || generation != _loadGeneration) return;
+      _allPlans = plans;
     } catch (e) {
-      debugPrint('Error loading plans: $e');
+      if (!_disposed && generation == _loadGeneration) {
+        debugPrint('Error loading plans: $e');
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (!_disposed && generation == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -49,5 +61,12 @@ class PlanProvider extends ChangeNotifier {
   Future<void> updateProgress(String id, double progress) async {
     await _repository.updateProgress(id, progress);
     await loadPlans();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _loadGeneration++;
+    super.dispose();
   }
 }

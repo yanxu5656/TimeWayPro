@@ -184,18 +184,6 @@ class _MoveGoalSheet extends StatelessWidget {
       initialDate: DateTime.parse(goal.weekKey),
       firstDate: DateTime(2020, 1, 6), // 期号锚点周一，往前的周没有 VOL 号
       lastDate: DateTime(DateTime.now().year + 10, 12, 31),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: context.colors.primary,
-              onPrimary: context.colors.textOnPrimary,
-              surface: context.colors.surface,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked == null) return;
     final String key = weekKeyOf(picked);

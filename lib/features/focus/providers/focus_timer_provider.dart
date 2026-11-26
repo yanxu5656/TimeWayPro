@@ -9,13 +9,7 @@ import '../../../shared/services/notification_service.dart';
 import '../services/focus_alarm_service.dart';
 
 /// 专注 45 分钟 / 休息 5 分钟循环计时阶段。
-enum FocusPhase {
-  idle,
-  focusing,
-  focusAlarm,
-  breaking,
-  breakAlarm,
-}
+enum FocusPhase { idle, focusing, focusAlarm, breaking, breakAlarm }
 
 /// 悬浮球全局 45/5 专注计时控制器。
 ///
@@ -28,6 +22,8 @@ class FocusTimerProvider extends ChangeNotifier {
     int breakDurationSeconds = defaultBreakSeconds,
     FocusAlarmService? alarmService,
     NotificationService? notificationService,
+    Future<SharedPreferences> Function()? preferences,
+    DateTime Function()? clock,
   }) : _focusDurationSeconds = focusDurationSeconds > 0
            ? focusDurationSeconds
            : defaultFocusSeconds,
@@ -35,7 +31,9 @@ class FocusTimerProvider extends ChangeNotifier {
            ? breakDurationSeconds
            : defaultBreakSeconds,
        _alarmService = alarmService ?? FocusAlarmService(),
-       _notificationService = notificationService ?? NotificationService();
+       _notificationService = notificationService ?? NotificationService(),
+       _preferences = preferences ?? SharedPreferences.getInstance,
+       _clock = clock ?? DateTime.now;
 
   static const int defaultFocusSeconds = 45 * 60;
   static const int defaultBreakSeconds = 5 * 60;
@@ -45,6 +43,11 @@ class FocusTimerProvider extends ChangeNotifier {
 
   final FocusAlarmService _alarmService;
   final NotificationService _notificationService;
+  final Future<SharedPreferences> Function() _preferences;
+  final DateTime Function() _clock;
+  int _stateGeneration = 0;
+  bool _disposed = false;
+  DateTime? _alarmAt;
 
   int _focusDurationSeconds;
   int _breakDurationSeconds;
@@ -93,7 +96,7 @@ class FocusTimerProvider extends ChangeNotifier {
         }
         final DateTime? end = _phaseEndTime;
         if (end == null) return 0;
-        final int diffMs = end.difference(DateTime.now()).inMilliseconds;
+        final int diffMs = end.difference(_clock()).inMilliseconds;
         if (diffMs <= 0) return 0;
         return (diffMs / 1000).ceil().clamp(0, totalPhaseSeconds);
     }
@@ -116,10 +119,7 @@ class FocusTimerProvider extends ChangeNotifier {
   }
 
   @visibleForTesting
-  void configureDurationsForTesting({
-    int? focusSeconds,
-    int? breakSeconds,
-  }) {
+  void configureDurationsForTesting({int? focusSeconds, int? breakSeconds}) {
     if (focusSeconds != null) _focusDurationSeconds = focusSeconds;
     if (breakSeconds != null) _breakDurationSeconds = breakSeconds;
     notifyListeners();
@@ -129,9 +129,9 @@ class FocusTimerProvider extends ChangeNotifier {
   Future<void> setAlarmMode(FocusAlarmMode mode) async {
     if (_alarmMode == mode) return;
     _alarmMode = mode;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final SharedPreferences prefs = await _preferences();
       await prefs.setString(_modePrefsKey, mode.prefValue);
     } catch (e) {
       debugPrint('FocusTimerProvider setAlarmMode persist error: $e');
@@ -151,7 +151,7 @@ class FocusTimerProvider extends ChangeNotifier {
   Future<bool> needsBatteryOptimizationPrompt() async {
     if (!Platform.isAndroid) return false;
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final SharedPreferences prefs = await _preferences();
       if (prefs.getBool(_batteryPromptPrefsKey) == true) return false;
       return !await _alarmService.isIgnoringBatteryOptimizations();
     } catch (e) {
@@ -162,7 +162,7 @@ class FocusTimerProvider extends ChangeNotifier {
 
   Future<void> markBatteryPromptShown() async {
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final SharedPreferences prefs = await _preferences();
       await prefs.setBool(_batteryPromptPrefsKey, true);
     } catch (e) {
       debugPrint('FocusTimerProvider markBatteryPromptShown error: $e');
@@ -173,8 +173,11 @@ class FocusTimerProvider extends ChangeNotifier {
       _alarmService.requestIgnoreBatteryOptimizations();
 
   Future<void> restoreState() async {
+    final int generation = _stateGeneration;
+    bool current() => !_disposed && generation == _stateGeneration;
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final SharedPreferences prefs = await _preferences();
+      if (!current()) return;
       _alarmMode = FocusAlarmMode.fromPref(prefs.getString(_modePrefsKey));
       final String? raw = prefs.getString(_prefsKey);
       if (raw == null || raw.isEmpty) {
@@ -182,11 +185,10 @@ class FocusTimerProvider extends ChangeNotifier {
         return;
       }
 
-      final Map<String, dynamic> data =
-          jsonDecode(raw) as Map<String, dynamic>;
+      final Map<String, dynamic> data = jsonDecode(raw) as Map<String, dynamic>;
       final int phaseIndex = (data['phase'] as num?)?.toInt() ?? 0;
       if (phaseIndex <= 0 || phaseIndex >= FocusPhase.values.length) {
-        await _clearPersistedState();
+        await _clearPersistedState(generation: generation);
         return;
       }
 
@@ -196,11 +198,27 @@ class FocusTimerProvider extends ChangeNotifier {
       _completedRounds = (data['completedRounds'] as num?)?.toInt() ?? 0;
       final String? endIso = data['phaseEndTime'] as String?;
       _phaseEndTime = endIso == null ? null : DateTime.tryParse(endIso);
+      final String? alarmIso = data['alarmAt'] as String?;
+      _alarmAt = alarmIso == null ? null : DateTime.tryParse(alarmIso);
 
       if (isAlarming) {
-        await _triggerAlarm(fromPhase: _phase == FocusPhase.focusAlarm
-            ? FocusPhase.focusing
-            : FocusPhase.breaking);
+        final DateTime? alarmAt = _alarmAt;
+        // 原生响铃 10 分钟后会自动停止；过期状态不能在下次打开 App 时重放。
+        if (alarmAt == null ||
+            !_clock().isBefore(alarmAt.add(const Duration(minutes: 10)))) {
+          _resetToIdle();
+          await _clearPersistedState(generation: generation);
+          if (!current()) return;
+          await _alarmService.stopAll();
+          if (current()) notifyListeners();
+          return;
+        }
+        await _triggerAlarm(
+          fromPhase: _phase == FocusPhase.focusAlarm
+              ? FocusPhase.focusing
+              : FocusPhase.breaking,
+          alarmAt: _alarmAt,
+        );
         return;
       }
 
@@ -210,120 +228,130 @@ class FocusTimerProvider extends ChangeNotifier {
             remainingSeconds: _pausedRemainingSeconds,
             isFocus: _phase == FocusPhase.focusing,
           );
-          notifyListeners();
+          if (current()) notifyListeners();
         } else if (remainingSeconds <= 0) {
           await _triggerAlarm(fromPhase: _phase);
         } else {
           _startTicker();
           await _syncNativeCountdown();
-          notifyListeners();
+          if (current()) notifyListeners();
         }
       }
     } catch (e) {
-      debugPrint('FocusTimerProvider restoreState error: $e');
+      if (!_disposed && generation == _stateGeneration) {
+        debugPrint('FocusTimerProvider restoreState error: $e');
+      }
     }
   }
 
   Future<void> startFocus() async {
     await stopTestAlarm();
+    final int generation = ++_stateGeneration;
+    _alarmAt = null;
 
     _phase = FocusPhase.focusing;
     _isPaused = false;
-    _phaseEndTime = DateTime.now().add(
-      Duration(seconds: _focusDurationSeconds),
-    );
+    _phaseEndTime = _clock().add(Duration(seconds: _focusDurationSeconds));
     _pausedRemainingSeconds = _focusDurationSeconds;
 
     _startTicker();
     await _persistState();
+    if (_disposed || generation != _stateGeneration) return;
     await _syncNativeCountdown();
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   Future<void> startBreak() async {
     await stopTestAlarm();
+    final int generation = ++_stateGeneration;
+    _alarmAt = null;
 
     _phase = FocusPhase.breaking;
     _isPaused = false;
-    _phaseEndTime = DateTime.now().add(
-      Duration(seconds: _breakDurationSeconds),
-    );
+    _phaseEndTime = _clock().add(Duration(seconds: _breakDurationSeconds));
     _pausedRemainingSeconds = _breakDurationSeconds;
 
     _startTicker();
     await _persistState();
+    if (_disposed || generation != _stateGeneration) return;
     await _syncNativeCountdown();
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   Future<void> pause() async {
     if (!isRunning || _isPaused) return;
+    final int generation = ++_stateGeneration;
     _pausedRemainingSeconds = remainingSeconds;
     _isPaused = true;
     _ticker?.cancel();
     _ticker = null;
 
     await _persistState();
+    if (_disposed || generation != _stateGeneration) return;
     await _alarmService.pauseCountdown(
       remainingSeconds: _pausedRemainingSeconds,
       isFocus: _phase == FocusPhase.focusing,
     );
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   Future<void> resume() async {
     if (!isRunning || !_isPaused) return;
+    final int generation = ++_stateGeneration;
     if (_pausedRemainingSeconds <= 0) {
       await _triggerAlarm(fromPhase: _phase);
       return;
     }
 
-    _phaseEndTime = DateTime.now().add(
-      Duration(seconds: _pausedRemainingSeconds),
-    );
+    _phaseEndTime = _clock().add(Duration(seconds: _pausedRemainingSeconds));
     _isPaused = false;
 
     _startTicker();
     await _persistState();
+    if (_disposed || generation != _stateGeneration) return;
     await _syncNativeCountdown();
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   /// 仅关闭闹铃并回到未开始状态（保留已完成轮数供本次界面展示）。
   Future<void> dismissAlarm() async {
-    await stopTestAlarm();
-    await _alarmService.stopAll();
-    await _notificationService.removeFocusAlarmNotification();
-    await _notificationService.removeFocusTimerNotification();
-
+    final int generation = ++_stateGeneration;
     _ticker?.cancel();
     _ticker = null;
-    _phase = FocusPhase.idle;
-    _isPaused = false;
-    _phaseEndTime = null;
-    _pausedRemainingSeconds = 0;
+    _resetToIdle();
 
-    await _clearPersistedState();
-    notifyListeners();
+    await stopTestAlarm();
+    if (_disposed || generation != _stateGeneration) return;
+    await _alarmService.stopAll();
+    if (_disposed || generation != _stateGeneration) return;
+    await _notificationService.removeFocusAlarmNotification();
+    if (_disposed || generation != _stateGeneration) return;
+    await _notificationService.removeFocusTimerNotification();
+    if (_disposed || generation != _stateGeneration) return;
+
+    await _clearPersistedState(generation: generation);
+    if (!_disposed) notifyListeners();
   }
 
   /// 彻底结束本轮专注循环并清零。
   Future<void> stop() async {
-    await stopTestAlarm();
-    await _alarmService.stopAll();
-    await _notificationService.removeFocusAlarmNotification();
-    await _notificationService.removeFocusTimerNotification();
-
+    final int generation = ++_stateGeneration;
     _ticker?.cancel();
     _ticker = null;
-    _phase = FocusPhase.idle;
-    _isPaused = false;
-    _phaseEndTime = null;
-    _pausedRemainingSeconds = 0;
+    _resetToIdle();
     _completedRounds = 0;
 
-    await _clearPersistedState();
-    notifyListeners();
+    await stopTestAlarm();
+    if (_disposed || generation != _stateGeneration) return;
+    await _alarmService.stopAll();
+    if (_disposed || generation != _stateGeneration) return;
+    await _notificationService.removeFocusAlarmNotification();
+    if (_disposed || generation != _stateGeneration) return;
+    await _notificationService.removeFocusTimerNotification();
+    if (_disposed || generation != _stateGeneration) return;
+
+    await _clearPersistedState(generation: generation);
+    if (!_disposed) notifyListeners();
   }
 
   Future<void> toggleTestAlarm() async {
@@ -342,7 +370,7 @@ class FocusTimerProvider extends ChangeNotifier {
     if (!isAlarming) {
       await _alarmService.stopAlarm();
     }
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   /// 从后台回到前台时根据壁钟立即同步状态（若已过节点则立刻响铃）。
@@ -377,12 +405,18 @@ class FocusTimerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _triggerAlarm({required FocusPhase fromPhase}) async {
+  Future<void> _triggerAlarm({
+    required FocusPhase fromPhase,
+    DateTime? alarmAt,
+  }) async {
+    if (_disposed || (isAlarming && alarmAt == null)) return;
+    final int generation = ++_stateGeneration;
     _ticker?.cancel();
     _ticker = null;
     _isPaused = false;
     _phaseEndTime = null;
     _pausedRemainingSeconds = 0;
+    _alarmAt = alarmAt ?? _clock();
 
     final bool finishedFocus = fromPhase == FocusPhase.focusing;
     if (finishedFocus && _phase != FocusPhase.focusAlarm) {
@@ -391,20 +425,20 @@ class FocusTimerProvider extends ChangeNotifier {
     _phase = finishedFocus ? FocusPhase.focusAlarm : FocusPhase.breakAlarm;
 
     await _persistState();
+    if (_disposed || generation != _stateGeneration) return;
     await _alarmService.startAlarm(
       mode: _alarmMode,
       title: _alarmTitle(finishedFocus),
       body: _alarmBody(finishedFocus),
     );
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   static String _alarmTitle(bool finishedFocus) =>
       finishedFocus ? '⏰ 45 分钟专注时间到' : '🔔 5 分钟休息结束';
 
-  static String _alarmBody(bool finishedFocus) => finishedFocus
-      ? '请放下手头工作，点击关闭闹铃并休息 5 分钟'
-      : '休息结束，点击关闭闹铃并开始下一轮 45 分钟专注';
+  static String _alarmBody(bool finishedFocus) =>
+      finishedFocus ? '请放下手头工作，点击关闭闹铃并休息 5 分钟' : '休息结束，点击关闭闹铃并开始下一轮 45 分钟专注';
 
   /// 让原生前台服务与当前阶段对齐：常驻保活 + 系统渲染倒计时通知。
   Future<void> _syncNativeCountdown() async {
@@ -418,35 +452,63 @@ class FocusTimerProvider extends ChangeNotifier {
     }
   }
 
+  void _resetToIdle() {
+    _phase = FocusPhase.idle;
+    _isPaused = false;
+    _phaseEndTime = null;
+    _pausedRemainingSeconds = 0;
+    _alarmAt = null;
+  }
+
   Future<void> _persistState() async {
+    final int generation = _stateGeneration;
+    final Map<String, dynamic> snapshot = <String, dynamic>{
+      'phase': _phase.index,
+      'isPaused': _isPaused,
+      'phaseEndTime': _phaseEndTime?.toIso8601String(),
+      'pausedRemaining': _pausedRemainingSeconds,
+      'completedRounds': _completedRounds,
+      'alarmAt': _alarmAt?.toIso8601String(),
+    };
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _prefsKey,
-        jsonEncode(<String, dynamic>{
-          'phase': _phase.index,
-          'isPaused': _isPaused,
-          'phaseEndTime': _phaseEndTime?.toIso8601String(),
-          'pausedRemaining': _pausedRemainingSeconds,
-          'completedRounds': _completedRounds,
-        }),
-      );
+      final SharedPreferences prefs = await _preferences();
+      if (_disposed || generation != _stateGeneration) return;
+      await prefs.setString(_prefsKey, jsonEncode(snapshot));
+      if (!_disposed && generation != _stateGeneration) {
+        await _persistCurrentState();
+      }
     } catch (e) {
       debugPrint('FocusTimerProvider persistState error: $e');
     }
   }
 
-  Future<void> _clearPersistedState() async {
+  Future<void> _clearPersistedState({int? generation}) async {
+    final int expectedGeneration = generation ?? _stateGeneration;
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final SharedPreferences prefs = await _preferences();
+      if (_disposed || expectedGeneration != _stateGeneration) return;
       await prefs.remove(_prefsKey);
+      if (!_disposed && expectedGeneration != _stateGeneration) {
+        await _persistCurrentState();
+      }
     } catch (e) {
       debugPrint('FocusTimerProvider clearPersistedState error: $e');
     }
   }
 
+  Future<void> _persistCurrentState() async {
+    if (_phase == FocusPhase.idle) {
+      final SharedPreferences prefs = await _preferences();
+      await prefs.remove(_prefsKey);
+    } else {
+      await _persistState();
+    }
+  }
+
   @override
   void dispose() {
+    _disposed = true;
+    _stateGeneration++;
     _ticker?.cancel();
     super.dispose();
   }
