@@ -12,7 +12,7 @@ class PaperIconButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.onTap,
-    this.color = AppColors.textPrimary,
+    this.color,
     this.size = sizeAction,
     this.iconSize = 24,
     this.tooltip,
@@ -27,7 +27,7 @@ class PaperIconButton extends StatelessWidget {
 
   final IconData icon;
   final VoidCallback? onTap;
-  final Color color;
+  final Color? color;
   final double size;
   final double iconSize;
   final String? tooltip;
@@ -35,7 +35,9 @@ class PaperIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effective = enabled ? color : AppColors.textHint;
+    final Color effective = enabled
+        ? (color ?? context.colors.textPrimary)
+        : context.colors.textHint;
 
     Widget button = SizedBox(
       width: size,

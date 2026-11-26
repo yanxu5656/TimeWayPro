@@ -7,10 +7,7 @@ import '../../providers/focus_timer_provider.dart';
 /// 全局顶部闹铃横幅：当 45 分钟专注或 5 分钟休息到期响铃时，
 /// 无论用户当前停留在哪个 Tab，都可以一键关闭闹铃并衔接下一阶段。
 class FocusAlarmBanner extends StatelessWidget {
-  const FocusAlarmBanner({
-    super.key,
-    required this.onOpenTimer,
-  });
+  const FocusAlarmBanner({super.key, required this.onOpenTimer});
 
   final VoidCallback onOpenTimer;
 
@@ -31,10 +28,10 @@ class FocusAlarmBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: AppRadius.brCard,
-          border: Border.all(color: AppColors.error, width: 1.5),
-          boxShadow: AppShadows.e2,
+          color: context.colors.surface,
+          borderRadius: BorderRadius.circular(context.shape.cardRadius),
+          border: Border.all(color: context.colors.error, width: 1.5),
+          boxShadow: context.shape.floatShadows,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,16 +39,18 @@ class FocusAlarmBanner extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                const Icon(
+                Icon(
                   Icons.notifications_active_rounded,
-                  color: AppColors.error,
+                  color: context.colors.error,
                   size: 20,
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
                     title,
-                    style: AppText.titleSm.copyWith(color: AppColors.error),
+                    style: AppText.titleSm.copyWith(
+                      color: context.colors.error,
+                    ),
                   ),
                 ),
                 PaperTextButton(
@@ -68,7 +67,7 @@ class FocusAlarmBanner extends StatelessWidget {
               children: <Widget>[
                 PaperButton(
                   onPressed: isFocusDone ? timer.startBreak : timer.startFocus,
-                  backgroundColor: AppColors.error,
+                  backgroundColor: context.colors.error,
                   compact: true,
                   label: actionText,
                 ),

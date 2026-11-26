@@ -81,7 +81,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
     return Text.rich(
       TextSpan(
         style: AppText.caption.copyWith(
-          color: AppColors.textSecondary,
+          color: context.colors.textSecondary,
           letterSpacing: 0.4,
         ),
         children: <InlineSpan>[
@@ -90,15 +90,15 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
             text: '${isoWeekNumber(monday)}',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
           ),
           TextSpan(text: ' 周 · ${weekRangeLabel(monday)} · '),
           TextSpan(
             text: 'VOL.${_volNumber(weekKey)}',
-            style: AppText.serifNum.copyWith(
+            style: context.text.serifNum.copyWith(
               fontSize: 12.5,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ],
@@ -144,7 +144,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
               PaperIconButton(
                 icon: Icons.chevron_left_rounded,
                 onTap: provider.previousWeek,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 size: PaperIconButton.sizeChrome,
                 iconSize: 22,
               ),
@@ -161,17 +161,17 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                               ? '本周'
                               : (weekShortLabel(provider.selectedWeekStart) ??
                                     ''),
-                          style: AppText.titleSerif.copyWith(
+                          style: context.text.titleSerif.copyWith(
                             fontSize: 18,
                             color: provider.isCurrentWeek
-                                ? AppColors.primary
-                                : AppColors.textPrimary,
+                                ? context.colors.primary
+                                : context.colors.textPrimary,
                           ),
                         ),
                         Text(
                           weekRangeCaps(provider.selectedWeekStart),
                           style: AppText.caption.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                             fontSize: 11.5,
                             letterSpacing: 1.6,
                           ),
@@ -184,7 +184,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
               PaperIconButton(
                 icon: Icons.chevron_right_rounded,
                 onTap: provider.nextWeek,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 size: PaperIconButton.sizeChrome,
                 iconSize: 22,
               ),
@@ -201,7 +201,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                 child: Text(
                   '回到本周',
                   style: AppText.caption.copyWith(
-                    color: AppColors.primary,
+                    color: context.colors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -216,18 +216,18 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                 value: provider.completed,
                 format: (int v) => '$v',
                 duration: const Duration(milliseconds: 450),
-                style: AppText.serifNum.copyWith(
+                style: context.text.serifNum.copyWith(
                   fontSize: 64,
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   ' /${provider.total}',
-                  style: AppText.serifNum.copyWith(
+                  style: context.text.serifNum.copyWith(
                     fontSize: 26,
-                    color: AppColors.textHint,
+                    color: context.colors.textHint,
                   ),
                 ),
               ),
@@ -244,7 +244,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: AppText.caption.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -253,7 +253,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.caption.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -264,9 +264,11 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
           const SizedBox(height: AppSpacing.xs),
           LinearProgressIndicator(
             value: provider.progress,
-            backgroundColor: AppColors.surfaceVariant,
+            backgroundColor: context.colors.surfaceVariant,
             valueColor: AlwaysStoppedAnimation<Color>(
-              provider.progress >= 1.0 ? AppColors.success : AppColors.primary,
+              provider.progress >= 1.0
+                  ? context.colors.success
+                  : context.colors.primary,
             ),
             minHeight: 5,
             borderRadius: AppRadius.brFull,
@@ -329,13 +331,15 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          const Icon(Icons.flag_outlined, size: 44, color: AppColors.textHint),
+          Icon(Icons.flag_outlined, size: 44, color: context.colors.textHint),
           const SizedBox(height: AppSpacing.md),
-          const Text('暂无目标', style: AppText.titleSerif),
+          Text('暂无目标', style: context.text.titleSerif),
           const SizedBox(height: AppSpacing.xs),
           Text(
             provider.isCurrentWeek ? '点击下方按钮，记下这周想完成什么' : '这一周还没有目标，翻到其它周看看',
-            style: AppText.caption.copyWith(color: AppColors.textSecondary),
+            style: AppText.caption.copyWith(
+              color: context.colors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -359,11 +363,11 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         // 与卡片同一份下间距，否则滑动时红底会伸进卡间的空隙
         margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         padding: const EdgeInsets.only(right: AppSpacing.md),
-        decoration: const BoxDecoration(
-          color: AppColors.error,
-          borderRadius: AppRadius.brCard,
+        decoration: BoxDecoration(
+          color: context.colors.error,
+          borderRadius: BorderRadius.circular(context.shape.cardRadius),
         ),
-        child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
+        child: Icon(Icons.delete_outline, color: context.colors.textOnPrimary),
       ),
       confirmDismiss: (_) => _confirmDelete(context, goal),
       onDismissed: (_) {
@@ -376,7 +380,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
           vertical: 15,
         ),
         margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
-        tint: goal.isCompleted ? AppColors.success : null,
+        tint: goal.isCompleted ? context.colors.success : null,
         // 点击整行进编辑；勾选与挪周是行内的独立按钮
         onTap: () => _showEditSheet(context, goal),
         child: Column(
@@ -388,11 +392,11 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                   width: 26,
                   child: Text(
                     no,
-                    style: AppText.serifNum.copyWith(
+                    style: context.text.serifNum.copyWith(
                       fontSize: 13,
                       color: goal.isCompleted
-                          ? AppColors.primary
-                          : AppColors.textHint,
+                          ? context.colors.primary
+                          : context.colors.textHint,
                     ),
                   ),
                 ),
@@ -408,10 +412,10 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                 Expanded(
                   child: Text(
                     goal.title,
-                    style: AppText.bodySerif.copyWith(
+                    style: context.text.bodySerif.copyWith(
                       color: goal.isCompleted
-                          ? AppColors.textHint
-                          : AppColors.textPrimary,
+                          ? context.colors.textHint
+                          : context.colors.textPrimary,
                       decoration: goal.isCompleted
                           ? TextDecoration.lineThrough
                           : null,
@@ -443,22 +447,24 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const Divider(height: 1, color: AppColors.divider),
+          Divider(height: 1, color: context.colors.divider),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: <Widget>[
               Text(
                 goal.progressMode == WeeklyProgressMode.count ? '打卡进度' : '阶段进度',
-                style: AppText.label.copyWith(color: AppColors.textSecondary),
+                style: AppText.label.copyWith(
+                  color: context.colors.textSecondary,
+                ),
               ),
               const Spacer(),
               Text(
                 '${goal.completedMilestones}/${goal.milestones.length}',
-                style: AppText.serifNum.copyWith(
+                style: context.text.serifNum.copyWith(
                   fontSize: 18,
                   color: goal.isCompleted
-                      ? AppColors.success
-                      : AppColors.primary,
+                      ? context.colors.success
+                      : context.colors.primary,
                 ),
               ),
             ],
@@ -466,9 +472,11 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
           const SizedBox(height: AppSpacing.xs),
           LinearProgressIndicator(
             value: goal.progress,
-            backgroundColor: AppColors.surfaceVariant,
+            backgroundColor: context.colors.surfaceVariant,
             valueColor: AlwaysStoppedAnimation<Color>(
-              goal.isCompleted ? AppColors.success : AppColors.primary,
+              goal.isCompleted
+                  ? context.colors.success
+                  : context.colors.primary,
             ),
             minHeight: 4,
             borderRadius: AppRadius.brFull,
@@ -527,16 +535,16 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                   },
                   size: 18,
                   color: goal.isCompleted
-                      ? AppColors.success
-                      : AppColors.primary,
+                      ? context.colors.success
+                      : context.colors.primary,
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   milestone.title,
                   style: AppText.caption.copyWith(
                     color: milestone.isCompleted
-                        ? AppColors.textHint
-                        : AppColors.textPrimary,
+                        ? context.colors.textHint
+                        : context.colors.textPrimary,
                     decoration: milestone.isCompleted
                         ? TextDecoration.lineThrough
                         : null,
@@ -563,10 +571,10 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         child: Semantics(
           button: true,
           label: '拖动调整顺序',
-          child: const Icon(
+          child: Icon(
             Icons.drag_handle_rounded,
             size: 20,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
       ),
@@ -582,10 +590,10 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
         child: Semantics(
           button: true,
           label: '挪到其他周',
-          child: const Icon(
+          child: Icon(
             Icons.event_repeat_outlined,
             size: 20,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
       ),
@@ -608,7 +616,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
               AppHaptics.confirm();
               Navigator.pop(ctx, true);
             },
-            color: AppColors.error,
+            color: context.colors.error,
             label: '删除',
           ),
         ],
@@ -629,10 +637,10 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.textOnPrimary,
-              surface: AppColors.surface,
+            colorScheme: ColorScheme.light(
+              primary: context.colors.primary,
+              onPrimary: context.colors.textOnPrimary,
+              surface: context.colors.surface,
             ),
           ),
           child: child!,
@@ -800,7 +808,9 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
       children: <Widget>[
         Text(
           isEditing ? '编辑目标' : '添加目标',
-          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
+          style: context.text.titleSerif.copyWith(
+            color: context.colors.textPrimary,
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         TextField(
@@ -823,7 +833,7 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
               title: const Text('分段完成'),
               subtitle: const Text('拆成阶段，或按次数逐点打卡'),
               value: _progressEnabled,
-              activeThumbColor: AppColors.primary,
+              activeThumbColor: context.colors.primary,
               onChanged: _saving ? null : _setProgressEnabled,
             ),
           ),
@@ -866,23 +876,27 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: Text(
                 '调整数量会保留对应序号的完成状态；切换类型会重新开始。',
-                style: AppText.caption.copyWith(color: AppColors.textSecondary),
+                style: AppText.caption.copyWith(
+                  color: context.colors.textSecondary,
+                ),
               ),
             ),
         ],
         const SizedBox(height: AppSpacing.sm),
         Row(
           children: <Widget>[
-            const Icon(
+            Icon(
               Icons.event_outlined,
               size: 14,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 '${isEditing ? '所在周' : '将添加到'}：${_weekHint(weekKey)}',
-                style: AppText.caption.copyWith(color: AppColors.textSecondary),
+                style: AppText.caption.copyWith(
+                  color: context.colors.textSecondary,
+                ),
               ),
             ),
           ],
@@ -914,19 +928,23 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
               vertical: AppSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
+              color: context.colors.primary.withValues(alpha: 0.08),
               borderRadius: AppRadius.brSm,
-              border: Border.all(color: AppColors.divider),
+              border: Border.all(color: context.colors.divider),
             ),
             child: Text(
               milestone.title,
-              style: AppText.caption.copyWith(color: AppColors.textSecondary),
+              style: AppText.caption.copyWith(
+                color: context.colors.textSecondary,
+              ),
             ),
           ),
         if (_milestones.length > preview.length)
           Text(
             '等 ${_milestones.length} 个打卡点',
-            style: AppText.caption.copyWith(color: AppColors.textSecondary),
+            style: AppText.caption.copyWith(
+              color: context.colors.textSecondary,
+            ),
           ),
       ],
     );

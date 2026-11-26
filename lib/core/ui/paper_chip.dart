@@ -44,8 +44,8 @@ class PaperChip extends StatelessWidget {
     final bool reduced =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final Color fg = selected
-        ? AppColors.textOnPrimary
-        : AppColors.textSecondary;
+        ? context.colors.textOnPrimary
+        : context.colors.textSecondary;
 
     // 选中瞬间图标从 0.85 弹回 1（easeOutBack 带一点过冲）。
     // key 挂在 selected 上：每次翻面都重新起跳，静止时恒为 1。
@@ -80,13 +80,13 @@ class PaperChip extends StatelessWidget {
               ? const EdgeInsets.symmetric(vertical: AppSpacing.md)
               : const EdgeInsets.symmetric(vertical: AppSpacing.sm)),
       decoration: BoxDecoration(
-        color: selected ? AppColors.primary : Colors.transparent,
+        color: selected ? context.colors.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: selected
-              ? AppColors.primary
+              ? context.colors.primary
               // 描边用 30% 陶土：比发丝线重一档，框出可点区域但不抢戏
-              : AppColors.primary.withValues(alpha: 0.3),
+              : context.colors.primary.withValues(alpha: 0.3),
           width: 1.2,
         ),
       ),

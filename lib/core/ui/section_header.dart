@@ -47,10 +47,10 @@ class SectionHeader extends StatelessWidget {
             children: <Widget>[
               Text(
                 _no,
-                style: AppText.serifNum.copyWith(
+                style: context.text.serifNum.copyWith(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+                  color: context.colors.primary,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -59,7 +59,7 @@ class SectionHeader extends StatelessWidget {
                 style: AppText.label.copyWith(
                   fontSize: 13,
                   letterSpacing: 2.4,
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
@@ -67,13 +67,13 @@ class SectionHeader extends StatelessWidget {
                 Text(
                   trailing!,
                   style: AppText.caption.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
             ],
           ),
         ),
-        if (rule) Container(height: 1.2, color: AppColors.dividerStrong),
+        if (rule) Container(height: 1.2, color: context.colors.dividerStrong),
       ],
     );
   }

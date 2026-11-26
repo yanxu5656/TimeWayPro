@@ -66,7 +66,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         if (isEditing)
           PaperIconButton(
             icon: Icons.delete_outline,
-            color: AppColors.error,
+            color: context.colors.error,
             size: PaperIconButton.sizeChrome,
             onTap: _deleteTask,
             tooltip: '删除任务',
@@ -163,11 +163,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
             if (_timerType == TimerType.countDown &&
                 _durationMinutes * 60 + _durationSeconds == 0)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
                   '倒计时时长至少为 1 秒',
-                  style: TextStyle(fontSize: 12, color: AppColors.error),
+                  style: TextStyle(fontSize: 12, color: context.colors.error),
                 ),
               ),
 
@@ -220,9 +220,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.event_outlined,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -231,8 +231,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                             : '点击设置截止日期',
                         style: TextStyle(
                           color: _dueDate != null
-                              ? AppColors.textPrimary
-                              : AppColors.textHint,
+                              ? context.colors.textPrimary
+                              : context.colors.textHint,
                         ),
                       ),
                       const Spacer(),
@@ -241,7 +241,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           icon: Icons.close,
                           iconSize: 18,
                           size: 32,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                           onTap: () => setState(() => _dueDate = null),
                           tooltip: '清除截止日期',
                         ),
@@ -297,10 +297,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -314,7 +314,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     return RadioListTile<RepeatType>(
       title: Text(title),
       value: value,
-      activeColor: AppColors.primary,
+      activeColor: context.colors.primary,
       contentPadding: EdgeInsets.zero,
       dense: true,
     );
@@ -341,7 +341,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             icon: Icons.remove_circle_outline,
             onTap: value > min ? () => onChanged(value - 1) : null,
             enabled: value > min,
-            color: AppColors.primary,
+            color: context.colors.primary,
             size: 40,
           ),
           Column(
@@ -355,9 +355,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ],
@@ -366,7 +366,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             icon: Icons.add_circle_outline,
             onTap: value < max ? () => onChanged(value + 1) : null,
             enabled: value < max,
-            color: AppColors.primary,
+            color: context.colors.primary,
             size: 40,
           ),
         ],
@@ -387,9 +387,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: context.colors.primary,
+              onPrimary: context.colors.textOnPrimary,
             ),
           ),
           child: child!,
@@ -465,7 +465,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ),
           PaperTextButton(
             onPressed: () => Navigator.pop(context, true),
-            color: AppColors.error,
+            color: context.colors.error,
             label: '删除',
           ),
         ],

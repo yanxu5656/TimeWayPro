@@ -115,10 +115,10 @@ class _PaperNavBarState extends State<PaperNavBar> {
         child: Container(
           height: 54,
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: AppRadius.brLg,
-            border: Border.all(color: AppColors.dividerStrong),
-            boxShadow: AppShadows.e1,
+            color: context.colors.surface,
+            borderRadius: BorderRadius.circular(context.shape.controlRadius),
+            border: Border.all(color: context.colors.dividerStrong),
+            boxShadow: context.shape.rowShadows,
           ),
           clipBehavior: Clip.antiAlias,
           child: LayoutBuilder(
@@ -173,7 +173,9 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = selected ? AppColors.primary : AppColors.textSecondary;
+    final Color fg = selected
+        ? context.colors.primary
+        : context.colors.textSecondary;
 
     return Semantics(
       label: data.label,
@@ -184,9 +186,7 @@ class _NavItem extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             border: showDivider
-                ? const Border(
-                    right: BorderSide(color: AppColors.dividerStrong),
-                  )
+                ? Border(right: BorderSide(color: context.colors.dividerStrong))
                 : const Border(),
           ),
           child: PressableScale(
@@ -200,7 +200,7 @@ class _NavItem extends StatelessWidget {
                 margin: const EdgeInsets.all(AppSpacing.xxs),
                 decoration: BoxDecoration(
                   color: selected
-                      ? AppColors.primary.withValues(alpha: 0.12)
+                      ? context.colors.primary.withValues(alpha: 0.12)
                       : Colors.transparent,
                   borderRadius: AppRadius.brMd,
                 ),

@@ -29,13 +29,15 @@ class PaperAppBar extends StatelessWidget implements PreferredSizeWidget {
     // route 切换时 DatePickerDialog 等会改写状态栏样式，
     // 这里每个顶栏都重申一遍，保证深色图标不被覆盖掉。
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: context.colors.isDark
+            ? Brightness.light
+            : Brightness.dark,
       ),
       child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.divider)),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: context.colors.divider)),
         ),
         child: SafeArea(
           bottom: false,
@@ -49,8 +51,8 @@ class PaperAppBar extends StatelessWidget implements PreferredSizeWidget {
                   Flexible(
                     child: Text(
                       title!,
-                      style: AppText.titleSerif.copyWith(
-                        color: AppColors.textPrimary,
+                      style: context.text.titleSerif.copyWith(
+                        color: context.colors.textPrimary,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),

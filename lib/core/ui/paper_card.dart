@@ -40,7 +40,7 @@ class PaperCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(AppSpacing.cardPad),
     this.margin = EdgeInsets.zero,
-    this.radius = AppRadius.card,
+    this.radius,
     this.tone = PaperTone.ruled,
     this.fill,
     this.tint,
@@ -57,7 +57,7 @@ class PaperCard extends StatelessWidget {
   final EdgeInsetsGeometry margin;
 
   /// 除 [PaperTone.flat] 外都生效
-  final double radius;
+  final double? radius;
 
   final PaperTone tone;
 
@@ -78,41 +78,53 @@ class PaperCard extends StatelessWidget {
 
   final String? semanticLabel;
 
-  BoxDecoration _decoration() {
+  BoxDecoration _decoration(BuildContext context) {
     if (tone == PaperTone.flat) {
       return BoxDecoration(color: tint?.withValues(alpha: 0.05));
     }
 
     final bool nested = tone == PaperTone.raised;
+    final double effectiveRadius = radius ?? context.shape.cardRadius;
+    final double nestedRadius = context.shape.controlRadius;
     final Color base =
-        fill ?? (nested ? AppColors.surfaceVariant : AppColors.surface);
+        fill ??
+        (nested ? context.colors.surfaceVariant : context.colors.surface);
     final Border border = tint != null
         ? Border.all(color: tint!.withValues(alpha: 0.55), width: 1.4)
-        : Border.all(color: AppColors.divider);
+        : Border.all(color: context.colors.divider);
 
     return BoxDecoration(
       color: tint == null
           ? base
           : Color.alphaBlend(tint!.withValues(alpha: 0.05), base),
-      borderRadius: BorderRadius.circular(nested ? AppRadius.lg : radius),
+      borderRadius: BorderRadius.circular(
+        nested ? nestedRadius : effectiveRadius,
+      ),
       border: border,
-      boxShadow: tone == PaperTone.row ? (shadows ?? AppShadows.e1) : null,
+      boxShadow: tone == PaperTone.row
+          ? (shadows ?? context.shape.rowShadows)
+          : null,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final bool interactive = onTap != null || onLongPress != null;
+    final double effectiveRadius = radius ?? context.shape.cardRadius;
 
     Widget surface = animate
         ? AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             padding: padding,
-            decoration: _decoration(),
+            decoration: _decoration(context),
             child: child,
           )
-        : Container(padding: padding, decoration: _decoration(), child: child);
+        : Container(
+            padding: padding,
+            decoration: _decoration(context),
+            child: child,
+          );
 
     if (interactive) {
       surface = Material(
@@ -121,10 +133,12 @@ class PaperCard extends StatelessWidget {
           onTap: onTap,
           onLongPress: onLongPress,
           borderRadius: BorderRadius.circular(
-            tone == PaperTone.raised ? AppRadius.lg : radius,
+            tone == PaperTone.raised
+                ? context.shape.controlRadius
+                : effectiveRadius,
           ),
-          splashColor: AppColors.inkSubtle,
-          highlightColor: AppColors.inkFaint,
+          splashColor: context.colors.inkSubtle,
+          highlightColor: context.colors.inkFaint,
           child: surface,
         ),
       );

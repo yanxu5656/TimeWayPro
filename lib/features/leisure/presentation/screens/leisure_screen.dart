@@ -46,25 +46,25 @@ class _LeisureScreenState extends State<LeisureScreen> {
                       meta: Text.rich(
                         TextSpan(
                           style: AppText.caption.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                             letterSpacing: 0.4,
                           ),
                           children: <InlineSpan>[
                             const TextSpan(text: '共 '),
                             TextSpan(
                               text: '${provider.totalCount}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
+                                color: context.colors.primary,
                               ),
                             ),
                             const TextSpan(text: ' 件 · 还没试 '),
                             TextSpan(
                               text:
                                   '${provider.totalCount - provider.doneCount}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
+                                color: context.colors.primary,
                               ),
                             ),
                             const TextSpan(text: ' 件'),
@@ -126,7 +126,7 @@ class _LeisureScreenState extends State<LeisureScreen> {
       return Center(
         child: Text(
           '这个筛选下还没有内容',
-          style: AppText.caption.copyWith(color: AppColors.textHint),
+          style: AppText.caption.copyWith(color: context.colors.textHint),
         ),
       );
     }
@@ -159,30 +159,30 @@ class _LeisureScreenState extends State<LeisureScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: const BoxDecoration(
-              color: AppColors.primarySubtle,
+            decoration: BoxDecoration(
+              color: context.colors.primarySubtle,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.sports_esports_rounded,
               size: 48,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             '闲时清单空着',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               letterSpacing: 0.3,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '不紧急但想做的事，记在这里慢慢挑',
-            style: TextStyle(fontSize: 14, color: AppColors.textHint),
+            style: TextStyle(fontSize: 14, color: context.colors.textHint),
           ),
         ],
       ),
@@ -197,11 +197,11 @@ class _LeisureScreenState extends State<LeisureScreen> {
         alignment: Alignment.centerRight,
         margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         padding: const EdgeInsets.only(right: 20),
-        decoration: const BoxDecoration(
-          color: AppColors.error,
-          borderRadius: AppRadius.brCard,
+        decoration: BoxDecoration(
+          color: context.colors.error,
+          borderRadius: BorderRadius.circular(context.shape.cardRadius),
         ),
-        child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
+        child: Icon(Icons.delete_outline, color: context.colors.textOnPrimary),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
@@ -219,7 +219,7 @@ class _LeisureScreenState extends State<LeisureScreen> {
                   AppHaptics.confirm();
                   Navigator.pop(context, true);
                 },
-                color: AppColors.error,
+                color: context.colors.error,
                 label: '删除',
               ),
             ],
@@ -236,7 +236,7 @@ class _LeisureScreenState extends State<LeisureScreen> {
           vertical: 15,
         ),
         margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
-        tint: item.isDone ? AppColors.success : null,
+        tint: item.isDone ? context.colors.success : null,
         onTap: () => showPaperSheet(
           context,
           builder: (context) => _LeisureSheet(item: item),
@@ -257,10 +257,10 @@ class _LeisureScreenState extends State<LeisureScreen> {
                 children: [
                   Text(
                     item.title,
-                    style: AppText.bodySerif.copyWith(
+                    style: context.text.bodySerif.copyWith(
                       color: item.isDone
-                          ? AppColors.textHint
-                          : AppColors.textPrimary,
+                          ? context.colors.textHint
+                          : context.colors.textPrimary,
                       decoration: item.isDone
                           ? TextDecoration.lineThrough
                           : null,
@@ -271,7 +271,7 @@ class _LeisureScreenState extends State<LeisureScreen> {
                     Text(
                       item.note!,
                       style: AppText.caption.copyWith(
-                        color: AppColors.textHint,
+                        color: context.colors.textHint,
                         decoration: item.isDone
                             ? TextDecoration.lineThrough
                             : null,
@@ -288,7 +288,9 @@ class _LeisureScreenState extends State<LeisureScreen> {
                 padding: const EdgeInsets.only(left: AppSpacing.xs),
                 child: Text(
                   '试过了',
-                  style: AppText.labelSm.copyWith(color: AppColors.success),
+                  style: AppText.labelSm.copyWith(
+                    color: context.colors.success,
+                  ),
                 ),
               ),
           ],
@@ -337,15 +339,17 @@ class _LeisureSheetState extends State<_LeisureSheet> {
       children: [
         Text(
           _isEditing ? '编辑闲时条目' : '记一件闲时想做的事',
-          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
+          style: context.text.titleSerif.copyWith(
+            color: context.colors.textPrimary,
+          ),
         ),
         const SizedBox(height: 24),
-        const Text(
+        Text(
           '想做的事',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -356,12 +360,12 @@ class _LeisureSheetState extends State<_LeisureSheet> {
           decoration: const InputDecoration(hintText: '如：打一款新游戏'),
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           '备注（可选）',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -374,7 +378,7 @@ class _LeisureSheetState extends State<_LeisureSheet> {
         if (_isEditing) ...[
           PaperTextButton(
             onPressed: _confirmDelete,
-            color: AppColors.error,
+            color: context.colors.error,
             icon: Icons.delete_outline_rounded,
             label: '删除这条',
           ),
@@ -409,7 +413,7 @@ class _LeisureSheetState extends State<_LeisureSheet> {
               AppHaptics.confirm();
               Navigator.pop(context, true);
             },
-            color: AppColors.error,
+            color: context.colors.error,
             label: '删除',
           ),
         ],

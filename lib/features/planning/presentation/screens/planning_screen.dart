@@ -60,7 +60,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
                 meta: Text.rich(
                   TextSpan(
                     style: AppText.caption.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                       letterSpacing: 0.4,
                     ),
                     children: <InlineSpan>[
@@ -69,7 +69,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
                         text: '$total',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                          color: context.colors.primary,
                         ),
                       ),
                       TextSpan(text: ' 个目标 · 平均进度 $avgProgress%'),
@@ -105,17 +105,17 @@ class _PlanningScreenState extends State<PlanningScreen> {
           Icon(
             Icons.account_tree_outlined,
             size: 64,
-            color: AppColors.textHint.withValues(alpha: 0.5),
+            color: context.colors.textHint.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             '暂无规划',
-            style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 18, color: context.colors.textSecondary),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '点击右下角 + 创建你的第一个目标',
-            style: TextStyle(fontSize: 14, color: AppColors.textHint),
+            style: TextStyle(fontSize: 14, color: context.colors.textHint),
           ),
         ],
       ),
@@ -169,8 +169,9 @@ class _PlanningScreenState extends State<PlanningScreen> {
                     height: 20,
                     margin: const EdgeInsets.only(right: 10),
                     decoration: BoxDecoration(
-                      color: AppColors
-                          .chartColors[depth % AppColors.chartColors.length],
+                      color:
+                          context.colors.chartColors[depth %
+                              context.colors.chartColors.length],
                       borderRadius: BorderRadius.circular(AppRadius.xs),
                     ),
                   ),
@@ -179,7 +180,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
                 Icon(
                   hasChildren ? Icons.folder_outlined : Icons.flag_outlined,
                   size: 20,
-                  color: AppColors.primary,
+                  color: context.colors.primary,
                 ),
                 const SizedBox(width: 10),
 
@@ -187,10 +188,10 @@ class _PlanningScreenState extends State<PlanningScreen> {
                 Expanded(
                   child: Text(
                     plan.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                 ),
@@ -225,7 +226,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
               borderRadius: BorderRadius.circular(AppRadius.xs),
               child: LinearProgressIndicator(
                 value: plan.progress,
-                backgroundColor: AppColors.surfaceVariant,
+                backgroundColor: context.colors.surfaceVariant,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   _getProgressColor(plan.progress),
                 ),
@@ -238,9 +239,9 @@ class _PlanningScreenState extends State<PlanningScreen> {
               const SizedBox(height: 8),
               Text(
                 plan.description!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -253,9 +254,9 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   Color _getProgressColor(double progress) {
-    if (progress < 0.3) return AppColors.error;
-    if (progress < 0.7) return AppColors.warning;
-    return AppColors.success;
+    if (progress < 0.3) return context.colors.error;
+    if (progress < 0.7) return context.colors.warning;
+    return context.colors.success;
   }
 
   void _showPlanDetail(Plan plan, PlanProvider provider) {
@@ -289,7 +290,9 @@ class _PlanningScreenState extends State<PlanningScreen> {
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: Text(
               plan.title,
-              style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
+              style: context.text.titleSerif.copyWith(
+                color: context.colors.textPrimary,
+              ),
             ),
           ),
           ListTile(
@@ -309,8 +312,8 @@ class _PlanningScreenState extends State<PlanningScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.delete_outline, color: AppColors.error),
-            title: const Text('删除', style: TextStyle(color: AppColors.error)),
+            leading: Icon(Icons.delete_outline, color: context.colors.error),
+            title: Text('删除', style: TextStyle(color: context.colors.error)),
             onTap: () {
               Navigator.pop(context);
               _deletePlan(plan, provider);
@@ -354,7 +357,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
                 () => provider.deletePlan(plan.id),
               );
             },
-            color: AppColors.error,
+            color: context.colors.error,
             label: '删除',
           ),
         ],
@@ -410,17 +413,19 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
       children: [
         Text(
           '目标详情',
-          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
+          style: context.text.titleSerif.copyWith(
+            color: context.colors.textPrimary,
+          ),
         ),
         const SizedBox(height: 20),
 
         // 标题
-        const Text(
+        Text(
           '标题',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 6),
@@ -431,12 +436,12 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
         const SizedBox(height: 16),
 
         // 描述
-        const Text(
+        Text(
           '描述（可选）',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 6),
@@ -451,20 +456,20 @@ class _PlanDetailSheetState extends State<_PlanDetailSheet> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               '进度',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             Text(
               '${(_progress * 100).toInt()}%',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.primary,
+                color: context.colors.primary,
               ),
             ),
           ],
@@ -560,12 +565,12 @@ class _AddPlanSheetState extends State<_AddPlanSheet> {
         ),
         const SizedBox(height: 20),
 
-        const Text(
+        Text(
           '目标名称',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 6),
@@ -576,12 +581,12 @@ class _AddPlanSheetState extends State<_AddPlanSheet> {
         ),
         const SizedBox(height: 16),
 
-        const Text(
+        Text(
           '描述（可选）',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 6),

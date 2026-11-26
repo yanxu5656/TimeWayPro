@@ -59,7 +59,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       meta: Text.rich(
                         TextSpan(
                           style: AppText.caption.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                             letterSpacing: 0.4,
                           ),
                           children: <InlineSpan>[
@@ -68,9 +68,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ),
                             TextSpan(
                               text: '${provider.notes.length}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
+                                color: context.colors.primary,
                               ),
                             ),
                             const TextSpan(text: ' 条'),
@@ -84,7 +84,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         PaperIconButton(
                           icon: Icons.chevron_left_rounded,
                           onTap: provider.previousMonth,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                           size: PaperIconButton.sizeChrome,
                           iconSize: 22,
                         ),
@@ -94,10 +94,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             children: [
                               Text(
                                 '${month.year} 年 ${month.month} 月',
-                                style: AppText.titleSerif.copyWith(
+                                style: context.text.titleSerif.copyWith(
                                   color: isCurrentMonth
-                                      ? AppColors.primary
-                                      : AppColors.textPrimary,
+                                      ? context.colors.primary
+                                      : context.colors.textPrimary,
                                 ),
                               ),
                               if (!isCurrentMonth) ...[
@@ -114,7 +114,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         PaperIconButton(
                           icon: Icons.chevron_right_rounded,
                           onTap: provider.nextMonth,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                           size: PaperIconButton.sizeChrome,
                           iconSize: 22,
                         ),
@@ -151,7 +151,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                             wd,
                                             textAlign: TextAlign.center,
                                             style: AppText.labelSm.copyWith(
-                                              color: AppColors.textSecondary,
+                                              color:
+                                                  context.colors.textSecondary,
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
@@ -222,20 +223,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
           padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             children: [
-              const Icon(
+              Icon(
                 Icons.calendar_month_rounded,
                 size: 40,
-                color: AppColors.textHint,
+                color: context.colors.textHint,
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 '这个月还没有标注',
-                style: AppText.caption.copyWith(color: AppColors.textHint),
+                style: AppText.caption.copyWith(color: context.colors.textHint),
               ),
               const SizedBox(height: AppSpacing.xxs),
               Text(
                 '点日历上的任意一天，记一条',
-                style: AppText.caption.copyWith(color: AppColors.textHint),
+                style: AppText.caption.copyWith(color: context.colors.textHint),
               ),
             ],
           ),
@@ -270,9 +271,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 width: 34,
                 child: Text(
                   '${date.day}',
-                  style: AppText.serifNum.copyWith(
+                  style: context.text.serifNum.copyWith(
                     fontSize: 18,
-                    color: AppColors.primary,
+                    color: context.colors.primary,
                   ),
                 ),
               ),
@@ -286,7 +287,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.body.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -295,16 +296,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       '${dayNotes.length > 1 ? ' · 等 ${dayNotes.length} 条' : ''}',
                       style: AppText.caption.copyWith(
                         fontSize: 12,
-                        color: AppColors.textHint,
+                        color: context.colors.textHint,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 18,
-                color: AppColors.textHint,
+                color: context.colors.textHint,
               ),
             ],
           ),
@@ -347,10 +348,10 @@ class _DayCell extends StatelessWidget {
           height: 62,
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
           decoration: BoxDecoration(
-            color: isToday ? AppColors.primarySubtle : Colors.transparent,
+            color: isToday ? context.colors.primarySubtle : Colors.transparent,
             borderRadius: AppRadius.brMd,
             border: isToday
-                ? Border.all(color: AppColors.primary, width: 1.2)
+                ? Border.all(color: context.colors.primary, width: 1.2)
                 : null,
           ),
           child: Column(
@@ -363,27 +364,27 @@ class _DayCell extends StatelessWidget {
                       width: 20,
                       height: 20,
                       alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
+                      decoration: BoxDecoration(
+                        color: context.colors.primary,
                         shape: BoxShape.circle,
                       ),
                       child: Text(
                         '${date.day}',
-                        style: AppText.serifNum.copyWith(
+                        style: context.text.serifNum.copyWith(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textOnPrimary,
+                          color: context.colors.textOnPrimary,
                         ),
                       ),
                     )
                   else
                     Text(
                       '${date.day}',
-                      style: AppText.serifNum.copyWith(
+                      style: context.text.serifNum.copyWith(
                         fontSize: 13,
                         color: inMonth
-                            ? AppColors.textPrimary
-                            : AppColors.textHint,
+                            ? context.colors.textPrimary
+                            : context.colors.textHint,
                       ),
                     ),
                   // 余量计数贴着日期：预览留给两行正文，不被计数挤掉。
@@ -396,11 +397,11 @@ class _DayCell extends StatelessWidget {
                           '+${notes.length - 1}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 9,
                             height: 1.2,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
+                            color: context.colors.primary,
                           ),
                         ),
                       ),
@@ -414,10 +415,10 @@ class _DayCell extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 9,
                     height: 1.2,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
             ],
@@ -501,7 +502,9 @@ class _DaySheetState extends State<_DaySheet> {
       children: [
         Text(
           '${date.month} 月 ${date.day} 日 · 周${weekdays[date.weekday - 1]}',
-          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
+          style: context.text.titleSerif.copyWith(
+            color: context.colors.textPrimary,
+          ),
         ),
         const SizedBox(height: 16),
         Consumer<CalendarProvider>(
@@ -510,7 +513,7 @@ class _DaySheetState extends State<_DaySheet> {
             if (notes.isEmpty) {
               return Text(
                 '这一天还没有标注',
-                style: AppText.caption.copyWith(color: AppColors.textHint),
+                style: AppText.caption.copyWith(color: context.colors.textHint),
               );
             }
             return Column(
@@ -531,8 +534,8 @@ class _DaySheetState extends State<_DaySheet> {
                               ),
                               decoration: BoxDecoration(
                                 color: _editingId == note.id
-                                    ? AppColors.primarySubtle
-                                    : AppColors.surfaceVariant,
+                                    ? context.colors.primarySubtle
+                                    : context.colors.surfaceVariant,
                                 borderRadius: AppRadius.brMd,
                               ),
                               child: Text(
@@ -540,7 +543,7 @@ class _DaySheetState extends State<_DaySheet> {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppText.body.copyWith(
-                                  color: AppColors.textPrimary,
+                                  color: context.colors.textPrimary,
                                 ),
                               ),
                             ),
@@ -550,7 +553,7 @@ class _DaySheetState extends State<_DaySheet> {
                           icon: Icons.delete_outline_rounded,
                           size: 32,
                           iconSize: 18,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                           tooltip: '删除标注',
                           onTap: () async {
                             AppHaptics.dismiss();

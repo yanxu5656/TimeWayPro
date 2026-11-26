@@ -38,16 +38,20 @@ class PaperFab extends StatelessWidget {
       builder: (BuildContext context, double press, Widget? child) {
         return Container(
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: context.colors.primary,
             borderRadius: AppRadius.brFull,
             boxShadow: <BoxShadow>[
               BoxShadow(
                 color: Color.lerp(
-                  AppColors.shadowMedium,
-                  AppColors.shadow,
+                  context.colors.shadowMedium,
+                  context.colors.shadow,
                   press,
                 )!,
-                blurRadius: lerpDouble(24, 6, press)!,
+                blurRadius: lerpDouble(
+                  context.shape.floatShadows.first.blurRadius,
+                  6,
+                  press,
+                )!,
                 offset: Offset(0, lerpDouble(10, 2, press)!),
               ),
             ],
@@ -68,13 +72,13 @@ class PaperFab extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(icon, color: AppColors.textOnPrimary, size: 21),
+              Icon(icon, color: context.colors.textOnPrimary, size: 21),
               if (extended) ...<Widget>[
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   label!,
                   style: AppText.labelLg.copyWith(
-                    color: AppColors.textOnPrimary,
+                    color: context.colors.textOnPrimary,
                   ),
                 ),
               ],

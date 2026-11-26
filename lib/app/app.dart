@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
 import '../core/ui/ui_effects.dart';
@@ -6,6 +7,7 @@ import '../features/daily/providers/daily_provider.dart';
 import '../features/focus/providers/focus_timer_provider.dart';
 import '../features/leisure/providers/leisure_provider.dart';
 import '../features/calendar/providers/calendar_provider.dart';
+import '../features/settings/providers/theme_provider.dart';
 import '../features/task/providers/task_provider.dart';
 import '../features/planning/providers/plan_provider.dart';
 import '../features/settings/providers/settings_provider.dart';
@@ -28,20 +30,37 @@ class TimeWayProApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => SettingsProvider()..loadSyncConfig(),
         ),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()..loadTheme()),
         ChangeNotifierProvider(
           create: (_) => FocusTimerProvider()..restoreState(),
         ),
       ],
-      child: MaterialApp(
-        title: 'TimeWayPro',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        // 这里已在 MediaQuery 之下，可读取系统"减弱动效"开关
-        builder: (context, child) {
-          UiEffects.respectPlatformPreferences(context);
-          return child ?? const SizedBox.shrink();
-        },
-        home: const MainScreen(),
+      child: Consumer<ThemeProvider>(
+        builder:
+            (BuildContext context, ThemeProvider themeProvider, Widget? child) {
+              return MaterialApp(
+                title: 'TimeWayPro',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.forDesign(themeProvider.option.design),
+                builder: (BuildContext context, Widget? child) {
+                  UiEffects.respectPlatformPreferences(context);
+                  final bool isDark = context.colors.isDark;
+                  return AnnotatedRegion<SystemUiOverlayStyle>(
+                    value: SystemUiOverlayStyle(
+                      statusBarColor: Colors.transparent,
+                      statusBarIconBrightness: isDark
+                          ? Brightness.light
+                          : Brightness.dark,
+                      systemNavigationBarIconBrightness: isDark
+                          ? Brightness.light
+                          : Brightness.dark,
+                    ),
+                    child: child ?? const SizedBox.shrink(),
+                  );
+                },
+                home: const MainScreen(),
+              );
+            },
       ),
     );
   }

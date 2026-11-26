@@ -81,10 +81,10 @@ class _TaskScreenState extends State<TaskScreen> {
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return const Center(
+            return Center(
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
-                color: AppColors.primary,
+                color: context.colors.primary,
               ),
             );
           }
@@ -142,7 +142,7 @@ class _TaskScreenState extends State<TaskScreen> {
             meta: Text.rich(
               TextSpan(
                 style: AppText.caption.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   letterSpacing: 0.4,
                 ),
                 children: <InlineSpan>[
@@ -154,7 +154,7 @@ class _TaskScreenState extends State<TaskScreen> {
                     text: '${isoWeekNumber(_selectedDate)}',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: context.colors.primary,
                     ),
                   ),
                   TextSpan(text: ' 周'),
@@ -164,7 +164,7 @@ class _TaskScreenState extends State<TaskScreen> {
                       text: '${provider.activeTimers.length}',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: context.colors.primary,
                       ),
                     ),
                   ],
@@ -197,17 +197,17 @@ class _TaskScreenState extends State<TaskScreen> {
                           _isToday(_selectedDate)
                               ? '今天'
                               : DateFormat('MM月dd日').format(_selectedDate),
-                          style: AppText.titleSerif.copyWith(
+                          style: context.text.titleSerif.copyWith(
                             color: _isToday(_selectedDate)
-                                ? AppColors.primary
-                                : AppColors.textPrimary,
+                                ? context.colors.primary
+                                : context.colors.textPrimary,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.xs),
                         Text(
                           _getWeekday(_selectedDate),
                           style: AppText.caption.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ],
@@ -227,18 +227,24 @@ class _TaskScreenState extends State<TaskScreen> {
           IntrinsicHeight(
             child: Row(
               children: [
-                _buildStatColumn('全部任务', totalTasks, AppColors.textPrimary),
+                _buildStatColumn(
+                  '全部任务',
+                  totalTasks,
+                  context.colors.textPrimary,
+                ),
                 const VerticalDivider(width: 1, thickness: 1),
                 _buildStatColumn(
                   '进行中',
                   runningTasks,
-                  runningTasks > 0 ? AppColors.success : AppColors.textHint,
+                  runningTasks > 0
+                      ? context.colors.success
+                      : context.colors.textHint,
                 ),
                 const VerticalDivider(width: 1, thickness: 1),
                 _buildStatColumn(
                   '常驻任务',
                   repeatableTasks,
-                  AppColors.textPrimary,
+                  context.colors.textPrimary,
                 ),
               ],
             ),
@@ -255,7 +261,7 @@ class _TaskScreenState extends State<TaskScreen> {
     return PaperIconButton(
       icon: icon,
       onTap: onTap,
-      color: AppColors.textSecondary,
+      color: context.colors.textSecondary,
       size: PaperIconButton.sizeChrome,
       iconSize: 22,
     );
@@ -271,13 +277,13 @@ class _TaskScreenState extends State<TaskScreen> {
               value: value,
               format: (v) => '$v',
               duration: const Duration(milliseconds: 450),
-              style: AppText.serifNum.copyWith(fontSize: 30, color: color),
+              style: context.text.serifNum.copyWith(fontSize: 30, color: color),
             ),
             const SizedBox(height: 2),
             Text(
               label,
               style: AppText.labelSm.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -295,29 +301,29 @@ class _TaskScreenState extends State<TaskScreen> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl),
             decoration: BoxDecoration(
-              color: AppColors.primarySubtle,
+              color: context.colors.primarySubtle,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.task_alt_rounded,
               size: 48,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             '暂无任务',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               letterSpacing: 0.3,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '点击下方按钮添加新任务',
-            style: TextStyle(fontSize: 14, color: AppColors.textHint),
+            style: TextStyle(fontSize: 14, color: context.colors.textHint),
           ),
         ],
       ),
@@ -463,10 +469,10 @@ class _TaskScreenState extends State<TaskScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.textOnPrimary,
-              surface: AppColors.surface,
+            colorScheme: ColorScheme.light(
+              primary: context.colors.primary,
+              onPrimary: context.colors.textOnPrimary,
+              surface: context.colors.surface,
             ),
           ),
           child: child!,
@@ -506,16 +512,16 @@ class _TaskScreenState extends State<TaskScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.check_circle,
-                color: AppColors.textOnPrimary,
+                color: context.colors.textOnPrimary,
                 size: 20,
               ),
               const SizedBox(width: 10),
               Text(task.isRepeatable ? '完成次数 +1' : '任务已完成'),
             ],
           ),
-          backgroundColor: AppColors.success,
+          backgroundColor: context.colors.success,
         ),
       );
   }
@@ -534,7 +540,7 @@ class _TaskScreenState extends State<TaskScreen> {
               Navigator.pop(context);
               context.read<TaskProvider>().deleteTask(task.id);
             },
-            color: AppColors.error,
+            color: context.colors.error,
             label: '删除',
           ),
         ],
@@ -552,12 +558,16 @@ class _TaskScreenState extends State<TaskScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.play_circle, color: Colors.white, size: 20),
+              Icon(
+                Icons.play_circle,
+                color: context.colors.textOnPrimary,
+                size: 20,
+              ),
               const SizedBox(width: 10),
               Text('开始计时: ${task.title}'),
             ],
           ),
-          backgroundColor: AppColors.primary,
+          backgroundColor: context.colors.primary,
         ),
       );
   }
@@ -583,16 +593,16 @@ class _TaskScreenState extends State<TaskScreen> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.check_circle,
-                  color: AppColors.textOnPrimary,
+                  color: context.colors.textOnPrimary,
                   size: 20,
                 ),
                 const SizedBox(width: 10),
                 Text(isCountUp ? '时间已记录' : '任务已完成'),
               ],
             ),
-            backgroundColor: AppColors.success,
+            backgroundColor: context.colors.success,
           ),
         );
     }

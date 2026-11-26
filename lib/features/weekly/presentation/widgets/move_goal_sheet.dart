@@ -38,12 +38,14 @@ class _MoveGoalSheet extends StatelessWidget {
       children: <Widget>[
         Text(
           '挪到其他周',
-          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
+          style: context.text.titleSerif.copyWith(
+            color: context.colors.textPrimary,
+          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           '「${goal.title}」',
-          style: AppText.caption.copyWith(color: AppColors.textSecondary),
+          style: AppText.caption.copyWith(color: context.colors.textSecondary),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -72,8 +74,12 @@ class _MoveGoalSheet extends StatelessWidget {
     final String key = weekKeyOf(monday);
     final bool isCurrent = key == goal.weekKey;
     final String? short = weekShortLabel(monday);
-    final Color strong = isCurrent ? AppColors.textHint : AppColors.textPrimary;
-    final Color weak = isCurrent ? AppColors.textHint : AppColors.textSecondary;
+    final Color strong = isCurrent
+        ? context.colors.textHint
+        : context.colors.textPrimary;
+    final Color weak = isCurrent
+        ? context.colors.textHint
+        : context.colors.textSecondary;
 
     return PaperCard(
       tone: PaperTone.row,
@@ -90,16 +96,18 @@ class _MoveGoalSheet extends StatelessWidget {
             width: 30,
             child: Text(
               index.toString().padLeft(2, '0'),
-              style: AppText.serifNum.copyWith(
+              style: context.text.serifNum.copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: isCurrent ? AppColors.textHint : AppColors.primary,
+                color: isCurrent
+                    ? context.colors.textHint
+                    : context.colors.primary,
               ),
             ),
           ),
           Text(
             short ?? weekRangeLabel(monday),
-            style: AppText.bodySerif.copyWith(
+            style: context.text.bodySerif.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: strong,
@@ -116,13 +124,13 @@ class _MoveGoalSheet extends StatelessWidget {
           if (isCurrent)
             Text(
               '当前',
-              style: AppText.labelSm.copyWith(color: AppColors.primary),
+              style: AppText.labelSm.copyWith(color: context.colors.primary),
             )
           else
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
               size: 20,
-              color: AppColors.textHint,
+              color: context.colors.textHint,
             ),
         ],
       ),
@@ -140,20 +148,20 @@ class _MoveGoalSheet extends StatelessWidget {
       onTap: () => _pickWeek(context),
       child: Row(
         children: <Widget>[
-          const SizedBox(
+          SizedBox(
             width: 30,
             child: Icon(
               Icons.calendar_month_rounded,
               size: 17,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
           ),
           Text(
             '选其他周…',
-            style: AppText.bodySerif.copyWith(
+            style: context.text.bodySerif.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
           ),
         ],
@@ -179,10 +187,10 @@ class _MoveGoalSheet extends StatelessWidget {
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.textOnPrimary,
-              surface: AppColors.surface,
+            colorScheme: ColorScheme.light(
+              primary: context.colors.primary,
+              onPrimary: context.colors.textOnPrimary,
+              surface: context.colors.surface,
             ),
           ),
           child: child!,

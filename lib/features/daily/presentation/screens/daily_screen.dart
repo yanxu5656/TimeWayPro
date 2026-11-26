@@ -75,7 +75,7 @@ class _DailyScreenState extends State<DailyScreen> {
             meta: Text.rich(
               TextSpan(
                 style: AppText.caption.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   letterSpacing: 0.4,
                 ),
                 children: <InlineSpan>[
@@ -88,7 +88,7 @@ class _DailyScreenState extends State<DailyScreen> {
                     text: '${isoWeekNumber(provider.selectedDate)}',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: context.colors.primary,
                     ),
                   ),
                   TextSpan(text: ' 周 · 共 '),
@@ -96,7 +96,7 @@ class _DailyScreenState extends State<DailyScreen> {
                     text: '${provider.totalTasks}',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: context.colors.primary,
                     ),
                   ),
                   const TextSpan(text: ' 条'),
@@ -129,17 +129,17 @@ class _DailyScreenState extends State<DailyScreen> {
                               : DateFormat(
                                   'MM月dd日',
                                 ).format(provider.selectedDate),
-                          style: AppText.titleSerif.copyWith(
+                          style: context.text.titleSerif.copyWith(
                             color: isToday
-                                ? AppColors.primary
-                                : AppColors.textPrimary,
+                                ? context.colors.primary
+                                : context.colors.textPrimary,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.xs),
                         Text(
                           _getWeekday(provider.selectedDate),
                           style: AppText.caption.copyWith(
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ],
@@ -162,18 +162,18 @@ class _DailyScreenState extends State<DailyScreen> {
                 value: provider.completedTasks,
                 format: (v) => '$v',
                 duration: const Duration(milliseconds: 450),
-                style: AppText.serifNum.copyWith(
+                style: context.text.serifNum.copyWith(
                   fontSize: 48,
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 5),
                 child: Text(
                   ' /${provider.totalTasks}',
-                  style: AppText.serifNum.copyWith(
+                  style: context.text.serifNum.copyWith(
                     fontSize: 22,
-                    color: AppColors.textHint,
+                    color: context.colors.textHint,
                   ),
                 ),
               ),
@@ -191,7 +191,7 @@ class _DailyScreenState extends State<DailyScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: AppText.caption.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -200,7 +200,7 @@ class _DailyScreenState extends State<DailyScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.caption.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -211,9 +211,11 @@ class _DailyScreenState extends State<DailyScreen> {
           const SizedBox(height: AppSpacing.xs),
           LinearProgressIndicator(
             value: provider.progress,
-            backgroundColor: AppColors.surfaceVariant,
+            backgroundColor: context.colors.surfaceVariant,
             valueColor: AlwaysStoppedAnimation<Color>(
-              provider.progress >= 1.0 ? AppColors.success : AppColors.primary,
+              provider.progress >= 1.0
+                  ? context.colors.success
+                  : context.colors.primary,
             ),
             minHeight: 5,
             borderRadius: AppRadius.brFull,
@@ -230,7 +232,7 @@ class _DailyScreenState extends State<DailyScreen> {
     return PaperIconButton(
       icon: icon,
       onTap: onTap,
-      color: AppColors.textSecondary,
+      color: context.colors.textSecondary,
       size: PaperIconButton.sizeChrome,
       iconSize: 22,
     );
@@ -316,29 +318,29 @@ class _DailyScreenState extends State<DailyScreen> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl),
             decoration: BoxDecoration(
-              color: AppColors.primarySubtle,
+              color: context.colors.primarySubtle,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.event_note_rounded,
               size: 48,
-              color: AppColors.primary,
+              color: context.colors.primary,
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             '暂无待办',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               letterSpacing: 0.3,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '点击下方按钮添加今日待办',
-            style: TextStyle(fontSize: 14, color: AppColors.textHint),
+            style: TextStyle(fontSize: 14, color: context.colors.textHint),
           ),
         ],
       ),
@@ -354,11 +356,11 @@ class _DailyScreenState extends State<DailyScreen> {
         // 与卡片同一份下间距，否则滑动时红底会伸进卡间的空隙
         margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         padding: const EdgeInsets.only(right: 20),
-        decoration: const BoxDecoration(
-          color: AppColors.error,
-          borderRadius: AppRadius.brCard,
+        decoration: BoxDecoration(
+          color: context.colors.error,
+          borderRadius: BorderRadius.circular(context.shape.cardRadius),
         ),
-        child: const Icon(Icons.delete_outline, color: AppColors.textOnPrimary),
+        child: Icon(Icons.delete_outline, color: context.colors.textOnPrimary),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
@@ -376,7 +378,7 @@ class _DailyScreenState extends State<DailyScreen> {
                   AppHaptics.confirm();
                   Navigator.pop(context, true);
                 },
-                color: AppColors.error,
+                color: context.colors.error,
                 label: '删除',
               ),
             ],
@@ -394,7 +396,7 @@ class _DailyScreenState extends State<DailyScreen> {
           vertical: 15,
         ),
         margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
-        tint: task.isCompleted ? AppColors.success : null,
+        tint: task.isCompleted ? context.colors.success : null,
         onTap: () {
           runPaperAction(context, () => provider.toggleComplete(task.id));
         },
@@ -419,10 +421,10 @@ class _DailyScreenState extends State<DailyScreen> {
                 children: [
                   Text(
                     task.title,
-                    style: AppText.bodySerif.copyWith(
+                    style: context.text.bodySerif.copyWith(
                       color: task.isCompleted
-                          ? AppColors.textHint
-                          : AppColors.textPrimary,
+                          ? context.colors.textHint
+                          : context.colors.textPrimary,
                       decoration: task.isCompleted
                           ? TextDecoration.lineThrough
                           : null,
@@ -434,7 +436,7 @@ class _DailyScreenState extends State<DailyScreen> {
                     Text(
                       task.description!,
                       style: AppText.caption.copyWith(
-                        color: AppColors.textHint,
+                        color: context.colors.textHint,
                         decoration: task.isCompleted
                             ? TextDecoration.lineThrough
                             : null,
@@ -453,7 +455,9 @@ class _DailyScreenState extends State<DailyScreen> {
                 padding: const EdgeInsets.only(left: AppSpacing.xs),
                 child: Text(
                   '已完成',
-                  style: AppText.labelSm.copyWith(color: AppColors.success),
+                  style: AppText.labelSm.copyWith(
+                    color: context.colors.success,
+                  ),
                 ),
               ),
           ],
@@ -476,10 +480,10 @@ class _DailyScreenState extends State<DailyScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.textOnPrimary,
-              surface: AppColors.surface,
+            colorScheme: ColorScheme.light(
+              primary: context.colors.primary,
+              onPrimary: context.colors.textOnPrimary,
+              surface: context.colors.surface,
             ),
           ),
           child: child!,
@@ -543,17 +547,19 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
       children: [
         Text(
           '添加待办',
-          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
+          style: context.text.titleSerif.copyWith(
+            color: context.colors.textPrimary,
+          ),
         ),
         const SizedBox(height: 24),
 
         // 任务名称
-        const Text(
+        Text(
           '待办内容',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -565,12 +571,12 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
         const SizedBox(height: 20),
 
         // 备注
-        const Text(
+        Text(
           '备注（可选）',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -582,12 +588,12 @@ class _AddDailyTaskSheetState extends State<_AddDailyTaskSheet> {
         const SizedBox(height: 20),
 
         // 时间段选择
-        const Text(
+        Text(
           '时间段',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 10),
@@ -690,17 +696,19 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
       children: [
         Text(
           '编辑待办',
-          style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
+          style: context.text.titleSerif.copyWith(
+            color: context.colors.textPrimary,
+          ),
         ),
         const SizedBox(height: 24),
 
         // 任务名称
-        const Text(
+        Text(
           '待办内容',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -711,12 +719,12 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
         const SizedBox(height: 20),
 
         // 备注
-        const Text(
+        Text(
           '备注（可选）',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -728,12 +736,12 @@ class _EditDailyTaskSheetState extends State<_EditDailyTaskSheet> {
         const SizedBox(height: 20),
 
         // 时间段选择
-        const Text(
+        Text(
           '时间段',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: 10),

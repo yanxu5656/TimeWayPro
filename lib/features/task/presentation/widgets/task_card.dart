@@ -48,13 +48,13 @@ class TaskCard extends StatelessWidget {
         ),
         margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
         animate: true,
-        tint: isRunning ? AppColors.success : null,
+        tint: isRunning ? context.colors.success : null,
         onTap: onEdit,
         onLongPress: () => _showOptions(context),
         child: Row(
           children: [
             // 完成按钮
-            _buildCompleteButton(),
+            _buildCompleteButton(context),
             const SizedBox(width: 14),
 
             // 任务信息
@@ -68,25 +68,25 @@ class TaskCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           task.title,
-                          style: AppText.bodySerif.copyWith(
+                          style: context.text.bodySerif.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: task.isCompleted
-                                ? AppColors.textHint
-                                : AppColors.textPrimary,
+                                ? context.colors.textHint
+                                : context.colors.textPrimary,
                             decoration: task.isCompleted
                                 ? TextDecoration.lineThrough
                                 : null,
                           ),
                         ),
                       ),
-                      if (isRunning) _buildRunningIndicator(),
+                      if (isRunning) _buildRunningIndicator(context),
                     ],
                   ),
                   const SizedBox(height: 6),
 
                   // 计时显示（进行中）
-                  if (isRunning) _buildTimerDisplay(),
+                  if (isRunning) _buildTimerDisplay(context),
 
                   // 标签行
                   Wrap(
@@ -94,6 +94,7 @@ class TaskCard extends StatelessWidget {
                     runSpacing: 6,
                     children: [
                       _buildTag(
+                        context,
                         task.timerType == TimerType.countUp
                             ? Icons.timer_outlined
                             : Icons.hourglass_bottom,
@@ -102,11 +103,16 @@ class TaskCard extends StatelessWidget {
                             : '倒计时 ${task.durationText}',
                       ),
                       if (task.isRepeatable)
-                        _buildTag(Icons.repeat, task.repeatTypeText),
+                        _buildTag(context, Icons.repeat, task.repeatTypeText),
                       if (task.isRepeatable && task.repeatCount > 1)
-                        _buildTag(Icons.refresh, '${task.repeatCount}次/天'),
+                        _buildTag(
+                          context,
+                          Icons.refresh,
+                          '${task.repeatCount}次/天',
+                        ),
                       if (task.dueDate != null)
                         _buildTag(
+                          context,
                           Icons.event_outlined,
                           DateFormat('MM/dd').format(task.dueDate!),
                         ),
@@ -124,24 +130,24 @@ class TaskCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primarySubtle,
+                            color: context.colors.primarySubtle,
                             borderRadius: BorderRadius.circular(AppRadius.sm),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.check_circle_outline,
                                 size: 14,
-                                color: AppColors.primary,
+                                color: context.colors.primary,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 '${task.completedCount}/${task.repeatCount}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
+                                  color: context.colors.primary,
                                 ),
                               ),
                             ],
@@ -155,11 +161,11 @@ class TaskCard extends StatelessWidget {
                               value: task.repeatCount > 0
                                   ? task.completedCount / task.repeatCount
                                   : 0,
-                              backgroundColor: AppColors.surfaceVariant,
+                              backgroundColor: context.colors.surfaceVariant,
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 task.completedCount >= task.repeatCount
-                                    ? AppColors.success
-                                    : AppColors.primary,
+                                    ? context.colors.success
+                                    : context.colors.primary,
                               ),
                               minHeight: 4,
                             ),
@@ -178,17 +184,17 @@ class TaskCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.access_time,
                           size: 14,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '$durationLabel ${_formatDuration(dailyDuration)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ],
@@ -217,7 +223,9 @@ class TaskCard extends StatelessWidget {
                         ),
                 child: KeyedSubtree(
                   key: ValueKey<bool>(isRunning),
-                  child: isRunning ? _buildStopButton() : _buildStartButton(),
+                  child: isRunning
+                      ? _buildStopButton(context)
+                      : _buildStartButton(context),
                 ),
               ),
           ],
@@ -226,7 +234,7 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCompleteButton() {
+  Widget _buildCompleteButton(BuildContext context) {
     // 尺寸与配色统一走 InkCheckCircle（28px + success 绿）。
     // 原先这里是 28/primary，待办页是 26/success，两页观感不一致。
     return InkCheckCircle(
@@ -236,11 +244,11 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRunningIndicator() {
+  Widget _buildRunningIndicator(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.1),
+        color: context.colors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
@@ -249,18 +257,18 @@ class TaskCard extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.success,
+              color: context.colors.success,
             ),
           ),
           const SizedBox(width: 6),
-          const Text(
+          Text(
             '进行中',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppColors.success,
+              color: context.colors.success,
             ),
           ),
         ],
@@ -268,7 +276,7 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTimerDisplay() {
+  Widget _buildTimerDisplay(BuildContext context) {
     final hours = elapsedSeconds ~/ 3600;
     final minutes = (elapsedSeconds % 3600) ~/ 60;
     final seconds = elapsedSeconds % 60;
@@ -303,60 +311,63 @@ class TaskCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.inkFaint,
+        color: context.colors.inkFaint,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.access_time_filled,
             size: 18,
-            color: AppColors.primary,
+            color: context.colors.primary,
           ),
           const SizedBox(width: AppSpacing.xs),
-          Text(timeStr, style: AppText.mono.copyWith(color: AppColors.primary)),
+          Text(
+            timeStr,
+            style: context.text.mono.copyWith(color: context.colors.primary),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStartButton() {
+  Widget _buildStartButton(BuildContext context) {
     return PaperIconButton(
       icon: task.timerType == TimerType.countUp
           ? Icons.play_arrow_rounded
           : Icons.timer_outlined,
       onTap: onStart,
-      color: AppColors.primary,
+      color: context.colors.primary,
     );
   }
 
-  Widget _buildStopButton() {
+  Widget _buildStopButton(BuildContext context) {
     return PaperIconButton(
       icon: Icons.stop_rounded,
       onTap: onStop,
-      color: AppColors.error,
+      color: context.colors.error,
     );
   }
 
-  Widget _buildTag(IconData icon, String text) {
+  Widget _buildTag(BuildContext context, IconData icon, String text) {
     // 编辑风的标签：细线描边的空框，不用底色块
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: context.colors.divider),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: AppColors.textSecondary),
+          Icon(icon, size: 13, color: context.colors.textSecondary),
           const SizedBox(width: 4),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -384,19 +395,21 @@ class TaskCard extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: Text(
               task.title,
-              style: AppText.titleSerif.copyWith(color: AppColors.textPrimary),
+              style: context.text.titleSerif.copyWith(
+                color: context.colors.textPrimary,
+              ),
             ),
           ),
           ListTile(
             leading: Container(
               padding: const EdgeInsets.all(AppSpacing.xs),
               decoration: BoxDecoration(
-                color: AppColors.primarySubtle,
+                color: context.colors.primarySubtle,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.edit_outlined,
-                color: AppColors.primary,
+                color: context.colors.primary,
                 size: 20,
               ),
             ),
@@ -410,16 +423,16 @@ class TaskCard extends StatelessWidget {
             leading: Container(
               padding: const EdgeInsets.all(AppSpacing.xs),
               decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
+                color: context.colors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.delete_outline,
-                color: AppColors.error,
+                color: context.colors.error,
                 size: 20,
               ),
             ),
-            title: const Text('删除任务', style: TextStyle(color: AppColors.error)),
+            title: Text('删除任务', style: TextStyle(color: context.colors.error)),
             onTap: () {
               Navigator.pop(context);
               onDelete();

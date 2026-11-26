@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.10.3-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.10.4-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -38,7 +38,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 与常见的待办清单不同，时途不满足于「打勾」，而是记录**每件事真实消耗了多少时间** —— 这些记录会沉淀为热力图、饼图和任务明细，让「我很忙」变成「我忙在了这件事上，一共 3 小时 20 分」。
 
-界面在 1.7.0 换为**陶土暖笺**：暖纸底、墨色文字、陶土一笔，圆角卡片当主表面、衬线数字当主角。设计取舍写在下面的[设计系统](#设计系统)一节。
+界面默认保留 **陶土暖笺**，同时提供简洁、可爱、科技三组共 10 套可切换主题；颜色、字体、圆角、阴影与深色状态栏会一起变化。方案预览与设计取舍写在下面的[外观主题](#外观主题)一节。
 
 ---
 
@@ -121,6 +121,14 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 - **本地导入导出** —— 导出为 JSON 文件、从 JSON 文件导入
 - **自动备份与原子写入** —— 写入走临时文件 + 改名替换，中断也不会写出半截 JSON；正式文件异常时自动从 `.bak` 回滚
 
+### 🎨 外观主题
+
+- **10 套完整主题**：默认「陶土暖笺」，另有简洁、可爱、科技各 3 款；设置页顶部分组展示迷你预览、名称与一句话风格说明
+- **实时全局切换**：点击方案立即应用到八个页面、卡片、导航、弹窗、表单、按钮、图表与系统状态栏，不重置当前 Tab 或专注计时
+- **自动保存与恢复**：主题 ID 持久化到本地，重启恢复；历史数据损坏或 ID 未知时安全回退默认主题
+- **不只是换色**：各主题同步调整字体、圆角、阴影、刊头水印与明暗模式；科技三款为深色界面
+- **可读性守护**：每套主题都经过正文、主色、按钮文字与弱化文字对比度测试
+
 ### 🔔 通知栏常驻通知
 
 - 计时进行中在通知栏常驻显示任务名称与计时，每 5 秒更新
@@ -129,6 +137,16 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.10.4 — 十套外观主题与实时换肤
+*2026-11-26*
+
+- **新增方案选择器**：设置页最前面加入「外观主题」，按经典文雅 / 简洁 / 可爱 / 科技分组；每张卡片带独立迷你预览，点击即应用并自动保存
+- **九款新主题**：简洁提供「云白 / 青野 / 石墨」，可爱提供「蜜桃汽水 / 薄荷糖 / 莓莓云朵」，科技提供「深空蓝 / 霓虹脉冲 / 矩阵夜航」；原「陶土暖笺」继续作为默认主题
+- **全局设计令牌**：以 `ThemeExtension<AppDesign>` 统一承载色板、字体、圆角、阴影与刊头策略；页面、卡片、导航、弹窗、表单和图表均改为读取当前主题
+- **运行时装配**：`ThemeData` 的 ColorScheme、输入框、按钮、对话框、进度条、开关等组件随主题重建；科技主题同步切换深色亮度与状态栏图标，不通过重建 `MaterialApp` 根节点重置导航和计时状态
+- **可靠持久化**：启动异步恢复所选主题，写盘失败保留当前会话选择；损坏值、未知 ID 与加载竞态均有防护
+- **方案实机对照**：新增九款主题截图和三组 WebP 联系表；新增 33 个目录、对比度、偏好和实时切换测试，默认套件 275 → **308**，`flutter analyze` 无告警
 
 ### v1.10.3 — 每周目标分段打卡
 *2026-11-25*
@@ -459,19 +477,58 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 ## 设计系统
 
-1.3.0 把散落的样式收敛成令牌 + 组件，1.5.0 在同一套骨架上把视觉语言整体换血为「静白志」（纸、墨、朱砂），1.7.0 再换成「陶土暖笺」——暖纸、墨、陶土三种材料，层次靠**圆角卡片与排版**表达，不再有模糊与渐变。
+1.3.0 把散落的样式收敛成令牌 + 组件，1.5.0 在同一套骨架上把视觉语言整体换血为「静白志」（纸、墨、朱砂），1.7.0 再换成「陶土暖笺」——暖纸、墨、陶土三种材料，层次靠**圆角卡片与排版**表达，不再有模糊与渐变。1.10.4 起，这套令牌升级为运行时主题，可一键切换十套完整外观。
 
 ### 令牌
 
 | 类别 | 位置 | 说明 |
 | --- | --- | --- |
-| 颜色 | `lib/core/theme/app_colors.dart` | 暖纸 `#F6EDE3` / 墨 `#2E2119` / 陶土 `#A84E2B` + 暖色系图表色板 |
+| 主题目录 | `lib/core/theme/app_design.dart` | 10 套主题的稳定 ID、色板、字体、形状、阴影与风格元数据 |
+| 运行时主题 | `lib/core/theme/app_theme.dart` | 由 `AppDesign` 装配 Material 3 的 ColorScheme、组件与文字主题 |
+| 颜色 | `lib/core/theme/app_colors.dart` | 默认暖纸 `#F6EDE3` / 墨 `#2E2119` / 陶土 `#A84E2B` + 暖色系图表色板 |
 | 圆角 | `lib/core/theme/app_radius.dart` | `xs 3` / `sm 6` / `md 10` / `lg 12` / `xl 14` / `sheet 16` + `card 16` / `full` |
 | 间距 | `lib/core/theme/app_spacing.dart` | 4pt 网格 + 语义常量（`screenH` / `cardPad` / `navInset`） |
-| 阴影 | `lib/core/theme/app_shadows.dart` | 只有 `e1`（账本行卡）/ `e2`（弹窗、FAB）两档微影 |
+| 阴影 | `lib/core/theme/app_shadows.dart` | 默认主题只有 `e1`（账本行卡）/ `e2`（弹窗、FAB）两档微影 |
 | 文字 | `lib/core/theme/app_text.dart` | 15 档 M3 槽位 + 衬线组（`masthead` / `titleSerif` / `bodySerif` / `serifNum` / `kicker`）+ 补充组 |
+| 偏好持久化 | `lib/features/settings/providers/theme_provider.dart` | 通过 `selected_theme_id` 保存与恢复所选主题 |
 
-令牌全部是编译期常量，页面不通过 `Theme.of(context)` 取样式——这样绝大多数样式能保持 `const`。
+页面通过 `context.colors`、`context.text`、`context.shape` 读取当前 `ThemeExtension<AppDesign>`；未挂载扩展时回退到默认暖笺，原有 `AppColors` / `AppText` / `AppRadius` 仍作为默认设计基准。主题切换更新 `MaterialApp.theme`，不替换应用根节点，因此当前 Tab、滚动位置和计时状态不会重置。
+
+### 外观主题（v1.10.4）
+
+设置页顶部即可选择，点击后实时应用并自动保存。每套方案都使用真实应用页面截图，而不是单独绘制的色卡。
+
+| 风格 | 方案 | 视觉取舍 |
+| --- | --- | --- |
+| 经典文雅 | **陶土暖笺**（默认） | 暖纸、陶土、衬线数字、16dp 圆角与双层行阴影 |
+| 简洁 | **云白** | 雾蓝 + 大面积留白，无行阴影，信息边界更克制 |
+| 简洁 | **青野** | 低饱和森林绿，清爽自然的轻量清单感 |
+| 简洁 | **石墨** | 中性灰阶，去掉装饰，专注内容本身 |
+| 可爱 | **蜜桃汽水** | 蜜桃红 + 奶油白，22dp 大圆角与柔和投影 |
+| 可爱 | **薄荷糖** | 清透薄荷绿，轻快而不刺眼 |
+| 可爱 | **莓莓云朵** | 柔紫与莓果色，轻盈甜美的圆润卡片 |
+| 科技 | **深空蓝** | 深夜蓝 + 冰蓝，8dp 圆角与较长阴影 |
+| 科技 | **霓虹脉冲** | 黑紫底 + 荧光绿 / 紫双强调色 |
+| 科技 | **矩阵夜航** | 碳黑 + 终端荧光绿，等宽字体强化仪表感 |
+
+#### 简洁：3 款方案
+
+<img src="docs/themes/minimal-options.webp" width="960" alt="简洁风格三款主题对照：云白、青野、石墨">
+
+#### 可爱：3 款方案
+
+<img src="docs/themes/cute-options.webp" width="960" alt="可爱风格三款主题对照：蜜桃汽水、薄荷糖、莓莓云朵">
+
+#### 科技：3 款方案
+
+<img src="docs/themes/tech-options.webp" width="960" alt="科技风格三款主题对照：深空蓝、霓虹脉冲、矩阵夜航">
+
+单款高清预览位于 [`docs/themes/`](docs/themes/)，命名与主题 ID 一致，例如 `cute_peach.webp`。重新生成：
+
+```bash
+flutter test test/golden/screenshots.golden.dart --update-goldens
+python tool/make_theme_previews.py
+```
 
 ### 衬线字体（打包资产）
 
@@ -593,14 +650,14 @@ flutter run
 flutter build apk --release
 # 产物：build/app/outputs/flutter-apk/app-release.apk
 # 发布到 Releases 时复制一份带版本号的，方便区分：
-#   cp .../app-release.apk .../app-release-1.10.0.apk
+#   cp .../app-release.apk .../app-release-1.10.4.apk
 ```
 
 ### 测试
 
 ```bash
 flutter analyze          # 当前基线：0 error / 0 warning
-flutter test             # 260 个测试
+flutter test             # 308 个测试
 ```
 
 另有三类不在默认 test run 里的 golden（文件名不以 `_test.dart` 结尾，避免像素跨平台漂移影响别人的机器）：
@@ -610,7 +667,8 @@ flutter test             # 260 个测试
 flutter test test/golden/paper_gallery.golden.dart --update-goldens
 flutter test test/golden/app_with_data.golden.dart --update-goldens
 flutter test test/golden/screenshots.golden.dart --update-goldens
-python tool/make_readme_shots.py     # 把截图缩成 README 用的 WebP
+python tool/make_readme_shots.py     # 把默认主题截图缩成 README 用的 WebP
+python tool/make_theme_previews.py   # 导出九款主题预览与三组联系表
 
 # 重新生成应用图标（改设计参数后跑这个，各平台资源一并重出）
 python tool/make_app_icon.py

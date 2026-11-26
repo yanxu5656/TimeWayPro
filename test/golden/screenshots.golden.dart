@@ -36,6 +36,7 @@ import 'package:time_way_pro/features/focus/providers/focus_timer_provider.dart'
 import 'package:time_way_pro/features/leisure/providers/leisure_provider.dart';
 import 'package:time_way_pro/features/planning/providers/plan_provider.dart';
 import 'package:time_way_pro/features/settings/providers/settings_provider.dart';
+import 'package:time_way_pro/features/settings/providers/theme_provider.dart';
 import 'package:time_way_pro/features/task/providers/task_provider.dart';
 import 'package:time_way_pro/features/weekly/providers/weekly_provider.dart';
 import 'package:time_way_pro/shared/database/database_helper.dart';
@@ -75,6 +76,7 @@ Future<void> _loadPackagedFont(String family, List<String> assets) async {
 
 Future<void> _loadFonts() async {
   await _loadFont('Roboto', File(r'C:\Windows\Fonts\Deng.ttf'));
+  await _loadFont('monospace', File(r'C:\Windows\Fonts\Deng.ttf'));
   await _loadPackagedFont('Playfair', <String>[
     'assets/fonts/PlayfairDisplay-Medium.ttf',
     'assets/fonts/PlayfairDisplay-Bold.ttf',
@@ -98,8 +100,9 @@ Future<void> _loadFonts() async {
 }
 
 /// 与 `TimeWayProApp` 结构一致（字体由上面的 Roboto 注册解决）
-Widget _appWithRealFont() {
+Widget _appWithRealFont({ThemeProvider? themeProvider}) {
   return MultiProvider(
+    key: ValueKey<String>(themeProvider?.option.id ?? 'default'),
     providers: [
       ChangeNotifierProvider<DailyProvider>(create: (_) => DailyProvider()),
       ChangeNotifierProvider<WeeklyProvider>(
@@ -120,15 +123,22 @@ Widget _appWithRealFont() {
       ChangeNotifierProvider<SettingsProvider>(
         create: (_) => SettingsProvider()..loadSyncConfig(),
       ),
+      ChangeNotifierProvider<ThemeProvider>(
+        create: (_) => themeProvider ?? (ThemeProvider()..loadTheme()),
+      ),
       ChangeNotifierProvider<FocusTimerProvider>(
         create: (_) => FocusTimerProvider()..restoreState(),
       ),
     ],
-    child: MaterialApp(
-      title: 'TimeWayPro',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const MainScreen(),
+    child: Consumer<ThemeProvider>(
+      builder: (BuildContext context, ThemeProvider value, Widget? child) {
+        return MaterialApp(
+          title: 'TimeWayPro',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.forDesign(value.option.design),
+          home: const MainScreen(),
+        );
+      },
     ),
   );
 }
@@ -200,6 +210,34 @@ void main() {
     }
 
     expect(tester.takeException(), isNull);
+    debugDisableShadows = true;
+  });
+
+  testWidgets('九款新主题对照截图', (WidgetTester tester) async {
+    UiEffects.resetForTesting();
+    UiEffects.tier.value = UiEffectTier.reduced;
+    debugDisableShadows = false;
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.runAsync(() => DatabaseHelper().importAll(seedData()));
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    for (final AppThemeOption option in AppThemeCatalog.options.skip(1)) {
+      await preferences.setString(ThemeProvider.storageKey, option.id);
+      final ThemeProvider provider = ThemeProvider(preferences: preferences);
+      await provider.loadTheme();
+      await tester.pumpWidget(
+        _appWithRealFont(themeProvider: provider),
+      );
+      for (int i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 120));
+      }
+      expect(tester.takeException(), isNull);
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('../../build/theme_previews/${option.id}.png'),
+      );
+    }
     debugDisableShadows = true;
   });
 

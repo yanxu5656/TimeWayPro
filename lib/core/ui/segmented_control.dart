@@ -76,8 +76,8 @@ class SegmentedControl<T> extends StatelessWidget {
                                     ? FontWeight.w700
                                     : FontWeight.w500,
                                 color: segment.value == value
-                                    ? AppColors.textPrimary
-                                    : AppColors.textSecondary,
+                                    ? context.colors.textPrimary
+                                    : context.colors.textSecondary,
                               ),
                               child: Text(
                                 segment.label,
@@ -100,7 +100,7 @@ class SegmentedControl<T> extends StatelessWidget {
               bottom: 0,
               width: segWidth,
               height: 2,
-              child: const ColoredBox(color: AppColors.primary),
+              child: ColoredBox(color: context.colors.primary),
             ),
           ],
         );

@@ -108,7 +108,7 @@ class PaperButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool enabled = onPressed != null && !loading;
-    final Color fg = foregroundColor ?? AppColors.textOnPrimary;
+    final Color fg = foregroundColor ?? context.colors.textOnPrimary;
 
     final List<Widget> children = <Widget>[
       if (loading)
@@ -128,8 +128,8 @@ class PaperButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
-        disabledBackgroundColor: AppColors.inkSubtle,
-        disabledForegroundColor: AppColors.textHint,
+        disabledBackgroundColor: context.colors.inkSubtle,
+        disabledForegroundColor: context.colors.textHint,
         overlayColor: fg.withValues(alpha: 0.18),
         padding:
             padding ??
@@ -177,7 +177,7 @@ class PaperOutlinedButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = foregroundColor ?? AppColors.primary;
+    final Color fg = foregroundColor ?? context.colors.primary;
 
     final List<Widget> children = <Widget>[
       if (icon != null) ...<Widget>[
@@ -233,14 +233,14 @@ class PaperTextButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final IconData? icon;
 
-  /// 前景色（删除动作传 [AppColors.error]）。
+  /// 前景色（删除动作传 [context.colors.error]）。
   final Color? color;
   final EdgeInsetsGeometry? padding;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = color ?? AppColors.primary;
+    final Color fg = color ?? context.colors.primary;
 
     final List<Widget> children = <Widget>[
       if (icon != null) ...<Widget>[

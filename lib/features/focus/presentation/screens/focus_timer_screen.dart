@@ -49,11 +49,11 @@ class _PhaseHeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ({String badge, String title, String subtitle, Color tint}) meta =
-        _phaseMeta(timer);
+        _phaseMeta(context, timer);
 
     return PaperCard(
       tone: PaperTone.row,
-      tint: meta.tint == AppColors.textSecondary ? null : meta.tint,
+      tint: meta.tint == context.colors.textSecondary ? null : meta.tint,
       child: Row(
         children: <Widget>[
           Container(
@@ -77,13 +77,15 @@ class _PhaseHeaderCard extends StatelessWidget {
               children: <Widget>[
                 Text(
                   meta.title,
-                  style: AppText.titleSm.copyWith(color: AppColors.textPrimary),
+                  style: AppText.titleSm.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   meta.subtitle,
                   style: AppText.bodySm.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
@@ -95,6 +97,7 @@ class _PhaseHeaderCard extends StatelessWidget {
   }
 
   ({String badge, String title, String subtitle, Color tint}) _phaseMeta(
+    BuildContext context,
     FocusTimerProvider t,
   ) {
     switch (t.phase) {
@@ -103,35 +106,35 @@ class _PhaseHeaderCard extends StatelessWidget {
           badge: '待开始',
           title: '45 分钟专注 · 5 分钟休息',
           subtitle: '倒计时结束后通过手机持续振动闹铃提醒休息',
-          tint: AppColors.textSecondary,
+          tint: context.colors.textSecondary,
         );
       case FocusPhase.focusing:
         return (
           badge: t.isPaused ? '已暂停' : '专注中',
           title: '保持心流，专注当下',
           subtitle: t.isPaused ? '点击「继续专注」恢复倒计时' : '满 45 分钟后将持续振动提醒你休息 5 分钟',
-          tint: AppColors.primary,
+          tint: context.colors.primary,
         );
       case FocusPhase.focusAlarm:
         return (
           badge: '闹铃中',
           title: '45 分钟专注时间到',
           subtitle: '手机正在持续振动闹铃，建议起身放松眼睛并休息 5 分钟',
-          tint: AppColors.error,
+          tint: context.colors.error,
         );
       case FocusPhase.breaking:
         return (
           badge: t.isPaused ? '休息暂停' : '休息中',
           title: '喝口水、远眺放松一下',
           subtitle: t.isPaused ? '点击「继续休息」恢复 5 分钟倒计时' : '5 分钟休息结束后将提醒你开始下一轮专注',
-          tint: AppColors.success,
+          tint: context.colors.success,
         );
       case FocusPhase.breakAlarm:
         return (
           badge: '闹铃中',
           title: '5 分钟休息已结束',
           subtitle: '手机正在持续振动闹铃，准备好就可以开启下一轮 45 分钟专注',
-          tint: AppColors.error,
+          tint: context.colors.error,
         );
     }
   }
@@ -145,11 +148,11 @@ class _DialCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color ringColor = switch (timer.phase) {
-      FocusPhase.idle => AppColors.primary,
-      FocusPhase.focusing => AppColors.primary,
-      FocusPhase.focusAlarm => AppColors.error,
-      FocusPhase.breaking => AppColors.success,
-      FocusPhase.breakAlarm => AppColors.error,
+      FocusPhase.idle => context.colors.primary,
+      FocusPhase.focusing => context.colors.primary,
+      FocusPhase.focusAlarm => context.colors.error,
+      FocusPhase.breaking => context.colors.success,
+      FocusPhase.breakAlarm => context.colors.error,
     };
 
     final String phaseLabel = switch (timer.phase) {
@@ -178,7 +181,7 @@ class _DialCard extends StatelessWidget {
               painter: _DialPainter(
                 progress: timer.isAlarming ? 1.0 : timer.progress,
                 ringColor: ringColor,
-                trackColor: AppColors.surfaceVariant,
+                trackColor: context.colors.surfaceVariant,
               ),
               child: Center(
                 child: Column(
@@ -191,16 +194,16 @@ class _DialCard extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       timer.formattedRemaining,
-                      style: AppText.serifNum.copyWith(
+                      style: context.text.serifNum.copyWith(
                         fontSize: 48,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       '已完成 ${timer.completedRounds} 轮',
                       style: AppText.bodySm.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -252,17 +255,17 @@ class _InfoPill extends StatelessWidget {
         vertical: AppSpacing.xxs + 2,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: context.colors.surfaceVariant,
         borderRadius: AppRadius.brFull,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(icon, size: 14, color: AppColors.textSecondary),
+          Icon(icon, size: 14, color: context.colors.textSecondary),
           const SizedBox(width: AppSpacing.xxs),
           Text(
             label,
-            style: AppText.bodySm.copyWith(color: AppColors.textSecondary),
+            style: AppText.bodySm.copyWith(color: context.colors.textSecondary),
           ),
         ],
       ),
@@ -304,9 +307,7 @@ class _PrimaryControlsState extends State<_PrimaryControls> {
         children: <Widget>[
           PaperButton(
             onPressed: isFocusDone ? timer.startBreak : timer.startFocus,
-            icon: isFocusDone
-                ? Icons.coffee_rounded
-                : Icons.play_arrow_rounded,
+            icon: isFocusDone ? Icons.coffee_rounded : Icons.play_arrow_rounded,
             label: isFocusDone ? '关闭闹铃 · 开始休息 5 分钟' : '关闭闹铃 · 开始下一轮专注',
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -388,7 +389,7 @@ class _PrimaryControlsState extends State<_PrimaryControls> {
         PaperTextButton(
           onPressed: timer.stop,
           icon: Icons.stop_rounded,
-          color: AppColors.error,
+          color: context.colors.error,
           label: stopLabel,
         ),
       ],
@@ -447,18 +448,18 @@ class _CycleAndAlarmCard extends StatelessWidget {
         children: <Widget>[
           Text(
             '节奏说明与闹铃测试',
-            style: AppText.titleSm.copyWith(color: AppColors.textPrimary),
+            style: AppText.titleSm.copyWith(color: context.colors.textPrimary),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             '• 计时期间通知栏常驻倒计时，锁屏、退出应用后到点依然准时响铃，直到你手动关闭或进入休息。\n'
             '• 休息倒计时固定 5 分钟，结束后同样提醒开启下一轮。',
-            style: AppText.bodySm.copyWith(color: AppColors.textSecondary),
+            style: AppText.bodySm.copyWith(color: context.colors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
             '闹铃模式',
-            style: AppText.label.copyWith(color: AppColors.textSecondary),
+            style: AppText.label.copyWith(color: context.colors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.xxs),
           SegmentedControl<FocusAlarmMode>(
@@ -474,7 +475,7 @@ class _CycleAndAlarmCard extends StatelessWidget {
             timer.alarmMode == FocusAlarmMode.vibrationOnly
                 ? '只振动不响铃，适合会议、课堂、图书馆等安静场合。'
                 : '闹钟铃声加持续振动，提醒效果最强。',
-            style: AppText.bodySm.copyWith(color: AppColors.textSecondary),
+            style: AppText.bodySm.copyWith(color: context.colors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.md),
           SizedBox(

@@ -13,8 +13,8 @@ import '../theme/app_theme.dart';
 /// v1.10.0 瘦身：色带只留标题行（约 47dp），[meta] 移出色带。
 /// 日期 / 周号 / 计数这些信息在日期行与进度行里本来就有第二份，
 /// 脚注行用 12px 纸面次级色承载，整块刊头从 ~124dp 降到 ~76dp，
-/// 把空间还给列表。色带上的文字一律用 [AppColors.textOnPrimary] /
-/// [AppColors.textOnPrimaryMuted] 这两个实测过对比度的档位。
+/// 把空间还给列表。色带上的文字一律用 [context.colors.textOnPrimary] /
+/// [context.colors.textOnPrimaryMuted] 这两个实测过对比度的档位。
 ///
 /// - [meta]：色带下方的一行脚注（`第 44 周 · 10/19 – 10/25 · VOL.359`）。
 ///   页面按纸面语义配色（次级文字 + 陶土数字），这里原样保留。
@@ -42,12 +42,6 @@ class Masthead extends StatelessWidget {
   /// 右上角描边水印（通常两位数字：当周 ISO 周号 / 当日日期）
   final String? ghost;
 
-  /// 水印描边画笔。暖白 26% 的空心描边——足够存在又不抢正文
-  static final Paint _ghostStroke = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 1.2
-    ..color = AppColors.ghostOnPrimary;
-
   static const TextStyle _ghostStyle = TextStyle(
     fontFamily: 'Playfair',
     fontSize: 56,
@@ -58,13 +52,19 @@ class Masthead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Paint ghostStroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = context.colors.ghostOnPrimary;
     final Widget titleRow = Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: <Widget>[
         Text(
           title,
-          style: AppText.masthead.copyWith(color: AppColors.textOnPrimary),
+          style: context.text.masthead.copyWith(
+            color: context.colors.textOnPrimary,
+          ),
         ),
         const SizedBox(width: AppSpacing.sm),
         // 320dp 窄屏下眉题可截断，标题永远完整
@@ -73,8 +73,8 @@ class Masthead extends StatelessWidget {
             kicker,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppText.kicker.copyWith(
-              color: AppColors.textOnPrimaryMuted,
+            style: context.text.kicker.copyWith(
+              color: context.colors.textOnPrimaryMuted,
             ),
           ),
         ),
@@ -96,12 +96,12 @@ class Masthead extends StatelessWidget {
         AppSpacing.cardPad,
         AppSpacing.xs,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: AppRadius.brCard,
+      decoration: BoxDecoration(
+        color: context.colors.primary,
+        borderRadius: BorderRadius.circular(context.shape.cardRadius),
       ),
       clipBehavior: Clip.hardEdge,
-      child: ghost == null
+      child: ghost == null || !context.shape.showMastheadGhost
           ? titleRow
           : Stack(
               clipBehavior: Clip.hardEdge,
@@ -112,7 +112,7 @@ class Masthead extends StatelessWidget {
                   child: ExcludeSemantics(
                     child: Text(
                       ghost!,
-                      style: _ghostStyle.copyWith(foreground: _ghostStroke),
+                      style: _ghostStyle.copyWith(foreground: ghostStroke),
                     ),
                   ),
                 ),
@@ -134,7 +134,7 @@ class Masthead extends StatelessWidget {
                 style: AppText.caption.copyWith(
                   fontSize: 12,
                   height: 1.4,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   letterSpacing: 0.4,
                 ),
                 child: meta!,

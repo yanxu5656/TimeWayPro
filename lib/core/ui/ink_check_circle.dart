@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import 'app_haptics.dart';
 import 'pressable_scale.dart';
 import 'ui_effects.dart';
@@ -20,7 +20,7 @@ class InkCheckCircle extends StatefulWidget {
     required this.isChecked,
     required this.onTap,
     this.size = 28,
-    this.color = AppColors.primary,
+    this.color,
     this.semanticLabel,
   });
 
@@ -30,7 +30,7 @@ class InkCheckCircle extends StatefulWidget {
   final double size;
 
   /// 选中时填充的强调色
-  final Color color;
+  final Color? color;
 
   final String? semanticLabel;
 
@@ -66,6 +66,7 @@ class _InkCheckCircleState extends State<InkCheckCircle> {
 
   @override
   Widget build(BuildContext context) {
+    final Color effectiveColor = widget.color ?? context.colors.primary;
     final bool reduced =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
@@ -92,12 +93,12 @@ class _InkCheckCircleState extends State<InkCheckCircle> {
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: widget.isChecked
-                        ? widget.color
+                        ? effectiveColor
                         // 空圈用 45% 墨，比文字轻、但仍在纸面上可见
-                        : AppColors.textPrimary.withValues(alpha: 0.45),
+                        : context.colors.textPrimary.withValues(alpha: 0.45),
                     width: 1.4,
                   ),
-                  color: widget.isChecked ? widget.color : Colors.transparent,
+                  color: widget.isChecked ? effectiveColor : Colors.transparent,
                 ),
                 child: widget.isChecked
                     ? TweenAnimationBuilder<double>(
@@ -112,7 +113,7 @@ class _InkCheckCircleState extends State<InkCheckCircle> {
                         child: Icon(
                           Icons.check,
                           size: widget.size * 0.57,
-                          color: AppColors.textOnPrimary,
+                          color: context.colors.textOnPrimary,
                         ),
                       )
                     : null,
@@ -139,7 +140,7 @@ class _InkCheckCircleState extends State<InkCheckCircle> {
                     height: widget.size,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: widget.color, width: 1.5),
+                      border: Border.all(color: effectiveColor, width: 1.5),
                     ),
                   ),
                 ),

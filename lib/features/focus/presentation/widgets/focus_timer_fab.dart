@@ -7,11 +7,7 @@ import '../../providers/focus_timer_provider.dart';
 /// 全局悬浮专注入口：显示在每个 Tab 页面表层左下角，支持拖拽移动位置，
 /// 点击进入 [FocusTimerScreen]（避免使用 PaperFab 类型以保持页面主 FAB 唯一）。
 class FocusTimerFab extends StatelessWidget {
-  const FocusTimerFab({
-    super.key,
-    required this.onTap,
-    this.onDragDelta,
-  });
+  const FocusTimerFab({super.key, required this.onTap, this.onDragDelta});
 
   final VoidCallback onTap;
   final ValueChanged<Offset>? onDragDelta;
@@ -26,22 +22,22 @@ class FocusTimerFab extends StatelessWidget {
     final String label;
 
     if (timer.isAlarming) {
-      bgColor = AppColors.error;
-      fgColor = AppColors.textOnPrimary;
+      bgColor = context.colors.error;
+      fgColor = context.colors.textOnPrimary;
       icon = Icons.notifications_active_rounded;
       label = timer.phase == FocusPhase.focusAlarm ? '去休息' : '该专注';
     } else if (timer.isRunning) {
       bgColor = timer.phase == FocusPhase.breaking
-          ? AppColors.success
-          : AppColors.primary;
-      fgColor = AppColors.textOnPrimary;
+          ? context.colors.success
+          : context.colors.primary;
+      fgColor = context.colors.textOnPrimary;
       icon = timer.phase == FocusPhase.breaking
           ? Icons.coffee_rounded
           : Icons.timer_rounded;
       label = timer.formattedRemaining;
     } else {
-      bgColor = AppColors.surface;
-      fgColor = AppColors.primary;
+      bgColor = context.colors.surface;
+      fgColor = context.colors.primary;
       icon = Icons.timer_outlined;
       label = '专注';
     }
@@ -68,8 +64,11 @@ class FocusTimerFab extends StatelessWidget {
                 borderRadius: AppRadius.brFull,
                 border: timer.isActive
                     ? null
-                    : Border.all(color: AppColors.primaryLight, width: 1.2),
-                boxShadow: AppShadows.e2,
+                    : Border.all(
+                        color: context.colors.primaryLight,
+                        width: 1.2,
+                      ),
+                boxShadow: context.shape.floatShadows,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -100,12 +99,15 @@ class FocusTimerFab extends StatelessWidget {
                   const SizedBox(width: AppSpacing.xs),
                   Text(
                     label,
-                    style: (timer.isRunning ? AppText.serifNum : AppText.labelLg)
-                        .copyWith(
-                          fontSize: 14,
-                          color: fgColor,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style:
+                        (timer.isRunning
+                                ? context.text.serifNum
+                                : AppText.labelLg)
+                            .copyWith(
+                              fontSize: 14,
+                              color: fgColor,
+                              fontWeight: FontWeight.w600,
+                            ),
                   ),
                 ],
               ),

@@ -17,7 +17,7 @@ class PaperSheetHandle extends StatelessWidget {
         width: 36,
         height: 4,
         decoration: BoxDecoration(
-          color: AppColors.inkSubtle,
+          color: context.colors.inkSubtle,
           borderRadius: AppRadius.brXs,
         ),
       ),
@@ -55,9 +55,11 @@ class PaperSheet extends StatelessWidget {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: AppRadius.brSheetTop,
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(context.shape.sheetRadius),
+          ),
         ),
         child: SafeArea(
           top: false,
@@ -89,7 +91,7 @@ Future<T?> showPaperSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
     backgroundColor: Colors.transparent,
-    barrierColor: AppColors.scrim,
+    barrierColor: context.colors.scrim,
     builder: (BuildContext ctx) =>
         PaperSheet(showHandle: showHandle, child: builder(ctx)),
   );

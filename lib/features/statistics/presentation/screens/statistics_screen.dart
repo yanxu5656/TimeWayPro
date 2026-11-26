@@ -87,10 +87,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting &&
                   _cachedStats == null) {
-                return const Center(
+                return Center(
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: AppColors.primary,
+                    color: context.colors.primary,
                   ),
                 );
               }
@@ -153,7 +153,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       scale: 0.95,
       pressOffset: 0.8,
       child: Material(
-        color: AppColors.textOnPrimary.withValues(alpha: 0.14),
+        color: context.colors.textOnPrimary.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(AppRadius.full),
         child: InkWell(
           onTap: _isRefreshing ? null : _refreshStats,
@@ -163,7 +163,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.full),
               border: Border.all(
-                color: AppColors.textOnPrimary.withValues(alpha: 0.35),
+                color: context.colors.textOnPrimary.withValues(alpha: 0.35),
               ),
             ),
             child: AnimatedSwitcher(
@@ -173,25 +173,25 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_isRefreshing)
-                    const SizedBox(
+                    SizedBox(
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.textOnPrimary,
+                        color: context.colors.textOnPrimary,
                       ),
                     )
                   else
-                    const Icon(
+                    Icon(
                       Icons.refresh_rounded,
                       size: 16,
-                      color: AppColors.textOnPrimary,
+                      color: context.colors.textOnPrimary,
                     ),
                   const SizedBox(width: 4),
                   Text(
                     _isRefreshing ? '刷新中' : '立即刷新',
                     style: AppText.labelSm.copyWith(
-                      color: AppColors.textOnPrimary,
+                      color: context.colors.textOnPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -241,10 +241,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   child: Center(
                     child: Text(
                       _getPeriodText(),
-                      style: AppText.titleSerif.copyWith(
+                      style: context.text.titleSerif.copyWith(
                         color: _isCurrentPeriod()
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
+                            ? context.colors.primary
+                            : context.colors.textPrimary,
                       ),
                     ),
                   ),
@@ -268,7 +268,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return PaperIconButton(
       icon: icon,
       onTap: onTap,
-      color: AppColors.textSecondary,
+      color: context.colors.textSecondary,
       size: PaperIconButton.sizeChrome,
       iconSize: 22,
     );
@@ -360,10 +360,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.textOnPrimary,
-              surface: AppColors.surface,
+            colorScheme: ColorScheme.light(
+              primary: context.colors.primary,
+              onPrimary: context.colors.textOnPrimary,
+              surface: context.colors.surface,
             ),
           ),
           child: child!,
@@ -387,14 +387,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             '总时长',
             stats.totalDuration,
             formatDurationShort,
-            AppColors.textPrimary,
+            context.colors.textPrimary,
           ),
           const VerticalDivider(width: 1, thickness: 1),
           _buildStatColumn(
             '完成任务',
             stats.completedCount,
             (v) => '$v',
-            AppColors.textPrimary,
+            context.colors.textPrimary,
           ),
         ],
       ),
@@ -415,13 +415,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             CountUpText(
               value: value,
               format: format,
-              style: AppText.numXl.copyWith(color: color),
+              style: context.text.numXl.copyWith(color: color),
             ),
             const SizedBox(height: AppSpacing.xxs),
             Text(
               label,
               style: AppText.caption.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -503,7 +503,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             children: [
               Text(
                 ['一', '二', '三', '四', '五', '六', '日'][i],
-                style: const TextStyle(fontSize: 11, color: AppColors.textHint),
+                style: TextStyle(fontSize: 11, color: context.colors.textHint),
               ),
               const SizedBox(height: 6),
               Tooltip(
@@ -516,7 +516,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     color: _heatCellColor(level),
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                     border: isSelected
-                        ? Border.all(color: AppColors.primary, width: 2)
+                        ? Border.all(color: context.colors.primary, width: 2)
                         : null,
                   ),
                   child: Center(
@@ -564,7 +564,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               color: _heatCellColor(level),
               borderRadius: BorderRadius.circular(AppRadius.sm),
               border: isSelected
-                  ? Border.all(color: AppColors.primary, width: 2)
+                  ? Border.all(color: context.colors.primary, width: 2)
                   : null,
             ),
             child: Center(
@@ -583,7 +583,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  /// 热力图档位：0 = 无数据，1..N 对应 AppColors.heatMapColors 的下标 + 1。
+  /// 热力图档位：0 = 无数据，1..N 对应 context.colors.heatMapColors 的下标 + 1。
   ///
   /// 用离散档位而不是连续强度，是为了让**格子颜色与文字颜色成对切换**——
   /// 原先文字阈值写死 `intensity > 0.5`，与色阶档位并不对齐，实测下来
@@ -591,18 +591,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   int _heatLevel(int duration, int maxDuration) {
     if (duration <= 0) return 0;
     final ratio = duration / maxDuration;
-    return (ratio * AppColors.heatMapColors.length).ceil().clamp(
+    return (ratio * context.colors.heatMapColors.length).ceil().clamp(
       1,
-      AppColors.heatMapColors.length,
+      context.colors.heatMapColors.length,
     );
   }
 
-  Color _heatCellColor(int level) =>
-      level == 0 ? AppColors.heatEmpty : AppColors.heatMapColors[level - 1];
+  Color _heatCellColor(int level) => level == 0
+      ? context.colors.heatEmpty
+      : context.colors.heatMapColors[level - 1];
 
   /// 1-3 档底色还够浅，用深色字；4-5 档才用白字
   Color _heatTextColor(int level) =>
-      level >= 4 ? AppColors.textOnPrimary : AppColors.textPrimary;
+      level >= 4 ? context.colors.textOnPrimary : context.colors.textPrimary;
 
   Widget _buildPieChart(_StatsData stats) {
     if (stats.taskDurations.isEmpty) {
@@ -613,12 +614,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             Icon(
               Icons.pie_chart_outline,
               size: 48,
-              color: AppColors.textHint.withValues(alpha: 0.5),
+              color: context.colors.textHint.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               '暂无数据',
-              style: TextStyle(color: AppColors.textHint, fontSize: 14),
+              style: TextStyle(color: context.colors.textHint, fontSize: 14),
             ),
           ],
         ),
@@ -668,7 +669,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           : title;
 
       final Color sliceColor =
-          AppColors.chartColors[index % AppColors.chartColors.length];
+          context.colors.chartColors[index % context.colors.chartColors.length];
       // 浅色切片用深色字，否则白字读不出
       final bool lightSlice =
           ThemeData.estimateBrightnessForColor(sliceColor) == Brightness.light;
@@ -680,7 +681,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         titleStyle: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: lightSlice ? AppColors.textPrimary : AppColors.textOnPrimary,
+          color: lightSlice
+              ? context.colors.textPrimary
+              : context.colors.textOnPrimary,
         ),
         radius: 70,
         titlePositionPercentageOffset: 0.6,
@@ -702,17 +705,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               width: 12,
               height: 12,
               decoration: BoxDecoration(
-                color:
-                    AppColors.chartColors[index % AppColors.chartColors.length],
+                color: context
+                    .colors
+                    .chartColors[index % context.colors.chartColors.length],
                 borderRadius: BorderRadius.circular(AppRadius.xs),
               ),
             ),
             const SizedBox(width: 6),
             Text(
               '${item['title']} (${formatDurationShort(item['total_duration'] as int)})',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ],
@@ -752,8 +756,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     width: 4,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors
-                          .chartColors[index % AppColors.chartColors.length],
+                      color:
+                          context.colors.chartColors[index %
+                              context.colors.chartColors.length],
                       borderRadius: BorderRadius.circular(AppRadius.xs),
                     ),
                   ),
@@ -774,10 +779,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           borderRadius: BorderRadius.circular(AppRadius.xs),
                           child: LinearProgressIndicator(
                             value: percentage / 100,
-                            backgroundColor: AppColors.surfaceVariant,
+                            backgroundColor: context.colors.surfaceVariant,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.chartColors[index %
-                                  AppColors.chartColors.length],
+                              context.colors.chartColors[index %
+                                  context.colors.chartColors.length],
                             ),
                             borderRadius: BorderRadius.circular(AppRadius.xs),
                             minHeight: 6,
@@ -789,10 +794,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(width: 14),
                   Text(
                     formatDurationShort(item['total_duration'] as int),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: context.colors.primary,
                     ),
                   ),
                 ],
