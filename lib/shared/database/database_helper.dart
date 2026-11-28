@@ -24,6 +24,10 @@ class DatabaseHelper {
     'sync_config',
     'leisure_items',
     'calendar_notes',
+    'reward_products',
+    'reward_inventory',
+    'coin_transactions',
+    'reward_meta',
   ];
 
   static Map<String, dynamic> _emptyData() => <String, dynamic>{
@@ -157,6 +161,31 @@ class DatabaseHelper {
       try {
         mutate();
         await _doSave();
+      } catch (_) {
+        _data = previousData;
+        rethrow;
+      }
+    });
+    _writeQueue = task.then((_) {}, onError: (Object _) {});
+    return task;
+  }
+
+  Future<T> transaction<T>(T Function(Map<String, dynamic> data) mutate) {
+    final Future<T> task = _writeQueue.catchError((Object _) {}).then((
+      _,
+    ) async {
+      await _ensureInitialized();
+      final Map<String, dynamic> previousData = _data;
+      _data = <String, dynamic>{
+        for (final MapEntry<String, dynamic> entry in _data.entries)
+          entry.key: entry.value is List
+              ? List<dynamic>.from(entry.value)
+              : entry.value,
+      };
+      try {
+        final T result = mutate(_data);
+        await _doSave();
+        return result;
       } catch (_) {
         _data = previousData;
         rethrow;

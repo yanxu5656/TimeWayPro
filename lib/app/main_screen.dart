@@ -14,6 +14,8 @@ import '../features/statistics/presentation/screens/statistics_screen.dart';
 import '../features/planning/presentation/screens/planning_screen.dart';
 import '../features/leisure/presentation/screens/leisure_screen.dart';
 import '../features/calendar/presentation/screens/calendar_screen.dart';
+import '../features/rewards/providers/reward_provider.dart';
+import '../features/rewards/presentation/screens/reward_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -42,7 +44,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     PlanningScreen(), // 4 规划
     LeisureScreen(), // 5 闲时
     CalendarScreen(), // 6 月历
-    SettingsScreen(), // 7 设置
+    RewardScreen(), // 7 商店
+    SettingsScreen(), // 8 设置
   ];
 
   @override
@@ -166,7 +169,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           bottomNavigationBar: PaperNavBar(
             key: _navBarKey,
             index: _currentIndex,
-            onChanged: (index) => setState(() => _currentIndex = index),
+            onChanged: (int index) {
+              setState(() => _currentIndex = index);
+              if (index == 7) context.read<RewardProvider>().load();
+            },
           ),
         ),
       ),

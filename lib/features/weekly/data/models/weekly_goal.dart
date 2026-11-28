@@ -64,6 +64,8 @@ class WeeklyGoal {
   final DateTime createdAt;
   final WeeklyProgressMode? progressMode;
   final List<WeeklyMilestone> milestones;
+  final int coinReward;
+  final DateTime? rewardClaimedAt;
 
   WeeklyGoal({
     required this.id,
@@ -74,6 +76,8 @@ class WeeklyGoal {
     required this.createdAt,
     WeeklyProgressMode? progressMode,
     List<WeeklyMilestone> milestones = const <WeeklyMilestone>[],
+    this.coinReward = 0,
+    this.rewardClaimedAt,
   }) : milestones = List<WeeklyMilestone>.unmodifiable(
          milestones.toList()..sort(
            (WeeklyMilestone a, WeeklyMilestone b) =>
@@ -111,6 +115,8 @@ class WeeklyGoal {
       'milestones': milestones
           .map((WeeklyMilestone milestone) => milestone.toMap())
           .toList(),
+      'coin_reward': coinReward,
+      'reward_claimed_at': rewardClaimedAt?.toIso8601String(),
     };
   }
 
@@ -150,6 +156,10 @@ class WeeklyGoal {
       createdAt: DateTime.parse(map['created_at']),
       progressMode: progressMode,
       milestones: milestones,
+      coinReward: map['coin_reward'] is int ? map['coin_reward'] as int : 0,
+      rewardClaimedAt: map['reward_claimed_at'] == null
+          ? null
+          : DateTime.tryParse(map['reward_claimed_at'] as String),
     );
   }
 
@@ -162,6 +172,8 @@ class WeeklyGoal {
     DateTime? createdAt,
     WeeklyProgressMode? progressMode,
     List<WeeklyMilestone>? milestones,
+    int? coinReward,
+    DateTime? rewardClaimedAt,
   }) {
     return WeeklyGoal(
       id: id ?? this.id,
@@ -172,6 +184,8 @@ class WeeklyGoal {
       createdAt: createdAt ?? this.createdAt,
       progressMode: progressMode ?? this.progressMode,
       milestones: milestones ?? this.milestones,
+      coinReward: coinReward ?? this.coinReward,
+      rewardClaimedAt: rewardClaimedAt ?? this.rewardClaimedAt,
     );
   }
 

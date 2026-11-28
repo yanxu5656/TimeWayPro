@@ -7,6 +7,8 @@ import '../features/daily/providers/daily_provider.dart';
 import '../features/focus/providers/focus_timer_provider.dart';
 import '../features/leisure/providers/leisure_provider.dart';
 import '../features/calendar/providers/calendar_provider.dart';
+import '../features/rewards/data/repositories/reward_repository.dart';
+import '../features/rewards/providers/reward_provider.dart';
 import '../features/settings/providers/theme_provider.dart';
 import '../features/task/providers/task_provider.dart';
 import '../features/planning/providers/plan_provider.dart';
@@ -19,10 +21,16 @@ class TimeWayProApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final RewardRepository rewards = RewardRepository();
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => DailyProvider()),
-        ChangeNotifierProvider(create: (_) => WeeklyProvider()..loadGoals()),
+        ChangeNotifierProvider(
+          create: (_) => WeeklyProvider(rewards: rewards)..loadGoals(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RewardProvider(repository: rewards)..load(),
+        ),
         ChangeNotifierProvider(create: (_) => TaskProvider()..loadTasks()),
         ChangeNotifierProvider(create: (_) => PlanProvider()..loadPlans()),
         ChangeNotifierProvider(create: (_) => LeisureProvider()..loadItems()),

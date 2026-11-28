@@ -429,6 +429,21 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                 _buildDragHandle(index),
               ],
             ),
+            if (goal.coinReward > 0)
+              Padding(
+                padding: const EdgeInsets.only(left: 26, top: 6),
+                child: Text(
+                  goal.rewardClaimedAt != null
+                      ? '已领取 ${goal.coinReward} 金币'
+                      : '完成奖励 ${goal.coinReward} 金币',
+                  key: Key('weekly_reward_${goal.id}'),
+                  style: AppText.caption.copyWith(
+                    color: goal.rewardClaimedAt != null
+                        ? context.colors.success
+                        : context.colors.primary,
+                  ),
+                ),
+              ),
             if (goal.hasMilestones)
               _buildMilestoneSection(context, goal, provider),
           ],
@@ -653,6 +668,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
               String title,
               List<WeeklyMilestone> milestones,
               WeeklyProgressMode? progressMode,
+              int coinReward,
             ) async {
               final WeeklyProvider provider = sheetContext
                   .read<WeeklyProvider>();
@@ -662,6 +678,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                     title,
                     milestones: milestones,
                     progressMode: progressMode,
+                    coinReward: coinReward,
                   );
                 } else {
                   await provider.updateGoal(
@@ -669,6 +686,9 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                       title: title,
                       milestones: milestones,
                       progressMode: progressMode,
+                      coinReward: goal.rewardClaimedAt != null
+                          ? goal.coinReward
+                          : coinReward,
                     ),
                   );
                 }
@@ -689,6 +709,7 @@ class _WeeklyGoalSheet extends StatefulWidget {
     String title,
     List<WeeklyMilestone> milestones,
     WeeklyProgressMode? progressMode,
+    int coinReward,
   )
   onSubmit;
 
@@ -704,7 +725,10 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
     text: widget.initial?.title ?? '',
   );
   late final TextEditingController _countController;
+  late final TextEditingController _coinController;
   late bool _progressEnabled;
+  late bool _rewardEnabled;
+  String? _coinError;
   late WeeklyProgressMode _mode;
   late List<WeeklyMilestone> _milestones;
   String? _countError;
@@ -715,6 +739,10 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
     super.initState();
     final WeeklyGoal? initial = widget.initial;
     _progressEnabled = initial?.hasMilestones ?? false;
+    _rewardEnabled = (initial?.coinReward ?? 0) > 0;
+    _coinController = TextEditingController(
+      text: '${initial?.coinReward ?? 30}',
+    );
     _mode = initial?.progressMode ?? WeeklyProgressMode.stages;
     _milestones = List<WeeklyMilestone>.of(
       initial?.milestones ?? const <WeeklyMilestone>[],
@@ -728,6 +756,7 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
   void dispose() {
     _controller.dispose();
     _countController.dispose();
+    _coinController.dispose();
     super.dispose();
   }
 
@@ -756,6 +785,12 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
     final int? count = int.tryParse(_countController.text.trim());
     if (count == null || count < 1 || count > _maxMilestones) return null;
     return count;
+  }
+
+  int? get _parsedCoinReward {
+    final int? value = int.tryParse(_coinController.text.trim());
+    if (value == null || value < 1 || value > 999999) return null;
+    return value;
   }
 
   String _milestoneTitle(int index) => _mode == WeeklyProgressMode.stages
@@ -809,6 +844,55 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
           onSubmitted: (_) => _submit(),
           decoration: const InputDecoration(hintText: '这周想完成什么'),
         ),
+        const SizedBox(height: AppSpacing.md),
+        PaperCard(
+          tone: PaperTone.raised,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          child: Material(
+            type: MaterialType.transparency,
+            child: SwitchListTile(
+              key: const Key('weekly_reward_switch'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('完成奖励金币'),
+              subtitle: Text(
+                widget.initial?.rewardClaimedAt != null
+                    ? '奖励已领取，金额不可修改'
+                    : '全部完成后一次性到账，可在商店兑换奖励',
+              ),
+              value: _rewardEnabled,
+              activeThumbColor: context.colors.primary,
+              onChanged: _saving || widget.initial?.rewardClaimedAt != null
+                  ? null
+                  : (bool value) => setState(() {
+                      _rewardEnabled = value;
+                      _coinError = null;
+                    }),
+            ),
+          ),
+        ),
+        if (_rewardEnabled) ...<Widget>[
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            key: const Key('weekly_coin_reward'),
+            controller: _coinController,
+            enabled: widget.initial?.rewardClaimedAt == null,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            maxLength: 6,
+            onChanged: (_) => setState(() => _coinError = null),
+            onSubmitted: (_) => _submit(),
+            decoration: InputDecoration(
+              labelText: '奖励金币',
+              prefixIcon: const Icon(Icons.monetization_on_outlined, size: 20),
+              suffixText: '金币',
+              counterText: '',
+              errorText: _coinError,
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.md),
         PaperCard(
           tone: PaperTone.raised,
@@ -954,6 +1038,10 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
       setState(() => _countError = '请输入 1–$_maxMilestones');
       return;
     }
+    if (_rewardEnabled && _parsedCoinReward == null) {
+      setState(() => _coinError = '请输入 1–999999 金币');
+      return;
+    }
     if (_progressEnabled) _refreshMilestones();
     setState(() => _saving = true);
     await runPaperAction(
@@ -962,6 +1050,7 @@ class _WeeklyGoalSheetState extends State<_WeeklyGoalSheet> {
         title,
         _progressEnabled ? _milestones : const <WeeklyMilestone>[],
         _progressEnabled ? _mode : null,
+        _rewardEnabled ? (_parsedCoinReward ?? 0) : 0,
       ),
     );
     if (mounted) setState(() => _saving = false);

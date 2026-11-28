@@ -61,6 +61,7 @@ class PaperNavBar extends StatefulWidget {
       Icons.calendar_month_rounded,
       '月历',
     ),
+    _NavItemData(Icons.storefront_outlined, Icons.storefront_rounded, '商店'),
     _NavItemData(Icons.settings_outlined, Icons.settings_rounded, '设置'),
   ];
 

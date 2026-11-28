@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/utils/week.dart';
+import '../../rewards/data/repositories/reward_repository.dart';
 import '../data/models/weekly_goal.dart';
 import '../data/repositories/weekly_goal_repository.dart';
 
@@ -11,8 +12,9 @@ import '../data/repositories/weekly_goal_repository.dart';
 /// 「翻回旧周」就能回看并继续编辑历史目标。
 class WeeklyProvider extends ChangeNotifier {
   final WeeklyGoalRepository _repository;
+  final RewardRepository? rewards;
 
-  WeeklyProvider({WeeklyGoalRepository? repository})
+  WeeklyProvider({WeeklyGoalRepository? repository, this.rewards})
     : _repository = repository ?? WeeklyGoalRepository();
 
   DateTime _weekAnchor = startOfWeek(DateTime.now());
@@ -97,6 +99,7 @@ class WeeklyProvider extends ChangeNotifier {
     String title, {
     List<WeeklyMilestone> milestones = const <WeeklyMilestone>[],
     WeeklyProgressMode? progressMode,
+    int coinReward = 0,
   }) async {
     await _repository.add(
       WeeklyGoal(
@@ -109,13 +112,17 @@ class WeeklyProvider extends ChangeNotifier {
         createdAt: DateTime.now(),
         progressMode: progressMode,
         milestones: milestones,
+        coinReward: coinReward,
       ),
     );
     await loadGoals();
   }
 
   Future<void> updateGoal(WeeklyGoal goal) async {
-    await _repository.update(goal);
+    await (rewards != null &&
+            (goal.coinReward > 0 || goal.rewardClaimedAt != null)
+        ? rewards!.updateWeeklyGoal(goal)
+        : _repository.update(goal));
     await loadGoals();
   }
 
@@ -161,7 +168,13 @@ class WeeklyProvider extends ChangeNotifier {
     _goals = nextGoals;
     notifyListeners();
     try {
-      await _repository.update(updated);
+      if (rewards != null &&
+          (updated.coinReward > 0 || updated.rewardClaimedAt != null)) {
+        final WeeklyGoal stored = await rewards!.updateWeeklyGoal(updated);
+        nextGoals[index] = stored;
+      } else {
+        await _repository.update(updated);
+      }
     } catch (_) {
       _goals = previousGoals;
       notifyListeners();
@@ -213,9 +226,16 @@ class WeeklyProvider extends ChangeNotifier {
       -1,
       (int max, WeeklyGoal g) => g.sortOrder > max ? g.sortOrder : max,
     );
-    await _repository.update(
-      goal.copyWith(weekKey: targetWeekKey, sortOrder: maxOrder + 1),
+    final WeeklyGoal moved = goal.copyWith(
+      weekKey: targetWeekKey,
+      sortOrder: maxOrder + 1,
     );
+    if (rewards != null &&
+        (moved.coinReward > 0 || moved.rewardClaimedAt != null)) {
+      await rewards!.updateWeeklyGoal(moved);
+    } else {
+      await _repository.update(moved);
+    }
     await loadGoals();
   }
 }
