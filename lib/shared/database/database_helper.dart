@@ -27,7 +27,6 @@ class DatabaseHelper {
     'reward_products',
     'reward_inventory',
     'coin_transactions',
-    'reward_meta',
   ];
 
   static Map<String, dynamic> _emptyData() => <String, dynamic>{
@@ -39,6 +38,7 @@ class DatabaseHelper {
   /// 读取旧版本写的文件、或导入旧备份时，新加的表在数据里不存在——
   /// 这里统一补成空列表，后续 `query` / `insert` 就不必各写各的兜底。
   static void _ensureTables(Map<String, dynamic> data) {
+    data.remove('reward_meta');
     for (final String table in _tables) {
       final dynamic rows = data[table];
       if (rows == null) {

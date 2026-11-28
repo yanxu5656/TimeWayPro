@@ -152,23 +152,6 @@ class _RewardScreenState extends State<RewardScreen> {
               index: i + 1,
               child: _buildProductCard(products[i], provider),
             ),
-          if (provider.allProducts.any((RewardProduct p) => !p.isActive)) ...[
-            SectionHeader(index: products.length + 1, title: '已下架'),
-            for (final RewardProduct product in provider.allProducts)
-              if (!product.isActive)
-                PaperCard(
-                  tone: PaperTone.row,
-                  margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
-                  onTap: () => _restore(product),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: _icon(product.icon),
-                    title: Text(product.title),
-                    subtitle: const Text('已下架 · 点击重新上架'),
-                    trailing: const Icon(Icons.restore_rounded),
-                  ),
-                ),
-          ],
         ],
       ),
     );
@@ -471,13 +454,6 @@ class _RewardScreenState extends State<RewardScreen> {
       () => context.read<RewardProvider>().fulfill(item.productId),
     );
   }
-
-  Future<void> _restore(RewardProduct product) async {
-    await runPaperAction(
-      context,
-      () => context.read<RewardProvider>().restoreProduct(product.id),
-    );
-  }
 }
 
 class _ProductSheet extends StatefulWidget {
@@ -498,7 +474,7 @@ class _ProductSheetState extends State<_ProductSheet> {
   late final TextEditingController _limit;
   late String _icon;
   bool _saving = false;
-  bool _archiving = false;
+  bool _deleting = false;
 
   @override
   void initState() {
@@ -627,9 +603,10 @@ class _ProductSheetState extends State<_ProductSheet> {
         const SizedBox(height: AppSpacing.md),
         if (widget.product != null)
           PaperTextButton(
-            label: _archiving ? '正在下架…' : '下架此奖励（保留仓库记录）',
+            key: const Key('product_delete'),
+            label: _deleting ? '正在删除…' : '删除此奖励（保留仓库记录）',
             color: context.colors.error,
-            onPressed: _saving || _archiving ? null : _archive,
+            onPressed: _saving || _deleting ? null : _confirmDelete,
           ),
         SizedBox(
           width: double.infinity,
@@ -637,7 +614,7 @@ class _ProductSheetState extends State<_ProductSheet> {
             key: const Key('product_save'),
             label: '保存奖励',
             loading: _saving,
-            onPressed: _saving || _archiving ? null : _save,
+            onPressed: _saving || _deleting ? null : _save,
           ),
         ),
       ],
@@ -666,7 +643,7 @@ class _ProductSheetState extends State<_ProductSheet> {
                     title: title,
                     price: price,
                     createdAt: DateTime.now(),
-                    sortOrder: provider.allProducts.length,
+                    sortOrder: provider.products.length,
                   ))
               .copyWith(
                 title: title,
@@ -685,14 +662,33 @@ class _ProductSheetState extends State<_ProductSheet> {
     if (success) Navigator.pop(context);
   }
 
-  Future<void> _archive() async {
-    setState(() => _archiving = true);
+  Future<void> _confirmDelete() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('删除这个奖励？'),
+        content: const Text('删除后不可恢复；已经兑换的仓库奖励和金币明细会保留。'),
+        actions: <Widget>[
+          PaperTextButton(
+            label: '取消',
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          PaperTextButton(
+            label: '确认删除',
+            color: context.colors.error,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _deleting = true);
     final bool success = await runPaperAction(
       context,
-      () => context.read<RewardProvider>().archiveProduct(widget.product!.id),
+      () => context.read<RewardProvider>().deleteProduct(widget.product!.id),
     );
     if (!mounted) return;
-    setState(() => _archiving = false);
+    setState(() => _deleting = false);
     if (success) Navigator.pop(context);
   }
 }

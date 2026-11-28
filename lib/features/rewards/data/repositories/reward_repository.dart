@@ -8,58 +8,19 @@ class RewardRepository {
   final DatabaseHelper _db = DatabaseHelper();
   final Uuid _uuid = const Uuid();
 
-  static const List<Map<String, Object>> _defaults = <Map<String, Object>>[
-    <String, Object>{
-      'id': 'default-movie',
-      'title': '看一场电影',
-      'description': '留一个完整的晚上，好好放松。',
-      'icon': 'movie',
-      'price': 80,
-    },
-    <String, Object>{
-      'id': 'default-coffee',
-      'title': '一杯喜欢的咖啡',
-      'description': '给自己一杯犒赏。',
-      'icon': 'coffee',
-      'price': 30,
-    },
-    <String, Object>{
-      'id': 'default-game',
-      'title': '痛快玩两小时游戏',
-      'description': '不设闹钟，尽情享受。',
-      'icon': 'game',
-      'price': 60,
-    },
-    <String, Object>{
-      'id': 'default-dayoff',
-      'title': '休息一整天',
-      'description': '放下待办，做真正想做的事。',
-      'icon': 'rest',
-      'price': 300,
-    },
-  ];
+  static const Set<String> _legacyProductIds = <String>{
+    'default-movie',
+    'default-coffee',
+    'default-game',
+    'default-dayoff',
+  };
 
-  static List<Map<String, dynamic>> _defaultRows(DateTime now) {
-    return <Map<String, dynamic>>[
-      for (int i = 0; i < _defaults.length; i++)
-        <String, dynamic>{
-          ..._defaults[i],
-          'stock': null,
-          'purchase_limit': null,
-          'is_active': 1,
-          'sort_order': i,
-          'created_at': now.toIso8601String(),
-        },
-    ];
-  }
-
-  Future<void> ensureCatalog() async {
+  Future<void> _removeLegacyCatalog() async {
     await _db.transaction<void>((Map<String, dynamic> data) {
-      final List<dynamic> meta = data['reward_meta'] as List;
-      if (meta.any((dynamic row) => row['id'] == 'catalog_seeded')) return;
-      final List<dynamic> products = data['reward_products'] as List;
-      products.addAll(_defaultRows(DateTime.now()));
-      meta.add(<String, dynamic>{'id': 'catalog_seeded', 'value': 1});
+      (data['reward_products'] as List).removeWhere(
+        (dynamic row) => _legacyProductIds.contains(row['id']),
+      );
+      data.remove('reward_meta');
     });
   }
 
@@ -113,28 +74,27 @@ class RewardRepository {
     });
   }
 
-  Future<List<RewardProduct>> getProducts({
-    bool includeInactive = false,
-  }) async {
+  Future<List<RewardProduct>> getProducts() async {
     final List<Map<String, dynamic>> rows = await _db.query('reward_products');
-    final List<Map<String, dynamic>> source = rows.isEmpty
-        ? _defaultRows(DateTime.now())
-        : rows;
-    final products = source
-        .map((Map<String, dynamic> row) => RewardProduct.fromMap(row))
-        .where((RewardProduct product) => includeInactive || product.isActive)
+    if (rows.any(
+      (Map<String, dynamic> row) => _legacyProductIds.contains(row['id']),
+    )) {
+      await _removeLegacyCatalog();
+      return getProducts();
+    }
+    final List<RewardProduct> products = rows
+        .map(RewardProduct.fromMap)
         .toList();
-    products.sort((RewardProduct a, RewardProduct b) {
-      if (a.isActive != b.isActive) return a.isActive ? -1 : 1;
-      return a.sortOrder.compareTo(b.sortOrder);
-    });
+    products.sort(
+      (RewardProduct a, RewardProduct b) => a.sortOrder.compareTo(b.sortOrder),
+    );
     return products;
   }
 
   Future<List<InventoryItem>> getInventory() async {
     final rows = await _db.query('reward_inventory');
     final items = rows
-        .map((Map<String, dynamic> row) => InventoryItem.fromMap(row))
+        .map(InventoryItem.fromMap)
         .where((InventoryItem item) => item.quantity > 0 || item.usedCount > 0)
         .toList();
     items.sort(
@@ -145,9 +105,7 @@ class RewardRepository {
 
   Future<List<CoinTransaction>> getTransactions() async {
     final rows = await _db.query('coin_transactions');
-    final items = rows
-        .map((Map<String, dynamic> row) => CoinTransaction.fromMap(row))
-        .toList();
+    final items = rows.map(CoinTransaction.fromMap).toList();
     items.sort(
       (CoinTransaction a, CoinTransaction b) =>
           b.createdAt.compareTo(a.createdAt),
@@ -166,48 +124,30 @@ class RewardRepository {
     if (product.purchaseLimit != null && product.purchaseLimit! < 1) {
       throw ArgumentError('限购次数至少为 1');
     }
-    await ensureCatalog();
     await _db.transaction<void>((Map<String, dynamic> data) {
       final List<dynamic> products = data['reward_products'] as List;
       final int index = products.indexWhere(
         (dynamic row) => row['id'] == product.id,
       );
+      final Map<String, dynamic> row = product.toMap()..['is_active'] = 1;
       if (index >= 0) {
-        products[index] = product.toMap();
+        products[index] = row;
       } else {
-        products.add(product.toMap());
+        products.add(row);
       }
     });
   }
 
-  Future<void> archiveProduct(String id) async {
+  Future<void> deleteProduct(String id) async {
     await _db.transaction<void>((Map<String, dynamic> data) {
       final List<dynamic> products = data['reward_products'] as List;
       final int index = products.indexWhere((dynamic row) => row['id'] == id);
       if (index < 0) throw StateError('奖励不存在');
-      final Map<String, dynamic> row = Map<String, dynamic>.from(
-        products[index] as Map,
-      );
-      row['is_active'] = 0;
-      products[index] = row;
-    });
-  }
-
-  Future<void> restoreProduct(String id) async {
-    await _db.transaction<void>((Map<String, dynamic> data) {
-      final List<dynamic> products = data['reward_products'] as List;
-      final int index = products.indexWhere((dynamic row) => row['id'] == id);
-      if (index < 0) throw StateError('奖励不存在');
-      final Map<String, dynamic> row = Map<String, dynamic>.from(
-        products[index] as Map,
-      );
-      row['is_active'] = 1;
-      products[index] = row;
+      products.removeAt(index);
     });
   }
 
   Future<void> purchase(String productId) async {
-    await ensureCatalog();
     await _db.transaction<void>((Map<String, dynamic> data) {
       final List<dynamic> products = data['reward_products'] as List;
       final int index = products.indexWhere(
@@ -217,7 +157,6 @@ class RewardRepository {
       final Map<String, dynamic> row = Map<String, dynamic>.from(
         products[index] as Map,
       );
-      if (row['is_active'] != 1) throw StateError('该奖励已下架');
       final RewardProduct product = RewardProduct.fromMap(row);
       if (product.stock != null && product.stock! < 1) {
         throw StateError('该奖励已兑完');

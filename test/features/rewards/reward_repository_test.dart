@@ -20,6 +20,17 @@ void main() {
     coinReward: reward,
   );
 
+  RewardProduct product({int price = 80, int? stock, int? limit}) =>
+      RewardProduct(
+        id: 'custom',
+        title: '看一场电影',
+        icon: 'movie',
+        price: price,
+        stock: stock,
+        purchaseLimit: limit,
+        createdAt: DateTime(2026, 11, 28),
+      );
+
   Future<void> seedGoal(WeeklyGoal value) async {
     await db.importAll(<String, dynamic>{
       'tasks': <dynamic>[],
@@ -27,6 +38,11 @@ void main() {
       'plans': <dynamic>[],
       'weekly_goals': <dynamic>[value.toMap()],
     });
+  }
+
+  Future<void> earnCoins() async {
+    await seedGoal(goal());
+    await repository.updateWeeklyGoal(goal(completed: true));
   }
 
   setUp(() {
@@ -44,6 +60,15 @@ void main() {
     });
     expect(old.coinReward, 0);
     expect(old.rewardClaimedAt, isNull);
+  });
+
+  test('空商店不会生成示例奖励，保存后只显示自定义奖励', () async {
+    expect(await repository.getProducts(), isEmpty);
+    await repository.saveProduct(product());
+    final products = await repository.getProducts();
+    expect(products, hasLength(1));
+    expect(products.single.id, 'custom');
+    expect(await db.query('reward_products'), hasLength(1));
   });
 
   test('完成并发更新也只发放一次金币', () async {
@@ -74,71 +99,104 @@ void main() {
   });
 
   test('兑换原子扣款入库，重复点击不会透支', () async {
-    await seedGoal(goal());
-    await repository.updateWeeklyGoal(goal(completed: true));
-    final products = await repository.getProducts();
-    expect(products, hasLength(4));
+    await earnCoins();
+    await repository.saveProduct(product());
     await Future.wait<void>(<Future<void>>[
-      repository.purchase(products.first.id),
-      repository.purchase(products.first.id).catchError((Object _) {}),
+      repository.purchase('custom'),
+      repository.purchase('custom').catchError((Object _) {}),
     ]);
     final inventory = await repository.getInventory();
     expect(inventory, hasLength(1));
     expect(inventory.single.quantity, 1);
-    final balance = (await repository.getTransactions()).fold<int>(
-      0,
-      (int sum, dynamic item) => sum + (item.amount as num).toInt(),
+    expect(
+      (await repository.getTransactions()).fold<int>(
+        0,
+        (int sum, item) => sum + item.amount,
+      ),
+      20,
     );
-    expect(balance, 20);
-    await expectLater(repository.purchase(products.first.id), throwsStateError);
+    await expectLater(repository.purchase('custom'), throwsStateError);
   });
 
   test('余额不足时兑换失败且不产生库存', () async {
-    await seedGoal(goal());
-    await repository.updateWeeklyGoal(goal(completed: true));
-    final product = (await repository.getProducts()).firstWhere(
-      (RewardProduct item) => item.price > 100,
-    );
-    await expectLater(repository.purchase(product.id), throwsStateError);
+    await earnCoins();
+    await repository.saveProduct(product(price: 300));
+    await expectLater(repository.purchase('custom'), throwsStateError);
     expect(await repository.getInventory(), isEmpty);
   });
 
-  test('库存、限购、下架和仓库兑现', () async {
-    await seedGoal(goal());
-    await repository.updateWeeklyGoal(goal(completed: true));
-    final DateTime now = DateTime.now();
-    final RewardProduct product = RewardProduct(
-      id: 'custom',
-      title: '限量奶茶',
-      price: 30,
-      stock: 1,
-      purchaseLimit: 1,
-      createdAt: now,
-    );
-    await repository.saveProduct(product);
-    await repository.purchase(product.id);
-    await expectLater(repository.purchase(product.id), throwsStateError);
+  test('库存、限购和仓库兑现', () async {
+    await earnCoins();
+    await repository.saveProduct(product(price: 30, stock: 1, limit: 1));
+    await repository.purchase('custom');
+    await expectLater(repository.purchase('custom'), throwsStateError);
     expect((await repository.getInventory()).single.quantity, 1);
-    await repository.fulfill(product.id);
+    await repository.fulfill('custom');
     final InventoryItem used = (await repository.getInventory()).single;
     expect(used.quantity, 0);
     expect(used.usedCount, 1);
-    await expectLater(repository.fulfill(product.id), throwsStateError);
-    await repository.archiveProduct(product.id);
-    await expectLater(repository.restoreProduct(product.id), completes);
+    await expectLater(repository.fulfill('custom'), throwsStateError);
   });
 
-  test('备份保留金币、库存与领取状态', () async {
-    await seedGoal(goal());
-    await repository.updateWeeklyGoal(goal(completed: true));
-    final product = (await repository.getProducts()).first;
-    await repository.purchase(product.id);
-    final exported = await db.exportAll();
-    db.resetForTesting();
-    await db.importAll(exported);
-    expect((await repository.getTransactions()).length, 2);
+  test('删除真实奖励成功且保留仓库和流水', () async {
+    await earnCoins();
+    await repository.saveProduct(product());
+    await repository.purchase('custom');
+    await repository.deleteProduct('custom');
+    expect(await repository.getProducts(), isEmpty);
     expect((await repository.getInventory()).single.quantity, 1);
-    final rows = await db.query('weekly_goals');
-    expect(WeeklyGoal.fromMap(rows.single).rewardClaimedAt, isNotNull);
+    expect(await repository.getTransactions(), hasLength(2));
+    await expectLater(repository.fulfill('custom'), completes);
+    await expectLater(repository.deleteProduct('custom'), throwsStateError);
+  });
+
+  test('升级清理旧示例奖励但保留自定义商品、仓库和流水', () async {
+    final DateTime now = DateTime(2026, 11, 28);
+    await db.importAll(<String, dynamic>{
+      'tasks': <dynamic>[],
+      'task_records': <dynamic>[],
+      'plans': <dynamic>[],
+      'reward_products': <dynamic>[
+        <String, dynamic>{
+          'id': 'default-movie',
+          'title': '看一场电影',
+          'icon': 'movie',
+          'price': 80,
+          'is_active': 1,
+          'created_at': now.toIso8601String(),
+        },
+        product().toMap(),
+      ],
+      'reward_inventory': <dynamic>[
+        <String, dynamic>{
+          'product_id': 'default-movie',
+          'title': '看一场电影',
+          'icon': 'movie',
+          'quantity': 1,
+          'acquired_count': 1,
+          'used_count': 0,
+          'updated_at': now.toIso8601String(),
+        },
+      ],
+      'coin_transactions': <dynamic>[
+        <String, dynamic>{
+          'id': 'legacy-purchase',
+          'amount': -80,
+          'type': 'purchase',
+          'title': '兑换：看一场电影',
+          'reference_id': 'default-movie',
+          'created_at': now.toIso8601String(),
+        },
+      ],
+      'reward_meta': <dynamic>[
+        <String, dynamic>{'id': 'catalog_seeded', 'value': 1},
+      ],
+    });
+    final products = await repository.getProducts();
+    expect(products.map((RewardProduct item) => item.id), <String>['custom']);
+    expect((await db.query('reward_products')).single['id'], 'custom');
+    expect((await repository.getInventory()).single.productId, 'default-movie');
+    expect(await repository.getTransactions(), hasLength(1));
+    expect((await db.exportAll()).containsKey('reward_meta'), isFalse);
   });
 }

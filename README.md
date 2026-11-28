@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.11.0-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.11.1-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -104,11 +104,11 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ### 🎁 奖励商店与仓库
 
 - **任务 → 金币 → 奖励闭环** —— 目前仅每周目标可设置金币，不给普通任务、待办或专注计时自动加币
-- **自定义奖励商品** —— 设置名称、描述、图标、价格、库存与限购次数，也可下架后重新上架
+- **自定义奖励商品** —— 设置名称、描述、图标、价格、库存与限购次数；商店默认空白，不自动生成示例奖励
 - **安全兑换** —— 余额、库存与限购在事务中校验，扣款和入库同时成功或同时失败，重复点击不会透支
 - **仓库兑现** —— 兑换后进入仓库，享受完奖励再手动兑现；兑现不退回金币，历史记录保留
 - **金币明细** —— 目标发奖、商品兑换、奖励兑现分别记账，余额由账本计算
-- **预置奖励与备份** —— 首次使用提供电影、咖啡、游戏、休息日四个示例；金币、商品、库存与流水随本地备份和 WebDAV 同步
+- **安全删除与备份** —— 删除商品不可恢复，但已有仓库奖励和金币流水完整保留；金币、商品、库存与流水随本地备份和 WebDAV 同步
 
 ### 🎮 闲时清单
 
@@ -153,6 +153,14 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.11.1 — 奖励删除修复与示例目录清理
+*2026-11-28*
+
+- **取消示例奖励**：商店不再自动生成电影、咖啡、游戏、休息日示例；升级时自动清理旧版本写入的示例商品
+- **修复操作失败**：示例商品此前仅临时展示、未落盘，点击下架会报「奖励不存在」；现在商品操作只针对真实持久化记录
+- **支持真实删除**：编辑页改为带二次确认的删除，原子移除商品；已兑换的仓库奖励与金币流水不受影响
+- **回归验证**：覆盖空商店、自定义商品新增与删除、库存和流水保留、旧示例目录迁移
 
 ### v1.11.0 — 每周目标金币与奖励商店
 *2026-11-28*
@@ -739,7 +747,7 @@ python tool/make_app_icon.py
 <应用文档目录>/time_way_pro_data.json.tmp   # 写入中转，rename 后即消失
 ```
 
-文件内包含十二张逻辑表：
+文件内包含十一张逻辑表：
 
 | 表名 | 说明 |
 | --- | --- |
@@ -751,10 +759,9 @@ python tool/make_app_icon.py
 | `leisure_items` | 闲时清单（标题 + 备注 + 是否试过） |
 | `calendar_notes` | 月历日标注（日期键 + 自由文本） |
 | `sync_config` | 云同步配置 |
-| `reward_products` | 奖励商品（价格、库存、限购、上下架） |
+| `reward_products` | 奖励商品（价格、库存、限购） |
 | `reward_inventory` | 仓库库存与兑现计数 |
 | `coin_transactions` | 金币发放、兑换、兑现流水 |
-| `reward_meta` | 奖励目录初始化标记 |
 
 写入用「临时文件 → 改名替换」完成：新内容先落到 `.tmp` 并 `flush` 落盘，旧的正式文件改名成 `.bak`，再由 `.tmp` 改名顶替。两次改名都只动元数据、不复制数据体，因此在任何时刻被中断，正式文件要么是旧的、要么是新的，不会出现半截 JSON。启动时若正式文件缺失或读取失败，会自动从 `.bak` 恢复。
 
