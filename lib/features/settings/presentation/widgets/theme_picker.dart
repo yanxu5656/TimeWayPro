@@ -62,7 +62,10 @@ class ThemePicker extends StatelessWidget {
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
                 final double spacing = AppSpacing.xs;
-                final double width = (constraints.maxWidth - spacing) / 2;
+                final bool wide = family == ThemeFamily.aurora;
+                final double width = wide
+                    ? constraints.maxWidth
+                    : (constraints.maxWidth - spacing) / 2;
                 return Wrap(
                   spacing: spacing,
                   runSpacing: spacing,
@@ -71,7 +74,7 @@ class ThemePicker extends StatelessWidget {
                         in AppThemeCatalog.byFamily(family))
                       SizedBox(
                         width: width,
-                        child: _ThemeOptionCard(option: option),
+                        child: _ThemeOptionCard(option: option, wide: wide),
                       ),
                   ],
                 );
@@ -86,9 +89,10 @@ class ThemePicker extends StatelessWidget {
 }
 
 class _ThemeOptionCard extends StatelessWidget {
-  const _ThemeOptionCard({required this.option});
+  const _ThemeOptionCard({required this.option, this.wide = false});
 
   final AppThemeOption option;
+  final bool wide;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +134,7 @@ class _ThemeOptionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  _ThemePreview(option: option),
+                  _ThemePreview(option: option, wide: wide),
                   const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: <Widget>[
@@ -180,9 +184,10 @@ class _ThemeOptionCard extends StatelessWidget {
 }
 
 class _ThemePreview extends StatelessWidget {
-  const _ThemePreview({required this.option});
+  const _ThemePreview({required this.option, this.wide = false});
 
   final AppThemeOption option;
+  final bool wide;
 
   @override
   Widget build(BuildContext context) {
@@ -195,20 +200,22 @@ class _ThemePreview extends StatelessWidget {
       final AppAtmosphere atmosphere = design.atmosphere!;
       return ExcludeSemantics(
         child: Container(
-          height: 92,
+          height: wide ? 142 : 92,
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius - 4),
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: <Color>[
-                Color(0xFFDCEAFF),
-                Color(0xFFF3E7FF),
-                Color(0xFFFFE8E0),
+                atmosphere.background,
+                atmosphere.backgroundElevated,
+                atmosphere.background,
               ],
             ),
-            border: Border.all(color: atmosphere.glassBorder),
+            border: Border.all(
+              color: atmosphere.glassBorder.withValues(alpha: 0.24),
+            ),
           ),
           child: Stack(
             children: <Widget>[
@@ -254,9 +261,18 @@ class _ThemePreview extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      color: atmosphere.glassFill,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: atmosphere.highlight),
+                      color: atmosphere.glassFill.withValues(alpha: 0.78),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: atmosphere.highlight.withValues(alpha: 0.28),
+                      ),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 14,
+                          offset: const Offset(0, 7),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: <Widget>[
@@ -290,10 +306,10 @@ class _ThemePreview extends StatelessWidget {
                       ),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Text(
+                    child: Text(
                       '+ 添加任务',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: c.textOnPrimary,
                         fontSize: 7,
                         fontWeight: FontWeight.w600,
                       ),

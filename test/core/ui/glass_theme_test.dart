@@ -17,6 +17,7 @@ Future<ThemeProvider> _glassProvider() async {
 Widget _glassHarness(
   ThemeProvider provider, {
   bool disableAnimations = false,
+  int navIndex = 0,
   VoidCallback? openSheet,
 }) {
   return ChangeNotifierProvider<ThemeProvider>.value(
@@ -71,7 +72,10 @@ Widget _glassHarness(
                 const PaperFab(onPressed: null, label: '专注'),
               ],
             ),
-            bottomNavigationBar: PaperNavBar(index: 0, onChanged: (_) {}),
+            bottomNavigationBar: PaperNavBar(
+              index: navIndex,
+              onChanged: (_) {},
+            ),
           ),
         );
       },
@@ -92,7 +96,7 @@ void main() {
     await tester.pumpWidget(_glassHarness(await _glassProvider()));
 
     expect(find.byType(AmbientBackground), findsOneWidget);
-    expect(find.byType(GlassSurface), findsNWidgets(4));
+    expect(find.byType(GlassSurface), findsWidgets);
     expect(find.byType(BackdropFilter), findsWidgets);
     expect(
       tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
@@ -129,12 +133,78 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('玻璃确认对话框使用折射表面且操作可用', (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_glassHarness(await _glassProvider()));
+    bool confirmed = false;
+    showDialog<void>(
+      context: tester.element(find.byType(Scaffold)),
+      builder: (BuildContext context) => PaperAlertDialog(
+        title: const Text('删除这条记录？'),
+        content: const Text('删除后无法恢复。'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              confirmed = true;
+              Navigator.of(context).pop();
+            },
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('删除这条记录？'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.byType(BackdropFilter),
+      ),
+      findsWidgets,
+    );
+    await tester.tap(find.text('删除'));
+    await tester.pumpAndSettle();
+    expect(confirmed, isTrue);
+    expect(find.byType(Dialog), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('320dp 窄屏下玻璃组件不溢出', (WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(320, 760));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(_glassHarness(await _glassProvider()));
     await tester.pumpAndSettle();
 
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('玻璃导航自动滚动并完整显示选中的末项', (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final ThemeProvider provider = await _glassProvider();
+    await tester.pumpWidget(_glassHarness(provider));
+    await tester.pumpWidget(_glassHarness(provider, navIndex: 8));
+    await tester.pumpAndSettle();
+
+    final Finder selectedLabel = find.descendant(
+      of: find.byType(PaperNavBar),
+      matching: find.text('设置'),
+    );
+    final Rect viewport = tester.getRect(
+      find.descendant(
+        of: find.byType(PaperNavBar),
+        matching: find.byType(SingleChildScrollView),
+      ),
+    );
+    final Rect label = tester.getRect(selectedLabel);
+    expect(label.left, greaterThanOrEqualTo(viewport.left));
+    expect(label.right, lessThanOrEqualTo(viewport.right));
     expect(tester.takeException(), isNull);
   });
 

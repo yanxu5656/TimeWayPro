@@ -406,7 +406,7 @@ Future<void> _startFocusWithBatteryCheck(
     if (!context.mounted) return;
     final bool? goSettings = await showDialog<bool>(
       context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
+      builder: (BuildContext dialogContext) => PaperAlertDialog(
         title: const Text('让闹铃锁屏后也准时响'),
         content: const Text(
           '为确保专注到点时即使锁屏、退出应用也能准时提醒：\n\n'

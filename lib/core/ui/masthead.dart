@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'glass_surface.dart';
 
 /// 页面刊头：一条**单行**实心陶土色带（衬线标题 + 行内眉题），
 /// 元信息行落在色带下方的纸面上作脚注。
@@ -54,26 +55,29 @@ class Masthead extends StatelessWidget {
   Widget build(BuildContext context) {
     if (context.isGlass) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(4, AppSpacing.xs, 4, AppSpacing.sm),
+        padding: const EdgeInsets.fromLTRB(2, AppSpacing.xs, 2, AppSpacing.md),
         child: Stack(
           children: <Widget>[
             if (ghost != null)
               Positioned(
-                top: -18,
-                right: -6,
+                top: -34,
+                right: -8,
                 child: ExcludeSemantics(
                   child: ShaderMask(
                     blendMode: BlendMode.srcIn,
                     shaderCallback: (Rect bounds) => LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                       colors: <Color>[
-                        context.colors.primary.withValues(alpha: 0.16),
-                        context.colors.accent.withValues(alpha: 0.05),
+                        context.atmosphere.highlight.withValues(alpha: 0.17),
+                        context.colors.primary.withValues(alpha: 0.025),
                       ],
                     ).createShader(bounds),
                     child: Text(
                       ghost!,
                       style: _ghostStyle.copyWith(
-                        fontSize: 92,
+                        fontSize: 104,
+                        fontWeight: FontWeight.w500,
                         color: Colors.white,
                       ),
                     ),
@@ -86,42 +90,33 @@ class Masthead extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Flexible(
-                      child: Container(
+                      child: GlassSurface(
+                        blur: false,
+                        shadow: false,
+                        interactiveLight: false,
+                        borderRadius: BorderRadius.circular(999),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              context.colors.primary.withValues(alpha: 0.14),
-                              context.colors.accent.withValues(alpha: 0.10),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: context.colors.primary.withValues(
-                              alpha: 0.12,
-                            ),
-                          ),
+                          horizontal: 11,
+                          vertical: 6,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             Icon(
                               Icons.auto_awesome_rounded,
-                              size: 12,
-                              color: context.colors.primary,
+                              size: 13,
+                              color: context.colors.accent,
                             ),
-                            const SizedBox(width: 5),
+                            const SizedBox(width: 6),
                             Flexible(
                               child: Text(
                                 kicker,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: context.text.kicker.copyWith(
-                                  fontSize: 10,
-                                  color: context.colors.primary,
+                                  fontSize: 9,
+                                  letterSpacing: 1.6,
+                                  color: context.colors.textPrimary,
                                 ),
                               ),
                             ),
@@ -133,24 +128,61 @@ class Masthead extends StatelessWidget {
                     ?trailing,
                   ],
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  title,
-                  style: context.text.masthead.copyWith(
-                    fontSize: 34,
-                    height: 1.15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.8,
-                    color: context.colors.textPrimary,
+                const SizedBox(height: AppSpacing.sm),
+                ShaderMask(
+                  blendMode: BlendMode.srcIn,
+                  shaderCallback: (Rect bounds) => LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: <Color>[
+                      context.atmosphere.highlight,
+                      context.atmosphere.highlight,
+                      context.colors.primary.withValues(alpha: 0.88),
+                    ],
+                    stops: const <double>[0, 0.62, 1],
+                  ).createShader(bounds),
+                  child: Text(
+                    title,
+                    style: context.text.masthead.copyWith(
+                      fontSize: 36,
+                      height: 1.1,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -1.4,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 if (meta != null) ...<Widget>[
-                  const SizedBox(height: 5),
-                  DefaultTextStyle.merge(
-                    style: AppText.caption.copyWith(
-                      color: context.colors.textSecondary,
-                    ),
-                    child: meta!,
+                  const SizedBox(height: 8),
+                  Row(
+                    children: <Widget>[
+                      Container(
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: context.colors.accent,
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: context.colors.accent.withValues(
+                                alpha: 0.65,
+                              ),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DefaultTextStyle.merge(
+                          style: AppText.caption.copyWith(
+                            color: context.colors.textSecondary,
+                            letterSpacing: 0.2,
+                          ),
+                          child: meta!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ],

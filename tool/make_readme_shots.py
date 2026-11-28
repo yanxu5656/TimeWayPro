@@ -25,7 +25,13 @@ DST_DIR = os.path.join('docs', 'screenshots')
 WIDTH = 420
 QUALITY = 88
 
-NAMES = ['daily', 'weekly', 'task', 'stats', 'planning', 'leisure', 'calendar']
+SHOTS = [
+    ('readme_screenshots', name)
+    for name in ['daily', 'weekly', 'task', 'stats', 'planning', 'leisure', 'calendar']
+] + [
+    ('glass_screenshots', 'glass_daily'),
+    ('glass_screenshots', 'glass_sheet'),
+]
 
 
 def main():
@@ -38,8 +44,9 @@ def main():
     os.makedirs(DST_DIR, exist_ok=True)
     total = 0
 
-    for name in NAMES:
-        src = os.path.join(SRC_DIR, f'{name}.png')
+    for source, name in SHOTS:
+        src_name = name.removeprefix('glass_')
+        src = os.path.join('build', source, f'{src_name}.png')
         if not os.path.isfile(src):
             sys.exit(f'缺少 {src}')
 
@@ -52,7 +59,7 @@ def main():
 
         size = os.path.getsize(dst)
         total += size
-        print(f'{name:<9} {WIDTH}x{height}  {size // 1024}KB')
+        print(f'{name:<14} {WIDTH}x{height}  {size // 1024}KB')
 
     print(f'合计 {total // 1024}KB -> {DST_DIR}/')
 

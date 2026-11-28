@@ -98,9 +98,9 @@ void main() {
           expect(design.shape.cardRadius, 8);
         case ThemeVisualStyle.fluid:
           expect(design.atmosphere, isNotNull);
-          expect(design.shape.cardRadius, 26);
-          expect(design.shape.sheetRadius, 34);
-          expect(design.shape.controlRadius, 22);
+          expect(design.shape.cardRadius, 30);
+          expect(design.shape.sheetRadius, 40);
+          expect(design.shape.controlRadius, 24);
       }
     }
   });

@@ -52,7 +52,7 @@ class SettingsScreen extends StatelessWidget {
                       AppSpacing.sm,
                     ),
                     child: Text(
-                      '点击方案即可实时切换并自动保存。简洁、可爱、科技各提供 3 款，另有一款液态玻璃主题，原有功能与数据不受影响。',
+                      '点击方案即可实时切换并自动保存。简洁、可爱、科技各提供 3 款，另有一款深色流光液态玻璃主题，原有功能与数据不受影响。',
                       style: TextStyle(
                         fontSize: 12,
                         height: 1.5,
@@ -377,7 +377,7 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _restore(BuildContext context, SettingsProvider provider) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => PaperAlertDialog(
         title: const Text('恢复数据'),
         content: const Text('恢复将覆盖当前所有数据，确定继续吗？'),
         actions: [
@@ -453,7 +453,7 @@ class SettingsScreen extends StatelessWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => PaperAlertDialog(
         title: const Text('断开连接'),
         content: const Text('确定要断开坚果云连接吗？本地数据不会被删除。'),
         actions: [
@@ -519,7 +519,7 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _importData(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => PaperAlertDialog(
         title: const Text('导入数据'),
         content: const Text('导入将覆盖当前所有数据，确定继续吗？'),
         actions: [

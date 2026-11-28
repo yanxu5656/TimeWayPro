@@ -542,7 +542,7 @@ class _TaskScreenState extends State<TaskScreen> {
   Future<void> _deleteTask(Task task) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => PaperAlertDialog(
         title: const Text('删除任务'),
         content: Text('确定要删除「${task.title}」吗？此操作不可撤销。'),
         actions: [

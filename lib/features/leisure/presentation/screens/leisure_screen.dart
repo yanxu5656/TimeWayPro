@@ -206,7 +206,7 @@ class _LeisureScreenState extends State<LeisureScreen> {
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (context) => PaperAlertDialog(
             title: const Text('删除闲时条目'),
             content: Text('确定要删除「${item.title}」吗？'),
             actions: [
@@ -400,7 +400,7 @@ class _LeisureSheetState extends State<_LeisureSheet> {
   Future<void> _confirmDelete() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => PaperAlertDialog(
         title: const Text('删除闲时条目'),
         content: Text('确定要删除「${widget.item!.title}」吗？'),
         actions: [

@@ -209,7 +209,7 @@ class AppShape {
       ThemeVisualStyle.clean => 10,
       ThemeVisualStyle.playful => 22,
       ThemeVisualStyle.technical => 8,
-      ThemeVisualStyle.fluid => 26,
+      ThemeVisualStyle.fluid => 30,
     };
     final bool shadows = style != ThemeVisualStyle.clean;
     return AppShape(
@@ -217,12 +217,12 @@ class AppShape {
       controlRadius: style == ThemeVisualStyle.playful
           ? 16
           : style == ThemeVisualStyle.fluid
-          ? 22
+          ? 24
           : radius - 4,
       sheetRadius: style == ThemeVisualStyle.playful
           ? 26
           : style == ThemeVisualStyle.fluid
-          ? 34
+          ? 40
           : radius,
       rowShadows: shadows
           ? <BoxShadow>[
@@ -316,6 +316,7 @@ AppPalette _palette({
   required Color surface,
   required Color surfaceVariant,
   required bool isDark,
+  Color? primaryForeground,
   List<Color>? chartColors,
   List<Color>? heatMapColors,
 }) {
@@ -330,9 +331,11 @@ AppPalette _palette({
     textPrimary.withValues(alpha: 0.42),
     background,
   );
-  final Color onPrimary = primary.computeLuminance() > 0.45
-      ? const Color(0xFF172126)
-      : Colors.white;
+  final Color onPrimary =
+      primaryForeground ??
+      (primary.computeLuminance() > 0.45
+          ? const Color(0xFF172126)
+          : Colors.white);
   final Color shadow = isDark
       ? Colors.black.withValues(alpha: 0.32)
       : primary.withValues(alpha: 0.10);
@@ -635,21 +638,29 @@ class AppThemeCatalog {
       family: ThemeFamily.aurora,
       design: _design(
         _palette(
-          primary: const Color(0xFF3159C8),
-          accent: const Color(0xFF8B5CD6),
-          background: const Color(0xFFF1F5FF),
-          surface: const Color(0xFFFFFFFF),
-          surfaceVariant: const Color(0xFFE5EDFF),
-          isDark: false,
+          primary: const Color(0xFF7C93FF),
+          accent: const Color(0xFFC69BFF),
+          background: const Color(0xFF050914),
+          surface: const Color(0xFF111A2B),
+          surfaceVariant: const Color(0xFF1A2540),
+          isDark: true,
+          primaryForeground: const Color(0xFF08111F),
           chartColors: const <Color>[
-            Color(0xFF3159C8),
-            Color(0xFF8B5CD6),
-            Color(0xFFD6913C),
-            Color(0xFF348E9C),
-            Color(0xFFCC657F),
-            Color(0xFF6D7ED1),
-            Color(0xFF68768C),
-            Color(0xFF5D9B78),
+            Color(0xFF7C93FF),
+            Color(0xFFC69BFF),
+            Color(0xFFFFC46B),
+            Color(0xFF56D6D0),
+            Color(0xFFFF7FA7),
+            Color(0xFF9A8CFF),
+            Color(0xFF91A6C9),
+            Color(0xFF83D6A5),
+          ],
+          heatMapColors: const <Color>[
+            Color(0xFF121D31),
+            Color(0xFF1B2C52),
+            Color(0xFF294A86),
+            Color(0xFF4D70D1),
+            Color(0xFF9DB2FF),
           ],
         ),
         ThemeVisualStyle.fluid,

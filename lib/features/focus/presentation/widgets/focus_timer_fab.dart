@@ -42,6 +42,73 @@ class FocusTimerFab extends StatelessWidget {
       label = '专注';
     }
 
+    final bool glass = context.isGlass;
+    Widget bubble = AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: glass ? Colors.transparent : bgColor,
+        borderRadius: AppRadius.brFull,
+        border: glass || timer.isActive
+            ? null
+            : Border.all(color: context.colors.primaryLight, width: 1.2),
+        boxShadow: glass ? null : context.shape.floatShadows,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            transitionBuilder: (Widget child, Animation<double> animation) =>
+                FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.7, end: 1).animate(animation),
+                    child: child,
+                  ),
+                ),
+            child: Icon(
+              icon,
+              key: ValueKey<IconData>(icon),
+              size: 19,
+              color: fgColor,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            label,
+            style: (timer.isRunning ? context.text.serifNum : AppText.labelLg)
+                .copyWith(
+                  fontSize: 14,
+                  color: fgColor,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+
+    if (glass) {
+      bubble = GlassSurface(
+        gradient: timer.isActive
+            ? <Color>[
+                Color.lerp(bgColor, Colors.black, 0.22)!,
+                bgColor,
+                Color.lerp(bgColor, context.colors.accent, 0.34)!,
+              ]
+            : null,
+        fill: context.atmosphere.glassFill,
+        rimColor: timer.isActive ? bgColor : context.colors.primary,
+        blur: true,
+        shadow: true,
+        borderRadius: AppRadius.brFull,
+        padding: EdgeInsets.zero,
+        child: bubble,
+      );
+    }
+
     return GestureDetector(
       key: const Key('focus_timer_fab'),
       onTap: onTap,
@@ -54,64 +121,7 @@ class FocusTimerFab extends StatelessWidget {
           child: Semantics(
             button: true,
             label: '专注计时悬浮按钮：$label',
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: AppRadius.brFull,
-                border: timer.isActive
-                    ? null
-                    : Border.all(
-                        color: context.colors.primaryLight,
-                        width: 1.2,
-                      ),
-                boxShadow: context.shape.floatShadows,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  // 图标随阶段形变（计时→咖啡→闹铃）；秒数文本每秒都变，
-                  // 不做交叉淡入，否则一直在闪
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    transitionBuilder:
-                        (Widget child, Animation<double> animation) =>
-                            FadeTransition(
-                              opacity: animation,
-                              child: ScaleTransition(
-                                scale: Tween<double>(
-                                  begin: 0.7,
-                                  end: 1,
-                                ).animate(animation),
-                                child: child,
-                              ),
-                            ),
-                    child: Icon(
-                      icon,
-                      key: ValueKey<IconData>(icon),
-                      size: 19,
-                      color: fgColor,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    label,
-                    style:
-                        (timer.isRunning
-                                ? context.text.serifNum
-                                : AppText.labelLg)
-                            .copyWith(
-                              fontSize: 14,
-                              color: fgColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                  ),
-                ],
-              ),
-            ),
+            child: bubble,
           ),
         ),
       ),

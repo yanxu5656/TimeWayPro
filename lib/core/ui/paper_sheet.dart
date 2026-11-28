@@ -56,10 +56,8 @@ class PaperSheet extends StatelessWidget {
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: GlassSurface(
-          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(context.shape.sheetRadius),
-          ),
+          margin: const EdgeInsets.all(AppSpacing.xs),
+          borderRadius: BorderRadius.circular(context.shape.sheetRadius),
           padding: EdgeInsets.zero,
           child: SafeArea(
             top: false,
@@ -119,7 +117,9 @@ Future<T?> showPaperSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
     backgroundColor: Colors.transparent,
-    barrierColor: context.colors.scrim,
+    barrierColor: context.isGlass
+        ? Colors.black.withValues(alpha: 0.64)
+        : context.colors.scrim,
     builder: (BuildContext ctx) =>
         PaperSheet(showHandle: showHandle, child: builder(ctx)),
   );

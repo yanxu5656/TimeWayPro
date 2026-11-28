@@ -154,74 +154,159 @@ class _DailyScreenState extends State<DailyScreen> {
             ],
           ),
 
-          // 进度：48px 衬线大分数 + 右侧两行小注 + 陶土粗条
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              CountUpText(
-                value: provider.completedTasks,
-                format: (v) => '$v',
-                duration: const Duration(milliseconds: 450),
+          _buildProgress(provider),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgress(DailyProvider provider) {
+    if (context.isGlass) {
+      return GlassSurface(
+        gradient: <Color>[
+          context.colors.primary.withValues(alpha: 0.2),
+          context.colors.accent.withValues(alpha: 0.07),
+        ],
+        rimColor: context.colors.primary,
+        blur: true,
+        shadow: true,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Row(
+          children: <Widget>[
+            CountUpText(
+              value: provider.completedTasks,
+              format: (v) => '$v',
+              duration: const Duration(milliseconds: 450),
+              style: context.text.serifNum.copyWith(
+                fontSize: 44,
+                height: 1,
+                color: context.colors.textPrimary,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                ' /${provider.totalTasks}',
                 style: context.text.serifNum.copyWith(
-                  fontSize: 48,
+                  fontSize: 20,
+                  color: context.colors.textHint,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            GlassProgressRing(
+              value: provider.progress,
+              size: 58,
+              strokeWidth: 5,
+              child: Text(
+                '${(provider.progress * 100).round()}%',
+                style: AppText.caption.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
                   color: context.colors.textPrimary,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Text(
-                  ' /${provider.totalTasks}',
-                  style: context.text.serifNum.copyWith(
-                    fontSize: 22,
-                    color: context.colors.textHint,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              // Flexible + 截断：与每周页同款防御（320dp 挤压时不溢出）
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      provider.totalTasks - provider.completedTasks > 0
-                          ? '还剩 ${provider.totalTasks - provider.completedTasks} 条'
-                          : '全部完成',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.caption.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: context.colors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '完成度 ${(provider.progress * 100).round()}%',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.caption.copyWith(
-                        color: context.colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          LinearProgressIndicator(
-            value: provider.progress,
-            backgroundColor: context.colors.surfaceVariant,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              provider.progress >= 1.0
-                  ? context.colors.success
-                  : context.colors.primary,
             ),
-            minHeight: 5,
-            borderRadius: AppRadius.brFull,
+            const Spacer(),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  Text(
+                    provider.totalTasks - provider.completedTasks > 0
+                        ? '还剩 ${provider.totalTasks - provider.completedTasks} 条'
+                        : '全部完成',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: context.colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '完成度 ${(provider.progress * 100).round()}%',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.caption.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: <Widget>[
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            CountUpText(
+              value: provider.completedTasks,
+              format: (v) => '$v',
+              duration: const Duration(milliseconds: 450),
+              style: context.text.serifNum.copyWith(
+                fontSize: 48,
+                color: context.colors.textPrimary,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Text(
+                ' /${provider.totalTasks}',
+                style: context.text.serifNum.copyWith(
+                  fontSize: 22,
+                  color: context.colors.textHint,
+                ),
+              ),
+            ),
+            const Spacer(),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  Text(
+                    provider.totalTasks - provider.completedTasks > 0
+                        ? '还剩 ${provider.totalTasks - provider.completedTasks} 条'
+                        : '全部完成',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: context.colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '完成度 ${(provider.progress * 100).round()}%',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.caption.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        LinearProgressIndicator(
+          value: provider.progress,
+          backgroundColor: context.colors.surfaceVariant,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            provider.progress >= 1.0
+                ? context.colors.success
+                : context.colors.primary,
           ),
-        ],
-      ),
+          minHeight: 5,
+          borderRadius: AppRadius.brFull,
+        ),
+      ],
     );
   }
 
@@ -365,7 +450,7 @@ class _DailyScreenState extends State<DailyScreen> {
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (context) => PaperAlertDialog(
             title: const Text('删除待办'),
             content: Text('确定要删除「${task.title}」吗？'),
             actions: [

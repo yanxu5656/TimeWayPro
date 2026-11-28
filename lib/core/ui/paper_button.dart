@@ -150,35 +150,21 @@ class PaperButton extends StatelessWidget {
 
     Widget visual = button;
     if (context.isGlass) {
-      visual = DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(context.shape.controlRadius),
-          gradient: LinearGradient(
-            colors: enabled
-                ? <Color>[
-                    backgroundColor ?? context.colors.primary,
-                    Color.lerp(
-                      backgroundColor ?? context.colors.primary,
-                      context.colors.accent,
-                      0.62,
-                    )!,
-                  ]
-                : <Color>[context.colors.inkSubtle, context.colors.inkFaint],
-          ),
-          boxShadow: enabled
-              ? <BoxShadow>[
-                  BoxShadow(
-                    color: context.atmosphere.glow.withValues(alpha: 0.5),
-                    blurRadius: 18,
-                    offset: const Offset(0, 7),
-                  ),
-                ]
-              : null,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(context.shape.controlRadius),
-          child: button,
-        ),
+      final Color primary = backgroundColor ?? context.colors.primary;
+      visual = GlassSurface(
+        borderRadius: BorderRadius.circular(context.shape.controlRadius),
+        gradient: enabled
+            ? <Color>[
+                Color.lerp(primary, Colors.black, 0.16)!,
+                primary,
+                Color.lerp(primary, context.colors.accent, 0.72)!,
+              ]
+            : <Color>[context.colors.inkSubtle, context.colors.inkFaint],
+        blur: false,
+        shadow: enabled,
+        interactiveLight: enabled,
+        padding: EdgeInsets.zero,
+        child: button,
       );
     }
 
@@ -251,8 +237,11 @@ class PaperOutlinedButton extends StatelessWidget {
       child: context.isGlass
           ? GlassSurface(
               borderRadius: BorderRadius.circular(context.shape.controlRadius),
+              fill: context.atmosphere.glassFill,
+              rimColor: fg,
               blur: false,
               shadow: false,
+              interactiveLight: onPressed != null,
               padding: EdgeInsets.zero,
               child: button,
             )

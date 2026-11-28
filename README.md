@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.12.0-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.13.0-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -140,6 +140,11 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 - **性能与无障碍降级**：极光连续动画和真实模糊遵循系统减弱动效设置及帧率自适应档位，低端机自动关闭最昂贵效果
 - **可读性守护**：每套主题都经过正文、主色、按钮文字与弱化文字对比度测试
 
+<p>
+  <img src="docs/screenshots/glass_daily.webp" width="210" alt="流光璃境每日待办">
+  <img src="docs/screenshots/glass_sheet.webp" width="210" alt="流光璃境玻璃弹窗">
+</p>
+
 ### 🔔 通知栏常驻通知
 
 - 计时进行中在通知栏常驻显示任务名称与计时，每 5 秒更新
@@ -154,6 +159,15 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.13.0 — 流光璃境材质与形态重构
+*2026-11-28*
+
+- **重做光学环境**：推翻首版浅色透明卡片，改为深夜蓝底与蓝、紫、洋红、青四色高饱和极光；加入光场呼吸、细颗粒与边缘暗角，让折射有真实可读的内容
+- **真实玻璃材质**：`GlassSurface` 统一实现 `BackdropFilter` 模糊、双层阴影、方向性渐变描边、内倒角、径向反射与跟随指针的高光；所有表面共享帧率与减弱动效降级
+- **组件形态颠覆**：导航改为单行悬浮玻璃 Dock，仅展开选中项并自动滚动到完整可见；底部弹窗四角悬浮，确认框也使用真实玻璃折射；刊头、按钮、芯片、分段控件、FAB 与计时器同步重构
+- **主题专属布局**：每日待办改为大数字与渐变进度透镜，每周、任务、统计等九个页面及奖励商店、设置均使用同一材质语言，而非旧纸面组件简单换色
+- **视觉与工程验证**：重新生成九个页面、添加待办弹窗与十一套主题截图；新增玻璃对话框操作、320dp 导航末项可见性和减弱动效回归，完整套件 **345** 项通过，`flutter analyze` 无告警
 
 ### v1.12.0 — 流光璃境液态玻璃主题
 *2026-11-28*

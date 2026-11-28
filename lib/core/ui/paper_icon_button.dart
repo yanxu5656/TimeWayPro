@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'glass_surface.dart';
 import 'pressable_scale.dart';
 
 /// 圆形墨色图标按钮。
@@ -44,6 +45,18 @@ class PaperIconButton extends StatelessWidget {
       height: size,
       child: Icon(icon, color: effective, size: iconSize),
     );
+
+    if (context.isGlass) {
+      button = GlassSurface(
+        borderRadius: BorderRadius.circular(999),
+        fill: context.atmosphere.glassFill,
+        blur: false,
+        shadow: false,
+        interactiveLight: enabled,
+        padding: EdgeInsets.zero,
+        child: button,
+      );
+    }
 
     if (tooltip != null) {
       button = Tooltip(message: tooltip!, child: button);

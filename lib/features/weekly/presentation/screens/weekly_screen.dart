@@ -618,7 +618,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
   Future<bool> _confirmDelete(BuildContext context, WeeklyGoal goal) async {
     final bool? ok = await showDialog<bool>(
       context: context,
-      builder: (BuildContext ctx) => AlertDialog(
+      builder: (BuildContext ctx) => PaperAlertDialog(
         title: const Text('删除目标'),
         content: Text('确定要删除「${goal.title}」吗？'),
         actions: <Widget>[

@@ -116,7 +116,7 @@ class PaperCard extends StatelessWidget {
           (tint == null
               ? null
               : Color.alphaBlend(
-                  tint!.withValues(alpha: 0.12),
+                  tint!.withValues(alpha: 0.16),
                   context.atmosphere.glassFill,
                 ));
       Widget glass = GlassSurface(
@@ -128,8 +128,10 @@ class PaperCard extends StatelessWidget {
         padding: padding,
         margin: margin,
         fill: fill,
-        blur: tone == PaperTone.row,
+        rimColor: tint,
+        blur: tone != PaperTone.raised,
         shadow: tone == PaperTone.row,
+        interactiveLight: onTap != null || onLongPress != null,
         child: child,
       );
       if (onTap != null || onLongPress != null) {

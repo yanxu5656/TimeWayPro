@@ -343,7 +343,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
   void _deletePlan(Plan plan, PlanProvider provider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => PaperAlertDialog(
         title: const Text('删除目标'),
         content: Text('确定要删除「${plan.title}」吗？子目标也会被删除。'),
         actions: [

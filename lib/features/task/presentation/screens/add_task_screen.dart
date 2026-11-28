@@ -445,7 +445,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (_saving) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => PaperAlertDialog(
         title: const Text('删除任务'),
         content: Text('确定要删除「${widget.task!.title}」吗？'),
         actions: [

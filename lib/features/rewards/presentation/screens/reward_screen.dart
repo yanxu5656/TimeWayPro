@@ -408,7 +408,7 @@ class _RewardScreenState extends State<RewardScreen> {
   Future<void> _confirmPurchase(RewardProduct product) async {
     final bool? ok = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
+      builder: (BuildContext context) => PaperAlertDialog(
         title: Text('兑换「${product.title}」？'),
         content: Text('将花费 ${product.price} 金币。兑换后可随时在仓库记录兑现。'),
         actions: <Widget>[
@@ -433,7 +433,7 @@ class _RewardScreenState extends State<RewardScreen> {
   Future<void> _confirmFulfill(InventoryItem item) async {
     final bool? ok = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
+      builder: (BuildContext context) => PaperAlertDialog(
         title: const Text('已经享受这个奖励了吗？'),
         content: Text('确认后消耗一件「${item.title}」，金币不会退回。'),
         actions: <Widget>[
@@ -665,7 +665,7 @@ class _ProductSheetState extends State<_ProductSheet> {
   Future<void> _confirmDelete() async {
     final bool? confirmed = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
+      builder: (BuildContext context) => PaperAlertDialog(
         title: const Text('删除这个奖励？'),
         content: const Text('删除后不可恢复；已经兑换的仓库奖励和金币明细会保留。'),
         actions: <Widget>[

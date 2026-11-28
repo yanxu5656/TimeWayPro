@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'glass_surface.dart';
 import 'pressable_scale.dart';
 
 /// 可选中的纸面 chip。
@@ -71,6 +72,7 @@ class PaperChip extends StatelessWidget {
             Text(label!, style: _labelStyle(fg)),
           ];
 
+    final bool glass = context.isGlass;
     final Widget chip = AnimatedContainer(
       duration: reduced ? Duration.zero : const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
@@ -80,15 +82,34 @@ class PaperChip extends StatelessWidget {
               ? const EdgeInsets.symmetric(vertical: AppSpacing.md)
               : const EdgeInsets.symmetric(vertical: AppSpacing.sm)),
       decoration: BoxDecoration(
-        color: selected ? context.colors.primary : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: selected
-              ? context.colors.primary
-              // 描边用 30% 陶土：比发丝线重一档，框出可点区域但不抢戏
-              : context.colors.primary.withValues(alpha: 0.3),
-          width: 1.2,
+        color: glass
+            ? Colors.transparent
+            : (selected ? context.colors.primary : Colors.transparent),
+        gradient: glass && selected
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[
+                  context.colors.primary,
+                  Color.lerp(
+                    context.colors.primary,
+                    context.colors.accent,
+                    0.72,
+                  )!,
+                ],
+              )
+            : null,
+        borderRadius: BorderRadius.circular(
+          glass ? context.shape.controlRadius : AppRadius.md,
         ),
+        border: glass
+            ? null
+            : Border.all(
+                color: selected
+                    ? context.colors.primary
+                    : context.colors.primary.withValues(alpha: 0.3),
+                width: 1.2,
+              ),
       ),
       child: vertical
           ? Column(mainAxisSize: MainAxisSize.min, children: children)
@@ -98,12 +119,24 @@ class PaperChip extends StatelessWidget {
             ),
     );
 
+    final Widget surface = glass
+        ? GlassSurface(
+            borderRadius: BorderRadius.circular(context.shape.controlRadius),
+            fill: context.atmosphere.glassFill,
+            blur: false,
+            shadow: selected,
+            rimColor: selected ? context.colors.accent : context.colors.primary,
+            padding: EdgeInsets.zero,
+            child: chip,
+          )
+        : chip;
+
     final Widget tappable = PressableScale(
       scale: 0.97,
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: chip,
+        child: surface,
       ),
     );
 

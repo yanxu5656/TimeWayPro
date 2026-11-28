@@ -90,10 +90,12 @@ class _PaperNavBarState extends State<PaperNavBar> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_controller.hasClients || _itemExtent <= 0) return;
       final ScrollPosition position = _controller.position;
-      final double target =
-          (widget.index * _itemExtent -
-                  (position.viewportDimension - _itemExtent) / 2)
-              .clamp(position.minScrollExtent, position.maxScrollExtent);
+      final double target = context.isGlass
+          ? (widget.index * 52 + 48 - (position.viewportDimension - 100) / 2)
+                .clamp(position.minScrollExtent, position.maxScrollExtent)
+          : (widget.index * _itemExtent -
+                    (position.viewportDimension - _itemExtent) / 2)
+                .clamp(position.minScrollExtent, position.maxScrollExtent);
       if ((target - position.pixels).abs() < 0.5) return;
       _controller.animateTo(
         target,
@@ -105,16 +107,47 @@ class _PaperNavBarState extends State<PaperNavBar> {
 
   @override
   Widget build(BuildContext context) {
-    final bool glass = context.isGlass;
-    final Widget bar = Container(
-      height: glass ? 60 : 54,
-      decoration: BoxDecoration(
-        color: glass ? Colors.transparent : context.colors.surface,
-        borderRadius: BorderRadius.circular(
-          glass ? 32 : context.shape.controlRadius,
+    if (context.isGlass) {
+      _itemExtent = 48;
+      return SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+          child: GlassSurface(
+            borderRadius: BorderRadius.circular(34),
+            shadow: true,
+            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+            child: SizedBox(
+              height: 58,
+              child: SingleChildScrollView(
+                controller: _controller,
+                scrollDirection: Axis.horizontal,
+                physics: const ClampingScrollPhysics(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    for (int i = 0; i < PaperNavBar._items.length; i++)
+                      _GlassNavItem(
+                        data: PaperNavBar._items[i],
+                        selected: i == widget.index,
+                        onTap: () => widget.onChanged(i),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
-        border: glass ? null : Border.all(color: context.colors.dividerStrong),
-        boxShadow: glass ? null : context.shape.rowShadows,
+      );
+    }
+
+    final Widget bar = Container(
+      height: 54,
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: BorderRadius.circular(context.shape.controlRadius),
+        border: Border.all(color: context.colors.dividerStrong),
+        boxShadow: context.shape.rowShadows,
       ),
       clipBehavior: Clip.antiAlias,
       child: LayoutBuilder(
@@ -139,7 +172,7 @@ class _PaperNavBarState extends State<PaperNavBar> {
                     child: _NavItem(
                       data: PaperNavBar._items[i],
                       selected: i == widget.index,
-                      showDivider: !glass && i != PaperNavBar._items.length - 1,
+                      showDivider: i != PaperNavBar._items.length - 1,
                       onTap: () => widget.onChanged(i),
                     ),
                   ),
@@ -153,15 +186,152 @@ class _PaperNavBarState extends State<PaperNavBar> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
+        padding: const EdgeInsets.fromLTRB(
           AppSpacing.sm,
-          glass ? 6 : AppSpacing.xs,
+          AppSpacing.xs,
           AppSpacing.sm,
-          glass ? 6 : AppSpacing.xs,
+          AppSpacing.xs,
         ),
-        child: glass
-            ? GlassSurface(borderRadius: BorderRadius.circular(32), child: bar)
-            : bar,
+        child: bar,
+      ),
+    );
+  }
+}
+
+class _GlassNavItem extends StatelessWidget {
+  const _GlassNavItem({
+    required this.data,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _NavItemData data;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color foreground = selected
+        ? context.colors.textOnPrimary
+        : context.colors.textSecondary;
+    return Semantics(
+      label: data.label,
+      button: true,
+      selected: selected,
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: PressableScale(
+          haptic: false,
+          scale: 0.94,
+          child: GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: selected ? 96 : 48,
+              height: 50,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                gradient: selected
+                    ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: <Color>[
+                          Color.lerp(
+                            context.colors.primary,
+                            Colors.black,
+                            0.24,
+                          )!,
+                          context.colors.primary,
+                          Color.lerp(
+                            context.colors.primary,
+                            context.colors.accent,
+                            0.76,
+                          )!,
+                        ],
+                      )
+                    : null,
+                borderRadius: BorderRadius.circular(27),
+                border: selected
+                    ? Border.all(color: Colors.white.withValues(alpha: 0.2))
+                    : null,
+                boxShadow: selected
+                    ? <BoxShadow>[
+                        BoxShadow(
+                          color: context.atmosphere.glow.withValues(alpha: 0.4),
+                          blurRadius: 16,
+                          offset: const Offset(0, 5),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: <Widget>[
+                  if (selected)
+                    Positioned(
+                      left: 12,
+                      top: 0,
+                      bottom: 0,
+                      child: AnimatedScale(
+                        scale: 1.06,
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeOutBack,
+                        child: Icon(
+                          data.activeIcon,
+                          size: 20,
+                          color: foreground,
+                        ),
+                      ),
+                    )
+                  else
+                    AnimatedScale(
+                      scale: 1,
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutBack,
+                      child: Icon(data.icon, size: 20, color: foreground),
+                    ),
+                  if (selected)
+                    Positioned(
+                      left: 38,
+                      right: 8,
+                      top: 0,
+                      bottom: 0,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          data.label,
+                          maxLines: 1,
+                          style: AppText.navLabelActive.copyWith(
+                            color: foreground,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0,
+                        child: Center(
+                          child: Text(
+                            data.label,
+                            maxLines: 1,
+                            style: AppText.navLabelActive.copyWith(
+                              color: foreground,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

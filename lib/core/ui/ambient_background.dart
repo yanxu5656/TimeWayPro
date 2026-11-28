@@ -13,7 +13,7 @@ class AmbientBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 650),
+      duration: const Duration(milliseconds: 720),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
       child: design.atmosphere == null
@@ -39,7 +39,7 @@ class _AuroraLayerState extends State<_AuroraLayer>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 24),
+    duration: const Duration(seconds: 28),
   );
 
   bool _canAnimate = false;
@@ -66,8 +66,19 @@ class _AuroraLayerState extends State<_AuroraLayer>
   @override
   Widget build(BuildContext context) {
     return SizedBox.expand(
-      child: ColoredBox(
-        color: widget.atmosphere.background,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[
+              widget.atmosphere.background,
+              widget.atmosphere.backgroundElevated,
+              widget.atmosphere.background,
+            ],
+            stops: const <double>[0, 0.52, 1],
+          ),
+        ),
         child: ValueListenableBuilder<UiEffectTier>(
           valueListenable: UiEffects.tier,
           builder: (BuildContext context, UiEffectTier tier, Widget? child) {
@@ -85,28 +96,70 @@ class _AuroraLayerState extends State<_AuroraLayer>
                   return Stack(
                     fit: StackFit.expand,
                     children: <Widget>[
-                      _orb(
+                      _lightField(
                         widget.atmosphere.orbs[0],
-                        Alignment(-0.35 + math.sin(phase) * 0.12, -0.18),
-                        0.92,
+                        Alignment(
+                          -0.62 + math.sin(phase) * 0.16,
+                          -0.3 + math.cos(phase * 0.7) * 0.08,
+                        ),
+                        1.34,
+                        0.9,
+                        0.78,
                       ),
-                      _orb(
+                      _lightField(
                         widget.atmosphere.orbs[1],
-                        Alignment(0.55, 0.12 + math.cos(phase * 0.8) * 0.1),
-                        1.05,
+                        Alignment(
+                          0.62 + math.cos(phase * 0.8) * 0.14,
+                          0.02 + math.sin(phase * 0.6) * 0.12,
+                        ),
+                        1.12,
+                        0.78,
+                        0.67,
                       ),
-                      _orb(
+                      _lightField(
                         widget.atmosphere.orbs[2],
                         Alignment(
-                          -0.1,
-                          0.58 + math.sin(phase * 0.7 + 2) * 0.12,
+                          -0.18 + math.sin(phase * 0.65 + 1.8) * 0.18,
+                          0.68 + math.cos(phase * 0.9) * 0.08,
                         ),
-                        0.86,
+                        1.2,
+                        0.72,
+                        0.48,
                       ),
-                      _orb(
+                      _lightField(
                         widget.atmosphere.orbs[3],
-                        Alignment(0.72, 0.78 + math.cos(phase * 0.9) * 0.08),
-                        0.78,
+                        Alignment(
+                          0.76 + math.cos(phase * 0.55 + 2) * 0.12,
+                          0.84 + math.sin(phase * 0.75) * 0.06,
+                        ),
+                        0.96,
+                        0.66,
+                        0.5,
+                      ),
+                      const Positioned.fill(
+                        child: IgnorePointer(
+                          child: CustomPaint(
+                            painter: _AtmosphereGrainPainter(),
+                          ),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                center: Alignment.center,
+                                radius: 1.05,
+                                colors: <Color>[
+                                  Colors.transparent,
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.3),
+                                ],
+                                stops: <double>[0, 0.62, 1],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   );
@@ -119,25 +172,52 @@ class _AuroraLayerState extends State<_AuroraLayer>
     );
   }
 
-  Widget _orb(Color color, Alignment alignment, double opacity) {
+  Widget _lightField(
+    Color color,
+    Alignment alignment,
+    double width,
+    double height,
+    double opacity,
+  ) {
     return Align(
       alignment: alignment,
       child: FractionallySizedBox(
-        widthFactor: 1.05,
-        heightFactor: 0.72,
+        widthFactor: width,
+        heightFactor: height,
         child: DecoratedBox(
           decoration: BoxDecoration(
             gradient: RadialGradient(
               colors: <Color>[
                 color.withValues(alpha: opacity),
-                color.withValues(alpha: opacity * 0.42),
+                color.withValues(alpha: opacity * 0.68),
+                color.withValues(alpha: opacity * 0.2),
                 color.withValues(alpha: 0),
               ],
-              stops: const <double>[0, 0.42, 1],
+              stops: const <double>[0, 0.2, 0.52, 1],
             ),
           ),
         ),
       ),
     );
   }
+}
+
+class _AtmosphereGrainPainter extends CustomPainter {
+  const _AtmosphereGrainPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final math.Random random = math.Random(28);
+    final Paint paint = Paint()..color = Colors.white.withValues(alpha: 0.045);
+    for (int i = 0; i < 150; i++) {
+      final Offset point = Offset(
+        random.nextDouble() * size.width,
+        random.nextDouble() * size.height,
+      );
+      canvas.drawCircle(point, random.nextDouble() * 0.65 + 0.2, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_AtmosphereGrainPainter oldDelegate) => false;
 }

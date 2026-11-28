@@ -67,19 +67,23 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: glass
-            ? atmosphere.glassFill.withValues(alpha: 0.42)
+            ? atmosphere.glassFill.withValues(alpha: 0.72)
             : c.surfaceVariant,
         hintStyle: TextStyle(color: c.textHint, fontSize: 14),
         border: OutlineInputBorder(
           borderRadius: controlRadius,
           borderSide: glass
-              ? BorderSide(color: atmosphere.glassBorder)
+              ? BorderSide(
+                  color: atmosphere.glassBorder.withValues(alpha: 0.26),
+                )
               : BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: controlRadius,
           borderSide: glass
-              ? BorderSide(color: atmosphere.glassBorder)
+              ? BorderSide(
+                  color: atmosphere.glassBorder.withValues(alpha: 0.26),
+                )
               : BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
@@ -154,12 +158,18 @@ class AppTheme {
           ),
         ),
       ),
-      dividerTheme: DividerThemeData(color: c.divider, thickness: 1, space: 0),
+      dividerTheme: DividerThemeData(
+        color: glass ? Colors.white.withValues(alpha: 0.12) : c.divider,
+        thickness: 1,
+        space: 0,
+      ),
       dialogTheme: DialogThemeData(
-        backgroundColor: glass ? atmosphere.dialogFill : c.surface,
+        backgroundColor: glass
+            ? atmosphere.dialogFill.withValues(alpha: 0.96)
+            : c.surface,
         surfaceTintColor: Colors.transparent,
-        elevation: glass ? 18 : 0,
-        shadowColor: glass ? atmosphere.glow : null,
+        elevation: glass ? 24 : 0,
+        shadowColor: glass ? Colors.black.withValues(alpha: 0.55) : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(glass ? 30 : s.cardRadius),
         ),
@@ -168,15 +178,20 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: c.textPrimary,
-        contentTextStyle: TextStyle(color: c.textOnInk, fontSize: 14),
+        backgroundColor: glass ? c.surface : c.textPrimary,
+        contentTextStyle: TextStyle(
+          color: glass ? c.textPrimary : c.textOnInk,
+          fontSize: 14,
+        ),
         shape: RoundedRectangleBorder(borderRadius: controlRadius),
         insetPadding: const EdgeInsets.all(AppSpacing.md),
         elevation: 0,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: c.primary,
-        linearTrackColor: c.surfaceVariant,
+        linearTrackColor: glass
+            ? Colors.white.withValues(alpha: 0.1)
+            : c.surfaceVariant,
         linearMinHeight: 4,
       ),
       listTileTheme: ListTileThemeData(
@@ -194,10 +209,13 @@ class AppTheme {
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
-          color: c.textPrimary,
+          color: glass ? c.surface : c.textPrimary,
           borderRadius: BorderRadius.circular(s.controlRadius),
         ),
-        textStyle: TextStyle(color: c.textOnInk, fontSize: 12),
+        textStyle: TextStyle(
+          color: glass ? c.textPrimary : c.textOnInk,
+          fontSize: 12,
+        ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,

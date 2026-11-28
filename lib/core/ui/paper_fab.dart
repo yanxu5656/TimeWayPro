@@ -3,6 +3,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'glass_surface.dart';
 import 'pressable_scale.dart';
 
 /// 陶土胶囊悬浮按钮。
@@ -36,34 +37,35 @@ class PaperFab extends StatelessWidget {
       enabled: onPressed != null,
       pressOffset: 1.5,
       builder: (BuildContext context, double press, Widget? child) {
+        if (context.isGlass) {
+          return GlassSurface(
+            gradient: <Color>[
+              Color.lerp(context.colors.primary, Colors.black, 0.2)!,
+              context.colors.primary,
+              Color.lerp(context.colors.primary, context.colors.accent, 0.8)!,
+            ],
+            blur: false,
+            shadow: onPressed != null,
+            interactiveLight: onPressed != null,
+            borderRadius: AppRadius.brFull,
+            padding: EdgeInsets.symmetric(
+              horizontal: extended ? AppSpacing.lg : AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            child: child!,
+          );
+        }
         return Container(
           decoration: BoxDecoration(
-            color: context.isGlass ? null : context.colors.primary,
-            gradient: context.isGlass
-                ? LinearGradient(
-                    colors: <Color>[
-                      context.colors.primary,
-                      Color.lerp(
-                        context.colors.primary,
-                        context.colors.accent,
-                        0.72,
-                      )!,
-                    ],
-                  )
-                : null,
-            border: context.isGlass
-                ? Border.all(color: Colors.white.withValues(alpha: 0.5))
-                : null,
+            color: context.colors.primary,
             borderRadius: AppRadius.brFull,
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: context.isGlass
-                    ? context.atmosphere.glow.withValues(alpha: 0.7)
-                    : Color.lerp(
-                        context.colors.shadowMedium,
-                        context.colors.shadow,
-                        press,
-                      )!,
+                color: Color.lerp(
+                  context.colors.shadowMedium,
+                  context.colors.shadow,
+                  press,
+                )!,
                 blurRadius: lerpDouble(
                   context.shape.floatShadows.first.blurRadius,
                   6,

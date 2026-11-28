@@ -226,7 +226,7 @@ void main() {
     debugDisableShadows = true;
   });
 
-  testWidgets('十款新主题对照截图', (WidgetTester tester) async {
+  testWidgets('十一款新主题对照截图', (WidgetTester tester) async {
     UiEffects.resetForTesting();
     UiEffects.tier.value = UiEffectTier.reduced;
     debugDisableShadows = false;

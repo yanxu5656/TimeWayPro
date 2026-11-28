@@ -10,6 +10,7 @@ export 'app_haptics.dart';
 export 'count_up_text.dart';
 export 'ink_check_circle.dart';
 export 'masthead.dart';
+export 'paper_alert_dialog.dart';
 export 'paper_app_bar.dart';
 export 'paper_button.dart';
 export 'paper_card.dart';

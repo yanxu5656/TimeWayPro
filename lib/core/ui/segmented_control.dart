@@ -46,9 +46,10 @@ class SegmentedControl<T> extends StatelessWidget {
 
     if (context.isGlass) {
       return GlassSurface(
-        borderRadius: BorderRadius.circular(26),
-        blur: false,
-        shadow: false,
+        borderRadius: BorderRadius.circular(28),
+        blur: true,
+        shadow: true,
+        rimColor: context.colors.primary,
         padding: const EdgeInsets.all(4),
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
@@ -64,27 +65,21 @@ class SegmentedControl<T> extends StatelessWidget {
                     top: 0,
                     bottom: 0,
                     width: width,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        gradient: LinearGradient(
-                          colors: <Color>[
-                            context.colors.primary,
-                            Color.lerp(
-                              context.colors.primary,
-                              context.colors.accent,
-                              0.7,
-                            )!,
-                          ],
-                        ),
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(
-                            color: context.atmosphere.glow,
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
+                    child: GlassSurface(
+                      borderRadius: BorderRadius.circular(23),
+                      gradient: <Color>[
+                        Color.lerp(context.colors.primary, Colors.black, 0.2)!,
+                        context.colors.primary,
+                        Color.lerp(
+                          context.colors.primary,
+                          context.colors.accent,
+                          0.78,
+                        )!,
+                      ],
+                      blur: false,
+                      shadow: true,
+                      padding: EdgeInsets.zero,
+                      child: const SizedBox.expand(),
                     ),
                   ),
                   Row(
