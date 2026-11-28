@@ -27,6 +27,15 @@ void main() {
     provider.dispose();
   });
 
+  test('流光璃境主题可持久化恢复', () async {
+    await preferences.setString(ThemeProvider.storageKey, 'aurora_glass');
+    final ThemeProvider provider = ThemeProvider(preferences: preferences);
+    await provider.loadTheme();
+    expect(provider.option.id, 'aurora_glass');
+    expect(provider.option.design.atmosphere, isNotNull);
+    provider.dispose();
+  });
+
   test('未知或损坏的偏好回退到默认主题', () async {
     await preferences.setInt(ThemeProvider.storageKey, 42);
     final ThemeProvider provider = ThemeProvider(preferences: preferences);

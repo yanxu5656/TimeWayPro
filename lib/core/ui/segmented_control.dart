@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'app_haptics.dart';
+import 'glass_surface.dart';
 
 /// 一个分段选项。
 class Segment<T> {
@@ -42,6 +43,84 @@ class SegmentedControl<T> extends StatelessWidget {
 
     int index = segments.indexWhere((Segment<T> s) => s.value == value);
     if (index < 0) index = 0;
+
+    if (context.isGlass) {
+      return GlassSurface(
+        borderRadius: BorderRadius.circular(26),
+        blur: false,
+        shadow: false,
+        padding: const EdgeInsets.all(4),
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final double width = constraints.maxWidth / segments.length;
+            return SizedBox(
+              height: 42,
+              child: Stack(
+                children: <Widget>[
+                  AnimatedPositioned(
+                    duration: effectiveDuration,
+                    curve: Curves.easeOutCubic,
+                    left: index * width,
+                    top: 0,
+                    bottom: 0,
+                    width: width,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        gradient: LinearGradient(
+                          colors: <Color>[
+                            context.colors.primary,
+                            Color.lerp(
+                              context.colors.primary,
+                              context.colors.accent,
+                              0.7,
+                            )!,
+                          ],
+                        ),
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: context.atmosphere.glow,
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: <Widget>[
+                      for (final Segment<T> segment in segments)
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              if (segment.value != value) AppHaptics.select();
+                              onChanged(segment.value);
+                            },
+                            child: Center(
+                              child: AnimatedDefaultTextStyle(
+                                duration: effectiveDuration,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: segment.value == value
+                                      ? context.colors.textOnPrimary
+                                      : context.colors.textSecondary,
+                                ),
+                                child: Text(segment.label),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    }
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {

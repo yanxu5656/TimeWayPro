@@ -52,6 +52,114 @@ class Masthead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (context.isGlass) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(4, AppSpacing.xs, 4, AppSpacing.sm),
+        child: Stack(
+          children: <Widget>[
+            if (ghost != null)
+              Positioned(
+                top: -18,
+                right: -6,
+                child: ExcludeSemantics(
+                  child: ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (Rect bounds) => LinearGradient(
+                      colors: <Color>[
+                        context.colors.primary.withValues(alpha: 0.16),
+                        context.colors.accent.withValues(alpha: 0.05),
+                      ],
+                    ).createShader(bounds),
+                    child: Text(
+                      ghost!,
+                      style: _ghostStyle.copyWith(
+                        fontSize: 92,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: <Color>[
+                              context.colors.primary.withValues(alpha: 0.14),
+                              context.colors.accent.withValues(alpha: 0.10),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: context.colors.primary.withValues(
+                              alpha: 0.12,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 12,
+                              color: context.colors.primary,
+                            ),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                kicker,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.text.kicker.copyWith(
+                                  fontSize: 10,
+                                  color: context.colors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    ?trailing,
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  title,
+                  style: context.text.masthead.copyWith(
+                    fontSize: 34,
+                    height: 1.15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.8,
+                    color: context.colors.textPrimary,
+                  ),
+                ),
+                if (meta != null) ...<Widget>[
+                  const SizedBox(height: 5),
+                  DefaultTextStyle.merge(
+                    style: AppText.caption.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
+                    child: meta!,
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     final Paint ghostStroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2

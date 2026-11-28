@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'glass_surface.dart';
 
 /// 表面档位。
 ///
@@ -109,6 +110,44 @@ class PaperCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (context.isGlass && tone != PaperTone.flat) {
+      final Color? fill =
+          this.fill ??
+          (tint == null
+              ? null
+              : Color.alphaBlend(
+                  tint!.withValues(alpha: 0.12),
+                  context.atmosphere.glassFill,
+                ));
+      Widget glass = GlassSurface(
+        borderRadius: BorderRadius.circular(
+          tone == PaperTone.raised
+              ? context.shape.controlRadius
+              : radius ?? context.shape.cardRadius,
+        ),
+        padding: padding,
+        margin: margin,
+        fill: fill,
+        blur: tone == PaperTone.row,
+        shadow: tone == PaperTone.row,
+        child: child,
+      );
+      if (onTap != null || onLongPress != null) {
+        glass = Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            borderRadius: BorderRadius.circular(context.shape.cardRadius),
+            child: glass,
+          ),
+        );
+      }
+      return semanticLabel == null
+          ? glass
+          : Semantics(label: semanticLabel, container: true, child: glass);
+    }
+
     final bool interactive = onTap != null || onLongPress != null;
     final double effectiveRadius = radius ?? context.shape.cardRadius;
 

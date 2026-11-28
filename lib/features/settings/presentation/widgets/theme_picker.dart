@@ -12,6 +12,7 @@ class ThemePicker extends StatelessWidget {
     ThemeFamily.minimal: '简洁',
     ThemeFamily.cute: '可爱',
     ThemeFamily.tech: '科技',
+    ThemeFamily.aurora: '液态玻璃',
   };
 
   @override
@@ -189,6 +190,122 @@ class _ThemePreview extends StatelessWidget {
     final AppPalette c = design.palette;
     final AppTypography t = design.typography;
     final double radius = design.shape.cardRadius;
+
+    if (design.atmosphere != null) {
+      final AppAtmosphere atmosphere = design.atmosphere!;
+      return ExcludeSemantics(
+        child: Container(
+          height: 92,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(radius - 4),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[
+                Color(0xFFDCEAFF),
+                Color(0xFFF3E7FF),
+                Color(0xFFFFE8E0),
+              ],
+            ),
+            border: Border.all(color: atmosphere.glassBorder),
+          ),
+          child: Stack(
+            children: <Widget>[
+              Positioned(
+                top: -24,
+                right: -18,
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: <Color>[
+                        atmosphere.orbs[1].withValues(alpha: 0.8),
+                        atmosphere.orbs[1].withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 11,
+                        color: c.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '今日待办',
+                        style: t.masthead.copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: c.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: atmosphere.glassFill,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: atmosphere.highlight),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 13,
+                          color: c.success,
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            '完成一件小事',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: t.bodySerif.copyWith(
+                              fontSize: 8,
+                              color: c.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Container(
+                    height: 13,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: <Color>[c.primary, c.accent],
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      '+ 添加任务',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 7,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return ExcludeSemantics(
       child: Container(

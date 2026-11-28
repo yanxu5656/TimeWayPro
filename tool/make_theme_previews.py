@@ -1,4 +1,4 @@
-"""导出九款主题的 WebP 预览与三组方案联系表。"""
+"""导出十款主题的 WebP 预览与四组方案联系表。"""
 
 from pathlib import Path
 
@@ -42,6 +42,14 @@ GROUPS = [
             ('tech_matrix', '03  矩阵夜航', '碳黑矩阵，终端绿光'),
         ],
     ),
+    (
+        'aurora',
+        '液态玻璃',
+        '动态极光 · 半透明材质 · 弹性动效',
+        [
+            ('aurora_glass', '01  流光璃境', 'Gemini 灵感的液态玻璃体验'),
+        ],
+    ),
 ]
 
 
@@ -59,7 +67,7 @@ def export_contact_sheet(key, title, subtitle, options):
     label_height = 76
     gap = 20
     image_height = round(CARD_WIDTH * 844 / 390)
-    width = margin * 2 + CARD_WIDTH * 3 + gap * 2
+    width = margin * 2 + CARD_WIDTH * len(options) + gap * (len(options) - 1)
     height = header_height + label_height + image_height + margin
     sheet = Image.new('RGB', (width, height), '#F3F1ED')
     draw = ImageDraw.Draw(sheet)

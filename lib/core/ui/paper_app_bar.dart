@@ -37,7 +37,9 @@ class PaperAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: context.colors.divider)),
+          border: context.isGlass
+              ? null
+              : Border(bottom: BorderSide(color: context.colors.divider)),
         ),
         child: SafeArea(
           bottom: false,

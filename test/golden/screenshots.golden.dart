@@ -35,6 +35,8 @@ import 'package:time_way_pro/features/daily/providers/daily_provider.dart';
 import 'package:time_way_pro/features/focus/providers/focus_timer_provider.dart';
 import 'package:time_way_pro/features/leisure/providers/leisure_provider.dart';
 import 'package:time_way_pro/features/planning/providers/plan_provider.dart';
+import 'package:time_way_pro/features/rewards/data/repositories/reward_repository.dart';
+import 'package:time_way_pro/features/rewards/providers/reward_provider.dart';
 import 'package:time_way_pro/features/settings/providers/settings_provider.dart';
 import 'package:time_way_pro/features/settings/providers/theme_provider.dart';
 import 'package:time_way_pro/features/task/providers/task_provider.dart';
@@ -101,10 +103,14 @@ Future<void> _loadFonts() async {
 
 /// 与 `TimeWayProApp` 结构一致（字体由上面的 Roboto 注册解决）
 Widget _appWithRealFont({ThemeProvider? themeProvider}) {
+  final RewardRepository rewards = RewardRepository();
   return MultiProvider(
     key: ValueKey<String>(themeProvider?.option.id ?? 'default'),
     providers: [
       ChangeNotifierProvider<DailyProvider>(create: (_) => DailyProvider()),
+      ChangeNotifierProvider<RewardProvider>(
+        create: (_) => RewardProvider(repository: rewards)..load(),
+      ),
       ChangeNotifierProvider<WeeklyProvider>(
         create: (_) => WeeklyProvider()..loadGoals(),
       ),
@@ -136,6 +142,13 @@ Widget _appWithRealFont({ThemeProvider? themeProvider}) {
           title: 'TimeWayPro',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.forDesign(value.option.design),
+          builder: (BuildContext context, Widget? child) => Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              AmbientBackground(design: context.design),
+              child ?? const SizedBox.shrink(),
+            ],
+          ),
           home: const MainScreen(),
         );
       },
@@ -213,7 +226,7 @@ void main() {
     debugDisableShadows = true;
   });
 
-  testWidgets('九款新主题对照截图', (WidgetTester tester) async {
+  testWidgets('十款新主题对照截图', (WidgetTester tester) async {
     UiEffects.resetForTesting();
     UiEffects.tier.value = UiEffectTier.reduced;
     debugDisableShadows = false;
@@ -226,9 +239,7 @@ void main() {
       await preferences.setString(ThemeProvider.storageKey, option.id);
       final ThemeProvider provider = ThemeProvider(preferences: preferences);
       await provider.loadTheme();
-      await tester.pumpWidget(
-        _appWithRealFont(themeProvider: provider),
-      );
+      await tester.pumpWidget(_appWithRealFont(themeProvider: provider));
       for (int i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 120));
       }
@@ -238,6 +249,71 @@ void main() {
         matchesGoldenFile('../../build/theme_previews/${option.id}.png'),
       );
     }
+    debugDisableShadows = true;
+  });
+
+  testWidgets('流光璃境全页面与弹窗截图', (WidgetTester tester) async {
+    UiEffects.resetForTesting();
+    UiEffects.tier.value = UiEffectTier.reduced;
+    debugDisableShadows = false;
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.runAsync(() => DatabaseHelper().importAll(seedData()));
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.setString(ThemeProvider.storageKey, 'aurora_glass');
+    final ThemeProvider provider = ThemeProvider(preferences: preferences);
+    await provider.loadTheme();
+    await tester.pumpWidget(_appWithRealFont(themeProvider: provider));
+    for (int i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    const List<(String, String)> shots = <(String, String)>[
+      ('待办', 'daily'),
+      ('每周', 'weekly'),
+      ('任务', 'task'),
+      ('统计', 'stats'),
+      ('规划', 'planning'),
+      ('闲时', 'leisure'),
+      ('月历', 'calendar'),
+      ('商店', 'rewards'),
+      ('设置', 'settings'),
+    ];
+    for (int i = 0; i < shots.length; i++) {
+      if (i > 0) {
+        await revealNavItem(tester, shots[i].$1);
+        await tester.tap(
+          find.descendant(
+            of: find.byType(PaperNavBar),
+            matching: find.text(shots[i].$1),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 700));
+      }
+      expect(tester.takeException(), isNull);
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('../../build/glass_screenshots/${shots[i].$2}.png'),
+      );
+    }
+
+    await revealNavItem(tester, '待办');
+    await tester.tap(
+      find.descendant(of: find.byType(PaperNavBar), matching: find.text('待办')),
+    );
+    await tester.pumpAndSettle();
+    final Finder addButton = find.widgetWithText(PaperFab, '添加待办');
+    await tester.ensureVisible(addButton);
+    await tester.tap(addButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.byType(PaperSheet), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../build/glass_screenshots/sheet.png'),
+    );
     debugDisableShadows = true;
   });
 

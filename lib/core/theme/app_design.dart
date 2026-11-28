@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'app_atmosphere.dart';
 import 'app_colors.dart';
 import 'app_shadows.dart';
 import 'app_text.dart';
 
-enum ThemeFamily { warm, minimal, cute, tech }
+enum ThemeFamily { warm, minimal, cute, tech, aurora }
 
-enum ThemeVisualStyle { editorial, clean, playful, technical }
+enum ThemeVisualStyle { editorial, clean, playful, technical, fluid }
 
 class AppPalette {
   const AppPalette({
@@ -146,7 +147,7 @@ class AppTypography {
   static AppTypography forStyle(ThemeVisualStyle style) {
     final String displayFamily = switch (style) {
       ThemeVisualStyle.editorial => 'NotoSerifSC',
-      ThemeVisualStyle.clean => 'Roboto',
+      ThemeVisualStyle.clean || ThemeVisualStyle.fluid => 'Roboto',
       ThemeVisualStyle.playful => 'Roboto',
       ThemeVisualStyle.technical => 'monospace',
     };
@@ -208,12 +209,21 @@ class AppShape {
       ThemeVisualStyle.clean => 10,
       ThemeVisualStyle.playful => 22,
       ThemeVisualStyle.technical => 8,
+      ThemeVisualStyle.fluid => 26,
     };
     final bool shadows = style != ThemeVisualStyle.clean;
     return AppShape(
       cardRadius: radius,
-      controlRadius: style == ThemeVisualStyle.playful ? 16 : radius - 4,
-      sheetRadius: style == ThemeVisualStyle.playful ? 26 : radius,
+      controlRadius: style == ThemeVisualStyle.playful
+          ? 16
+          : style == ThemeVisualStyle.fluid
+          ? 22
+          : radius - 4,
+      sheetRadius: style == ThemeVisualStyle.playful
+          ? 26
+          : style == ThemeVisualStyle.fluid
+          ? 34
+          : radius,
       rowShadows: shadows
           ? <BoxShadow>[
               BoxShadow(
@@ -241,12 +251,14 @@ class AppDesign extends ThemeExtension<AppDesign> {
     required this.typography,
     required this.shape,
     required this.style,
+    this.atmosphere,
   });
 
   final AppPalette palette;
   final AppTypography typography;
   final AppShape shape;
   final ThemeVisualStyle style;
+  final AppAtmosphere? atmosphere;
 
   @override
   AppDesign copyWith({
@@ -254,12 +266,14 @@ class AppDesign extends ThemeExtension<AppDesign> {
     AppTypography? typography,
     AppShape? shape,
     ThemeVisualStyle? style,
+    AppAtmosphere? atmosphere,
   }) {
     return AppDesign(
       palette: palette ?? this.palette,
       typography: typography ?? this.typography,
       shape: shape ?? this.shape,
       style: style ?? this.style,
+      atmosphere: atmosphere ?? this.atmosphere,
     );
   }
 
@@ -275,6 +289,8 @@ extension AppDesignContext on BuildContext {
   AppPalette get colors => design.palette;
   AppTypography get text => design.typography;
   AppShape get shape => design.shape;
+  AppAtmosphere get atmosphere => design.atmosphere ?? AppAtmosphere.glass;
+  bool get isGlass => design.atmosphere != null;
 }
 
 class AppThemeOption {
@@ -380,11 +396,16 @@ AppPalette _palette({
   );
 }
 
-AppDesign _design(AppPalette palette, ThemeVisualStyle style) => AppDesign(
+AppDesign _design(
+  AppPalette palette,
+  ThemeVisualStyle style, {
+  AppAtmosphere? atmosphere,
+}) => AppDesign(
   palette: palette,
   typography: AppTypography.forStyle(style),
   shape: AppShape.forDesign(palette, style),
   style: style,
+  atmosphere: atmosphere,
 );
 
 class AppThemeCatalog {
@@ -607,6 +628,34 @@ class AppThemeCatalog {
       ),
     ])
       option,
+    AppThemeOption(
+      id: 'aurora_glass',
+      name: '流光璃境',
+      tagline: 'Gemini 灵感 · 动态极光与液态毛玻璃',
+      family: ThemeFamily.aurora,
+      design: _design(
+        _palette(
+          primary: const Color(0xFF3159C8),
+          accent: const Color(0xFF8B5CD6),
+          background: const Color(0xFFF1F5FF),
+          surface: const Color(0xFFFFFFFF),
+          surfaceVariant: const Color(0xFFE5EDFF),
+          isDark: false,
+          chartColors: const <Color>[
+            Color(0xFF3159C8),
+            Color(0xFF8B5CD6),
+            Color(0xFFD6913C),
+            Color(0xFF348E9C),
+            Color(0xFFCC657F),
+            Color(0xFF6D7ED1),
+            Color(0xFF68768C),
+            Color(0xFF5D9B78),
+          ],
+        ),
+        ThemeVisualStyle.fluid,
+        atmosphere: AppAtmosphere.glass,
+      ),
+    ),
   ];
 
   static AppThemeOption get defaultOption => options.first;

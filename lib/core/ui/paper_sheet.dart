@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'glass_surface.dart';
 
 /// 36×4 的墨色拖拽把手
 class PaperSheetHandle extends StatelessWidget {
@@ -49,6 +50,33 @@ class PaperSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (context.isGlass) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: GlassSurface(
+          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(context.shape.sheetRadius),
+          ),
+          padding: EdgeInsets.zero,
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (showHandle) const PaperSheetHandle(),
+                Flexible(
+                  child: SingleChildScrollView(padding: padding, child: child),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       // 键盘弹起时把内容顶上去
       padding: EdgeInsets.only(

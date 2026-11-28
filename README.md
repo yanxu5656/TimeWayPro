@@ -11,7 +11,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-%5E3.12.2-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-3DDC84?logo=android&logoColor=white)](#环境要求)
-[![Version](https://img.shields.io/badge/Version-1.11.1-A84E2B)](#版本迭代)
+[![Version](https://img.shields.io/badge/Version-1.12.0-A84E2B)](#版本迭代)
 [![Release](https://img.shields.io/badge/Release-下载安装包-A84E2B?logo=github)](https://github.com/yanxu5656/TimeWayPro/releases)
 
 <p>
@@ -38,7 +38,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 与常见的待办清单不同，时途不满足于「打勾」，而是记录**每件事真实消耗了多少时间** —— 这些记录会沉淀为热力图、饼图和任务明细，让「我很忙」变成「我忙在了这件事上，一共 3 小时 20 分」。
 
-界面默认保留 **陶土暖笺**，同时提供简洁、可爱、科技三组共 10 套可切换主题；颜色、字体、圆角、阴影与深色状态栏会一起变化。方案预览与设计取舍写在下面的[外观主题](#外观主题)一节。
+界面默认保留 **陶土暖笺**，同时提供简洁、可爱、科技三组及液态玻璃风格共 11 套可切换主题。新增「流光璃境」拥有动态极光背景、真实毛玻璃材质、悬浮导航与弹性动效，并非单纯更换配色。方案预览与设计取舍写在下面的[外观主题](#外观主题)一节。
 
 ---
 
@@ -133,10 +133,11 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 ### 🎨 外观主题
 
-- **10 套完整主题**：默认「陶土暖笺」，另有简洁、可爱、科技各 3 款；设置页顶部分组展示迷你预览、名称与一句话风格说明
+- **11 套完整主题**：默认「陶土暖笺」，另有简洁、可爱、科技各 3 款，以及液态玻璃风格「流光璃境」；设置页顶部分组展示迷你预览、名称与一句话风格说明
 - **实时全局切换**：点击方案立即应用到九个页面、卡片、导航、弹窗、表单、按钮、图表与系统状态栏，不重置当前 Tab 或专注计时
 - **自动保存与恢复**：主题 ID 持久化到本地，重启恢复；历史数据损坏或 ID 未知时安全回退默认主题
-- **不只是换色**：各主题同步调整字体、圆角、阴影、刊头水印与明暗模式；科技三款为深色界面
+- **不只是换色**：各主题同步调整字体、圆角、阴影、刊头水印与明暗模式；科技三款为深色界面，流光璃境进一步改变背景、材质、组件形态与动效
+- **性能与无障碍降级**：极光连续动画和真实模糊遵循系统减弱动效设置及帧率自适应档位，低端机自动关闭最昂贵效果
 - **可读性守护**：每套主题都经过正文、主色、按钮文字与弱化文字对比度测试
 
 ### 🔔 通知栏常驻通知
@@ -153,6 +154,15 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 ---
 
 ## 版本迭代
+
+### v1.12.0 — 流光璃境液态玻璃主题
+*2026-11-28*
+
+- **全新材质体系**：研究 Gemini iOS 的动态渐变与 Liquid Glass 视觉，新增原创主题「流光璃境」；四色极光缓慢流动，卡片、导航、弹窗、按钮与输入框使用半透明玻璃层
+- **组件形态升级**：刊头改为悬浮标题与渐变眉题，底部导航改为浮动玻璃胶囊，分段控件使用滑动渐变指示块，FAB 与主按钮加入蓝色至紫色光晕
+- **全局氛围背景**：背景位于导航层之下，九个页面与二级路由保持透明画布；切换主题时极光淡入淡出，不重建 `MaterialApp` 或重置当前 Tab
+- **可靠降级**：系统开启减弱动效或设备帧率降至最低档时停止连续极光动画；最低档同时关闭 `BackdropFilter`，保留半透明层级
+- **视觉与回归验证**：新增九个页面及真实底部弹窗截图，补充玻璃材质、320dp 窄屏、弹窗、主题持久化和减弱动效测试
 
 ### v1.11.1 — 奖励删除修复与示例目录清理
 *2026-11-28*
@@ -538,13 +548,16 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 ## 设计系统
 
-1.3.0 把散落的样式收敛成令牌 + 组件，1.5.0 在同一套骨架上把视觉语言整体换血为「静白志」（纸、墨、朱砂），1.7.0 再换成「陶土暖笺」——暖纸、墨、陶土三种材料，层次靠**圆角卡片与排版**表达，不再有模糊与渐变。1.10.4 起，这套令牌升级为运行时主题，可一键切换十套完整外观。
+1.3.0 把散落的样式收敛成令牌 + 组件，1.5.0 在同一套骨架上把视觉语言整体换血为「静白志」（纸、墨、朱砂），1.7.0 再换成「陶土暖笺」——暖纸、墨、陶土三种材料，层次靠**圆角卡片与排版**表达。1.10.4 起，这套令牌升级为运行时主题，可一键切换十一套外观；1.12.0 增加独立的氛围材质层，让「流光璃境」能够使用动态极光与真实毛玻璃，而旧主题仍保持原有纸面质感。
 
 ### 令牌
 
 | 类别 | 位置 | 说明 |
 | --- | --- | --- |
-| 主题目录 | `lib/core/theme/app_design.dart` | 10 套主题的稳定 ID、色板、字体、形状、阴影与风格元数据 |
+| 主题目录 | `lib/core/theme/app_design.dart` | 11 套主题的稳定 ID、色板、字体、形状、阴影、氛围材质与风格元数据 |
+| 氛围材质 | `lib/core/theme/app_atmosphere.dart` | 极光色、玻璃填充、高光、描边、光晕、对话框颜色与模糊强度 |
+| 动态背景 | `lib/core/ui/ambient_background.dart` | 导航层下的四色极光、主题淡入淡出、帧率与减弱动效降级 |
+| 玻璃表面 | `lib/core/ui/glass_surface.dart` | 统一 `BackdropFilter`、渐变填充、边缘高光与彩色投影 |
 | 运行时主题 | `lib/core/theme/app_theme.dart` | 由 `AppDesign` 装配 Material 3 的 ColorScheme、组件与文字主题 |
 | 颜色 | `lib/core/theme/app_colors.dart` | 默认暖纸 `#F6EDE3` / 墨 `#2E2119` / 陶土 `#A84E2B` + 暖色系图表色板 |
 | 圆角 | `lib/core/theme/app_radius.dart` | `xs 3` / `sm 6` / `md 10` / `lg 12` / `xl 14` / `sheet 16` + `card 16` / `full` |
@@ -555,7 +568,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 
 页面通过 `context.colors`、`context.text`、`context.shape` 读取当前 `ThemeExtension<AppDesign>`；未挂载扩展时回退到默认暖笺，原有 `AppColors` / `AppText` / `AppRadius` 仍作为默认设计基准。主题切换更新 `MaterialApp.theme`，不替换应用根节点，因此当前 Tab、滚动位置和计时状态不会重置。
 
-### 外观主题（v1.10.4）
+### 外观主题（v1.12.0）
 
 设置页顶部即可选择，点击后实时应用并自动保存。每套方案都使用真实应用页面截图，而不是单独绘制的色卡。
 
@@ -571,6 +584,7 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 | 科技 | **深空蓝** | 深夜蓝 + 冰蓝，8dp 圆角与较长阴影 |
 | 科技 | **霓虹脉冲** | 黑紫底 + 荧光绿 / 紫双强调色 |
 | 科技 | **矩阵夜航** | 碳黑 + 终端荧光绿，等宽字体强化仪表感 |
+| 液态玻璃 | **流光璃境** | 动态四色极光、真实模糊、悬浮胶囊导航与渐变弹性动效 |
 
 #### 简洁：3 款方案
 
@@ -583,6 +597,12 @@ TimeWayPro（中文名「时途」）是一款基于 Flutter 开发的时间管�
 #### 科技：3 款方案
 
 <img src="docs/themes/tech-options.webp" width="960" alt="科技风格三款主题对照：深空蓝、霓虹脉冲、矩阵夜航">
+
+#### 液态玻璃：流光璃境
+
+<img src="docs/themes/aurora-options.webp" width="420" alt="流光璃境主题预览：动态极光与毛玻璃卡片">
+
+「流光璃境」参考 Gemini iOS 的色彩氛围与材质方向，但使用原创命名和本项目的组件实现。它不只是透明化：刊头、卡片、导航、分段控件、弹窗和按钮都切换为玻璃形态，并加入连续极光、滑动选中态、渐变光晕与主题淡入淡出。实际使用中会跟随 `UiEffects` 自动降级，不强制低端机承担持续模糊与动画。
 
 单款高清预览位于 [`docs/themes/`](docs/themes/)，命名与主题 ID 一致，例如 `cute_peach.webp`。重新生成：
 
@@ -729,7 +749,7 @@ flutter test test/golden/paper_gallery.golden.dart --update-goldens
 flutter test test/golden/app_with_data.golden.dart --update-goldens
 flutter test test/golden/screenshots.golden.dart --update-goldens
 python tool/make_readme_shots.py     # 把默认主题截图缩成 README 用的 WebP
-python tool/make_theme_previews.py   # 导出九款主题预览与三组联系表
+python tool/make_theme_previews.py   # 导出十款主题预览与四组联系表
 
 # 重新生成应用图标（改设计参数后跑这个，各平台资源一并重出）
 python tool/make_app_icon.py

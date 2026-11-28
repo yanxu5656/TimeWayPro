@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
+import '../core/ui/ambient_background.dart';
 import '../core/ui/ui_effects.dart';
 import '../features/daily/providers/daily_provider.dart';
 import '../features/focus/providers/focus_timer_provider.dart';
@@ -62,8 +63,15 @@ class TimeWayProApp extends StatelessWidget {
                       systemNavigationBarIconBrightness: isDark
                           ? Brightness.light
                           : Brightness.dark,
+                      systemNavigationBarColor: Colors.transparent,
                     ),
-                    child: child ?? const SizedBox.shrink(),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        AmbientBackground(design: context.design),
+                        child ?? const SizedBox.shrink(),
+                      ],
+                    ),
                   );
                 },
                 home: const MainScreen(),

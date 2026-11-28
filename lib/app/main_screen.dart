@@ -101,6 +101,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       child: NavBarInset(
         height: _navBarHeight,
         child: Scaffold(
+          backgroundColor: context.isGlass
+              ? Colors.transparent
+              : Theme.of(context).scaffoldBackgroundColor,
           // 内容延伸到纸面底部导航之下，FAB 靠 NavBarInset 避让
           extendBody: true,
           body: LayoutBuilder(

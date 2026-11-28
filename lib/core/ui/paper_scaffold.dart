@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
 import 'paper_app_bar.dart';
 import 'paper_nav_bar.dart';
 
@@ -38,7 +39,9 @@ class PaperScaffold extends StatelessWidget {
     return Scaffold(
       // 自己铺纸底：二级页（push 路由）没有 MainScreen 的底可透；
       // Tab 页之下叠一层同色纸也无任何视觉差
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: context.isGlass
+          ? Colors.transparent
+          : Theme.of(context).scaffoldBackgroundColor,
       extendBody: title == null,
       appBar: title == null
           ? null

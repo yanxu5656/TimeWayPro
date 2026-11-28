@@ -38,15 +38,32 @@ class PaperFab extends StatelessWidget {
       builder: (BuildContext context, double press, Widget? child) {
         return Container(
           decoration: BoxDecoration(
-            color: context.colors.primary,
+            color: context.isGlass ? null : context.colors.primary,
+            gradient: context.isGlass
+                ? LinearGradient(
+                    colors: <Color>[
+                      context.colors.primary,
+                      Color.lerp(
+                        context.colors.primary,
+                        context.colors.accent,
+                        0.72,
+                      )!,
+                    ],
+                  )
+                : null,
+            border: context.isGlass
+                ? Border.all(color: Colors.white.withValues(alpha: 0.5))
+                : null,
             borderRadius: AppRadius.brFull,
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Color.lerp(
-                  context.colors.shadowMedium,
-                  context.colors.shadow,
-                  press,
-                )!,
+                color: context.isGlass
+                    ? context.atmosphere.glow.withValues(alpha: 0.7)
+                    : Color.lerp(
+                        context.colors.shadowMedium,
+                        context.colors.shadow,
+                        press,
+                      )!,
                 blurRadius: lerpDouble(
                   context.shape.floatShadows.first.blurRadius,
                   6,

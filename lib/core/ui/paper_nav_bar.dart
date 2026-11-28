@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'glass_surface.dart';
 import 'pressable_scale.dart';
 
 /// 广播纸面底部导航的**实测高度**。
@@ -104,56 +105,63 @@ class _PaperNavBarState extends State<PaperNavBar> {
 
   @override
   Widget build(BuildContext context) {
+    final bool glass = context.isGlass;
+    final Widget bar = Container(
+      height: glass ? 60 : 54,
+      decoration: BoxDecoration(
+        color: glass ? Colors.transparent : context.colors.surface,
+        borderRadius: BorderRadius.circular(
+          glass ? 32 : context.shape.controlRadius,
+        ),
+        border: glass ? null : Border.all(color: context.colors.dividerStrong),
+        boxShadow: glass ? null : context.shape.rowShadows,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final double itemExtent = (constraints.maxWidth / 4 + 8).clamp(
+            88.0,
+            120.0,
+          );
+          if ((itemExtent - _itemExtent).abs() > 0.5) {
+            _itemExtent = itemExtent;
+            _revealSelected();
+          }
+          return SingleChildScrollView(
+            controller: _controller,
+            scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
+            child: Row(
+              children: <Widget>[
+                for (int i = 0; i < PaperNavBar._items.length; i++)
+                  SizedBox(
+                    width: itemExtent,
+                    child: _NavItem(
+                      data: PaperNavBar._items[i],
+                      selected: i == widget.index,
+                      showDivider: !glass && i != PaperNavBar._items.length - 1,
+                      onTap: () => widget.onChanged(i),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           AppSpacing.sm,
-          AppSpacing.xs,
+          glass ? 6 : AppSpacing.xs,
           AppSpacing.sm,
-          AppSpacing.xs,
+          glass ? 6 : AppSpacing.xs,
         ),
-        child: Container(
-          height: 54,
-          decoration: BoxDecoration(
-            color: context.colors.surface,
-            borderRadius: BorderRadius.circular(context.shape.controlRadius),
-            border: Border.all(color: context.colors.dividerStrong),
-            boxShadow: context.shape.rowShadows,
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final double itemExtent = (constraints.maxWidth / 4 + 8).clamp(
-                88.0,
-                120.0,
-              );
-              if ((itemExtent - _itemExtent).abs() > 0.5) {
-                _itemExtent = itemExtent;
-                _revealSelected();
-              }
-              return SingleChildScrollView(
-                controller: _controller,
-                scrollDirection: Axis.horizontal,
-                physics: const ClampingScrollPhysics(),
-                child: Row(
-                  children: <Widget>[
-                    for (int i = 0; i < PaperNavBar._items.length; i++)
-                      SizedBox(
-                        width: itemExtent,
-                        child: _NavItem(
-                          data: PaperNavBar._items[i],
-                          selected: i == widget.index,
-                          showDivider: i != PaperNavBar._items.length - 1,
-                          onTap: () => widget.onChanged(i),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
+        child: glass
+            ? GlassSurface(borderRadius: BorderRadius.circular(32), child: bar)
+            : bar,
       ),
     );
   }
@@ -201,17 +209,48 @@ class _NavItem extends StatelessWidget {
                 margin: const EdgeInsets.all(AppSpacing.xxs),
                 decoration: BoxDecoration(
                   color: selected
-                      ? context.colors.primary.withValues(alpha: 0.12)
+                      ? (context.isGlass
+                            ? context.colors.primary.withValues(alpha: 0.06)
+                            : context.colors.primary.withValues(alpha: 0.12))
                       : Colors.transparent,
-                  borderRadius: AppRadius.brMd,
+                  gradient: selected && context.isGlass
+                      ? LinearGradient(
+                          colors: <Color>[
+                            context.colors.primary.withValues(alpha: 0.24),
+                            context.colors.accent.withValues(alpha: 0.14),
+                          ],
+                        )
+                      : null,
+                  borderRadius: context.isGlass
+                      ? BorderRadius.circular(24)
+                      : AppRadius.brMd,
+                  border: selected && context.isGlass
+                      ? Border.all(
+                          color: context.colors.primary.withValues(alpha: 0.18),
+                        )
+                      : null,
+                  boxShadow: selected && context.isGlass
+                      ? <BoxShadow>[
+                          BoxShadow(
+                            color: context.atmosphere.glow,
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    Icon(
-                      selected ? data.activeIcon : data.icon,
-                      size: 21,
-                      color: fg,
+                    AnimatedScale(
+                      scale: selected ? 1.08 : 1,
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutBack,
+                      child: Icon(
+                        selected ? data.activeIcon : data.icon,
+                        size: 21,
+                        color: fg,
+                      ),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     AnimatedDefaultTextStyle(

@@ -52,7 +52,7 @@ class SettingsScreen extends StatelessWidget {
                       AppSpacing.sm,
                     ),
                     child: Text(
-                      '点击方案即可实时切换并自动保存。简洁、可爱、科技各提供 3 款，原有功能与数据不受影响。',
+                      '点击方案即可实时切换并自动保存。简洁、可爱、科技各提供 3 款，另有一款液态玻璃主题，原有功能与数据不受影响。',
                       style: TextStyle(
                         fontSize: 12,
                         height: 1.5,

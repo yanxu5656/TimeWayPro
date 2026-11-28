@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'app_atmosphere.dart';
 import 'app_design.dart';
 import 'app_spacing.dart';
 import 'app_text.dart';
 
+export 'app_atmosphere.dart';
 export 'app_colors.dart';
 export 'app_design.dart';
 export 'app_radius.dart';
@@ -22,6 +24,8 @@ class AppTheme {
     final AppPalette c = design.palette;
     final AppTypography t = design.typography;
     final AppShape s = design.shape;
+    final AppAtmosphere? atmosphere = design.atmosphere;
+    final bool glass = atmosphere != null;
     final BorderRadius controlRadius = BorderRadius.all(
       Radius.circular(s.controlRadius),
     );
@@ -44,9 +48,10 @@ class AppTheme {
         outlineVariant: c.divider,
       ),
       scaffoldBackgroundColor: c.background,
-      canvasColor: c.background,
+      canvasColor: glass ? Colors.transparent : c.background,
       appBarTheme: AppBarTheme(
-        backgroundColor: c.background,
+        backgroundColor: glass ? Colors.transparent : c.background,
+        scrolledUnderElevation: 0,
         foregroundColor: c.textPrimary,
         surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle(
@@ -61,15 +66,21 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: c.surfaceVariant,
+        fillColor: glass
+            ? atmosphere.glassFill.withValues(alpha: 0.42)
+            : c.surfaceVariant,
         hintStyle: TextStyle(color: c.textHint, fontSize: 14),
         border: OutlineInputBorder(
           borderRadius: controlRadius,
-          borderSide: BorderSide.none,
+          borderSide: glass
+              ? BorderSide(color: atmosphere.glassBorder)
+              : BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: controlRadius,
-          borderSide: BorderSide.none,
+          borderSide: glass
+              ? BorderSide(color: atmosphere.glassBorder)
+              : BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: controlRadius,
@@ -145,11 +156,12 @@ class AppTheme {
       ),
       dividerTheme: DividerThemeData(color: c.divider, thickness: 1, space: 0),
       dialogTheme: DialogThemeData(
-        backgroundColor: c.surface,
+        backgroundColor: glass ? atmosphere.dialogFill : c.surface,
         surfaceTintColor: Colors.transparent,
-        elevation: 0,
+        elevation: glass ? 18 : 0,
+        shadowColor: glass ? atmosphere.glow : null,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(s.cardRadius),
+          borderRadius: BorderRadius.circular(glass ? 30 : s.cardRadius),
         ),
         titleTextStyle: t.titleSerif.copyWith(color: c.textPrimary),
         contentTextStyle: AppText.body.copyWith(color: c.textSecondary),

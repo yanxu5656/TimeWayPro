@@ -180,6 +180,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('完整应用切换到流光璃境不重置当前 Tab', (WidgetTester tester) async {
+    await pumpSeededApp(tester);
+    await revealNavItem(tester, '设置');
+    await tester.tap(
+      find.descendant(of: find.byType(PaperNavBar), matching: find.text('设置')),
+    );
+    await tester.pumpAndSettle();
+
+    final BuildContext context = tester.element(find.byType(PaperNavBar));
+    final ThemeProvider provider = context.read<ThemeProvider>();
+    await provider.selectTheme('aurora_glass');
+    await tester.pumpAndSettle();
+
+    expect(provider.option.id, 'aurora_glass');
+    expect(find.byType(GlassSurface), findsWidgets);
+    expect(find.text('外观主题'), findsOneWidget);
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+      Colors.transparent,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('完整应用内切换不重置当前 Tab', (WidgetTester tester) async {
     await pumpSeededApp(tester);
     await revealNavItem(tester, '设置');

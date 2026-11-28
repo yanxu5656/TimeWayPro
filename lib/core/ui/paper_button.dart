@@ -16,6 +16,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'glass_surface.dart';
 import 'pressable_scale.dart';
 
 /// 文案形变：值变化时交叉淡入 + 轻微上移。
@@ -126,7 +127,7 @@ class PaperButton extends StatelessWidget {
     final Widget button = ElevatedButton(
       onPressed: enabled ? onPressed : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: backgroundColor,
+        backgroundColor: context.isGlass ? Colors.transparent : backgroundColor,
         foregroundColor: foregroundColor,
         disabledBackgroundColor: context.colors.inkSubtle,
         disabledForegroundColor: context.colors.textHint,
@@ -147,11 +148,45 @@ class PaperButton extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
 
+    Widget visual = button;
+    if (context.isGlass) {
+      visual = DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(context.shape.controlRadius),
+          gradient: LinearGradient(
+            colors: enabled
+                ? <Color>[
+                    backgroundColor ?? context.colors.primary,
+                    Color.lerp(
+                      backgroundColor ?? context.colors.primary,
+                      context.colors.accent,
+                      0.62,
+                    )!,
+                  ]
+                : <Color>[context.colors.inkSubtle, context.colors.inkFaint],
+          ),
+          boxShadow: enabled
+              ? <BoxShadow>[
+                  BoxShadow(
+                    color: context.atmosphere.glow.withValues(alpha: 0.5),
+                    blurRadius: 18,
+                    offset: const Offset(0, 7),
+                  ),
+                ]
+              : null,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(context.shape.controlRadius),
+          child: button,
+        ),
+      );
+    }
+
     return PressableScale(
       enabled: enabled,
       scale: 0.97,
       pressOffset: 1.5,
-      child: button,
+      child: visual,
     );
   }
 }
@@ -190,6 +225,7 @@ class PaperOutlinedButton extends StatelessWidget {
     final Widget button = OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
+        backgroundColor: context.isGlass ? Colors.transparent : null,
         foregroundColor: foregroundColor,
         overlayColor: fg.withValues(alpha: 0.10),
         padding:
@@ -212,7 +248,15 @@ class PaperOutlinedButton extends StatelessWidget {
       enabled: onPressed != null,
       scale: 0.97,
       pressOffset: 1.2,
-      child: button,
+      child: context.isGlass
+          ? GlassSurface(
+              borderRadius: BorderRadius.circular(context.shape.controlRadius),
+              blur: false,
+              shadow: false,
+              padding: EdgeInsets.zero,
+              child: button,
+            )
+          : button,
     );
   }
 }

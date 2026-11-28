@@ -9,16 +9,16 @@ double _contrast(Color a, Color b) {
 }
 
 void main() {
-  test('目录包含四种风格，新风格各三款且 ID 唯一', () {
-    expect(AppThemeCatalog.options, hasLength(10));
+  test('目录包含五种风格且 ID 唯一', () {
+    expect(AppThemeCatalog.options, hasLength(11));
     expect(
       AppThemeCatalog.options.map((AppThemeOption option) => option.id).toSet(),
-      hasLength(10),
+      hasLength(11),
     );
     for (final ThemeFamily family in ThemeFamily.values) {
       expect(
         AppThemeCatalog.byFamily(family).length,
-        family == ThemeFamily.warm ? 1 : 3,
+        family == ThemeFamily.warm || family == ThemeFamily.aurora ? 1 : 3,
       );
     }
     expect(AppThemeCatalog.defaultOption.id, 'warm_paper');
@@ -96,6 +96,11 @@ void main() {
           expect(design.typography.masthead.fontFamily, 'monospace');
           expect(design.palette.isDark, isTrue);
           expect(design.shape.cardRadius, 8);
+        case ThemeVisualStyle.fluid:
+          expect(design.atmosphere, isNotNull);
+          expect(design.shape.cardRadius, 26);
+          expect(design.shape.sheetRadius, 34);
+          expect(design.shape.controlRadius, 22);
       }
     }
   });

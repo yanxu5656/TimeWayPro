@@ -4,6 +4,8 @@
 // （AppColors / AppRadius / AppSpacing / AppShadows / AppText）。
 export '../theme/app_theme.dart';
 export 'action_feedback.dart';
+export 'ambient_background.dart';
+export 'glass_surface.dart';
 export 'app_haptics.dart';
 export 'count_up_text.dart';
 export 'ink_check_circle.dart';
